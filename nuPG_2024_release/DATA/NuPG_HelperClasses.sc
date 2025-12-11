@@ -121,46 +121,59 @@ NuPG_PresetManager {
 		};
 	}
 
-	// Save presets to file
+	// Save presets to file - returns true on success
 	save { |path|
-		var file, timestamp;
+		var timestamp, success = false;
 		// Ensure path has a filename, generate one if needed
 		if (path.basename.size == 0) {
 			timestamp = Date.getDate.format("%Y%m%d_%H%M%S");
 			path = path ++ "preset_" ++ timestamp;
 		};
-		file = File(path, "w");
-		if (file.isOpen) {
-			file.write(presets.asCompileString);
-			file.close;
+		// Use writeArchive for reliable cross-platform file writing
+		try {
+			presets.writeArchive(path);
 			("Presets saved to:" + path).postln;
-		} {
-			("Error: Could not open file for writing:" + path).warn;
+			success = true;
+		} { |error|
+			("Error saving presets:" + error).warn;
 		};
+		^success;
 	}
 
 	// Load presets from file
 	load { |path|
 		if (File.exists(path)) {
-			var file = File(path, "r");
-			var content = file.readAllString;
-			file.close;
-			// Try to interpret as new format first
+			// Try to load as archive first (new format)
 			try {
-				var loaded = content.interpret;
+				var loaded = Object.readArchive(path);
 				if (loaded.isKindOf(List) or: loaded.isKindOf(Array)) {
 					presets = loaded.asList;
-				} {
-					// Could be old Conductor format - try to convert
-					presets = this.prConvertOldFormat(loaded);
+					("Presets loaded from:" + path).postln;
+					^true;
 				};
-				("Presets loaded from:" + path).postln;
 			} { |error|
-				("Error loading presets:" + error).warn;
+				// Archive load failed, try as text file
+				var file = File(path, "r");
+				var content = file.readAllString;
+				file.close;
+				try {
+					var loaded = content.interpret;
+					if (loaded.isKindOf(List) or: loaded.isKindOf(Array)) {
+						presets = loaded.asList;
+					} {
+						// Could be old Conductor format - try to convert
+						presets = this.prConvertOldFormat(loaded);
+					};
+					("Presets loaded from:" + path).postln;
+					^true;
+				} { |error2|
+					("Error loading presets:" + error2).warn;
+				};
 			};
 		} {
 			("Preset file not found:" + path).warn;
 		};
+		^false;
 	}
 
 	// Convert old Conductor preset format to new format

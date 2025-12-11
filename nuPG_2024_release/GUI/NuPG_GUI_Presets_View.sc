@@ -7,7 +7,7 @@ NuPG_GUI_Presets_View {
 	var <>defaultPresetPath;
 	var <>presetInterpolationSlider, <>interpolationFromPreset, <>presetName;
 	var <>currentPreset, <>interpolationToPreset, <>presetMenu, <>savePreset;
-	var <>presetSize, <>addPreset, <>removePreset, <>nextPreset, <>previousPreset;
+	var <>presetSize, <>addPreset, <>removePreset, <>nextPreset, <>previousPreset, <>updatePreset;
 
 	draw {|name, dimensions, viewsList, n = 1, dataObj|
 		// All var declarations must come first in SuperCollider
@@ -64,6 +64,7 @@ NuPG_GUI_Presets_View {
 		removePreset = n.collect{};
 		nextPreset = n.collect{};
 		previousPreset = n.collect{};
+		updatePreset = n.collect{};
 		presetInterpolationSlider = n.collect{};
 		interpolationFromPreset = n.collect{};
 		currentPreset = n.collect{};
@@ -82,18 +83,35 @@ NuPG_GUI_Presets_View {
 
 			savePreset[i] = guiDefinitions.nuPGButton([["SAVE"]], 15, 35);
 			savePreset[i].action_{
-				var presetFilename, timestamp, presetNum;
+				var presetFilename, timestamp, presetNum, success;
 				// Always generate automatic name: preset_XX_YYYYMMDD_HHMMSS
 				timestamp = Date.getDate.format("%Y%m%d_%H%M%S");
 				presetNum = (presetMenu[i].items.size + 1).asString.padLeft(2, "0");
 				presetFilename = "preset_" ++ presetNum ++ "_" ++ timestamp;
-				data.conductor[(\con_ ++ i).asSymbol].save(defaultPresetPath ++ presetFilename);
-				// Refresh the preset menu
-				files = {|tablePath| ["/*"].collect{|item| (tablePath ++ item).pathMatch}.flatten };
-				fileNames = files.value(defaultPresetPath).collect{|item| PathName(item).fileName};
-				presetMenu[i].items = [];
-				presetMenu[i].items = fileNames;
-				("Saved preset:" + presetFilename).postln;
+				success = data.conductor[(\con_ ++ i).asSymbol].save(defaultPresetPath ++ presetFilename);
+				// Refresh the preset menu only on success
+				if (success) {
+					files = {|tablePath| ["/*"].collect{|item| (tablePath ++ item).pathMatch}.flatten };
+					fileNames = files.value(defaultPresetPath).collect{|item| PathName(item).fileName};
+					presetMenu[i].items = [];
+					presetMenu[i].items = fileNames;
+				};
+		};
+			// UPDATE button - overwrites currently selected preset file
+			updatePreset[i] = guiDefinitions.nuPGButton([["UPDATE"]], 15, 45);
+			updatePreset[i].action_{
+				var selectedFile, success;
+				if (presetMenu[i].items.size > 0) {
+					selectedFile = fileNames[presetMenu[i].value];
+					if (selectedFile.notNil) {
+						success = data.conductor[(\con_ ++ i).asSymbol].save(defaultPresetPath ++ selectedFile);
+						if (success) {
+							("Updated preset:" + selectedFile).postln;
+						};
+					};
+				} {
+					"No preset file selected to update".warn;
+				};
 		};
 			presetMenu[i] = guiDefinitions.nuPGMenu(defState: 1, width: 70);
 			presetMenu[i].items = [];
@@ -218,6 +236,9 @@ NuPG_GUI_Presets_View {
 			viewLayout[i].addSpanning(addPreset[i], row: 1, column: 2);
 			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("remove preset", 15, 70), row: 1, column: 5, columnSpan: 2);
 			viewLayout[i].addSpanning(removePreset[i], row: 1, column: 7);
+
+			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("update preset set", 15, 90), row: 2, column: 0, columnSpan: 2);
+			viewLayout[i].addSpanning(updatePreset[i], row: 2, column: 2);
 
 			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("previous preset", 15, 80), row: 3, column: 0,  columnSpan: 2);
 			viewLayout[i].addSpanning(previousPreset[i], row: 3, column: 2);
