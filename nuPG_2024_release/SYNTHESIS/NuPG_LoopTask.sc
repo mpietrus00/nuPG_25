@@ -1,6 +1,9 @@
 NuPG_LoopTask {
 
 	var <>tasks, <>taskSingleShot;
+	var <>synthesis;  // Mutable reference for seamless switching
+	var <>data;
+	var <>numInstances;
 
 	loadSingleshot {|data, synthesis, progressSlider, n = 1|
 
@@ -229,7 +232,18 @@ NuPG_LoopTask {
 		^taskSingleShot;
 	}
 
-	load {|data, synthesis, n = 1|
+	// Switch synthesis engine (for seamless switching)
+	switchSynthesis { |newSynthesis|
+		synthesis = newSynthesis;
+		("LoopTask: switched to" + newSynthesis.class).postln;
+	}
+
+	load { |dataArg, synthesisArg, n = 1|
+		// Store references as instance variables for later switching
+		var loopTask = this;  // Capture self for use in Tdef closures
+		data = dataArg;
+		synthesis = synthesisArg;
+		numInstances = n;
 
 		tasks = n.collect{|i|
 
@@ -384,7 +398,8 @@ NuPG_LoopTask {
 
 
 				loop{
-					synthesis.trainInstances[i].set(
+					// Use loopTask.synthesis for seamless switching support
+					loopTask.synthesis.trainInstances[i].set(
 						\fundamental_frequency_loop, fundamentalPatt.linlin(-1, 1,
 				data.data_fundamentalFrequency_maxMin[i][1].value,
 				data.data_fundamentalFrequency_maxMin[i][0].value).next,

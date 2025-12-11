@@ -70,10 +70,8 @@ s.waitForBoot({
 	~numberOfInstances.collect{|i|
 		~loopTask.tasks[i].set(\playbackDirection, 0);
 	};
-
-	~numberOfInstances.collect{|i|
-		~loopTask.tasks[i].set(\playbackDirection, 0);
-	};
+	// Connect loopTask to switcher for seamless synthesis switching
+	~synthSwitcher.loopTask = ~loopTask;
 	~scrubbTask = NuPG_ScrubbTask.new;
 	~scrubbTask.load(data: ~data, synthesis: ~synthesis, n: ~numberOfInstances);
 	~numberOfInstances.collect{|i|};

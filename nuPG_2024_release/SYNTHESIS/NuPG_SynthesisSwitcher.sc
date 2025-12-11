@@ -13,6 +13,7 @@ NuPG_SynthesisSwitcher {
 	var <>numChannels;
 	var <>data;
 	var <>buffers;            // Dictionary of buffer references
+	var <>loopTask;           // NuPG_LoopTask reference for seamless switching
 
 	*new {
 		if (instance.isNil) {
@@ -145,6 +146,11 @@ NuPG_SynthesisSwitcher {
 		// Update references
 		activeSynth = newSynth;
 		activeMode = newMode;
+
+		// Update loopTask synthesis reference for seamless switching
+		if (loopTask.notNil) {
+			loopTask.switchSynthesis(newSynth);
+		};
 
 		// Map buffers to new synth
 		this.prMapBuffers;
