@@ -82,9 +82,20 @@ NuPG_GUI_Presets_View {
 
 			savePreset[i] = guiDefinitions.nuPGButton([["SAVE"]], 15, 35);
 			savePreset[i].action_{
-				data.conductor[(\con_ ++ i).asSymbol].save(defaultPresetPath ++ presetName[i].string);
-			files = {|tablePath| ["/*"].collect{|item|  (tablePath ++ item).pathMatch}.flatten };
-			fileNames = files.value(defaultPresetPath).collect{|i| PathName(i).fileName};
+				var presetFilename, timestamp, presetNum;
+				// Generate automatic name if text field is empty
+				if (presetName[i].string.size == 0) {
+					timestamp = Date.getDate.format("%Y%m%d_%H%M%S");
+					presetNum = (presetMenu[i].items.size + 1).asString.padLeft(2, "0");
+					presetFilename = "preset_" ++ presetNum ++ "_" ++ timestamp;
+					presetName[i].string = presetFilename;
+				} {
+					presetFilename = presetName[i].string;
+				};
+				data.conductor[(\con_ ++ i).asSymbol].save(defaultPresetPath ++ presetFilename);
+				// Refresh the preset menu
+				files = {|tablePath| ["/*"].collect{|item| (tablePath ++ item).pathMatch}.flatten };
+				fileNames = files.value(defaultPresetPath).collect{|item| PathName(item).fileName};
 				presetMenu[i].items = [];
 				presetMenu[i].items = fileNames;
 		};

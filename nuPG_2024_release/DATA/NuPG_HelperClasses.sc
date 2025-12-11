@@ -123,10 +123,20 @@ NuPG_PresetManager {
 
 	// Save presets to file
 	save { |path|
-		var file = File(path, "w");
-		file.write(presets.asCompileString);
-		file.close;
-		("Presets saved to:" + path).postln;
+		var file, timestamp;
+		// Ensure path has a filename, generate one if needed
+		if (path.basename.size == 0) {
+			timestamp = Date.getDate.format("%Y%m%d_%H%M%S");
+			path = path ++ "preset_" ++ timestamp;
+		};
+		file = File(path, "w");
+		if (file.isOpen) {
+			file.write(presets.asCompileString);
+			file.close;
+			("Presets saved to:" + path).postln;
+		} {
+			("Error: Could not open file for writing:" + path).warn;
+		};
 	}
 
 	// Load presets from file
