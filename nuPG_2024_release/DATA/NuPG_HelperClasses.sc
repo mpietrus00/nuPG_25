@@ -123,7 +123,7 @@ NuPG_PresetManager {
 
 	// Save presets to file - returns true on success
 	save { |path|
-		var timestamp, success = false, content, file;
+		var timestamp, success = false, content, file, dir;
 		// Ensure path has a filename, generate one if needed
 		if (path.basename.size == 0) {
 			timestamp = Date.getDate.format("%Y%m%d_%H%M%S");
@@ -131,11 +131,16 @@ NuPG_PresetManager {
 		};
 		// Standardize path for cross-platform compatibility
 		path = path.standardizePath;
-		("Attempting to save to:" + path).postln;
+
+		// Create directory if it doesn't exist
+		dir = path.dirname;
+		if (File.exists(dir).not) {
+			("Creating directory:" + dir).postln;
+			File.mkdir(dir);
+		};
 
 		// Convert presets to compile string
 		content = presets.asCompileString;
-		("Content size:" + content.size + "chars").postln;
 
 		// Write using simple File open/write/close
 		file = File(path, "w");
@@ -146,7 +151,6 @@ NuPG_PresetManager {
 			success = true;
 		} {
 			("Could not open file:" + path).warn;
-			("Check if directory exists and is writable").postln;
 		};
 		^success;
 	}
