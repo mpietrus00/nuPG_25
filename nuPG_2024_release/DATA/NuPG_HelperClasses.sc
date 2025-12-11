@@ -123,15 +123,16 @@ NuPG_PresetManager {
 
 	// Save presets to file - returns true on success
 	save { |path|
-		var timestamp, success = false;
+		var timestamp, success = false, content;
 		// Ensure path has a filename, generate one if needed
 		if (path.basename.size == 0) {
 			timestamp = Date.getDate.format("%Y%m%d_%H%M%S");
 			path = path ++ "preset_" ++ timestamp;
 		};
-		// Use writeArchive for reliable cross-platform file writing
+		// Convert presets to compile string and write using File.use
 		try {
-			presets.writeArchive(path);
+			content = presets.asCompileString;
+			File.use(path, "w", { |file| file.write(content) });
 			("Presets saved to:" + path).postln;
 			success = true;
 		} { |error|
@@ -142,33 +143,21 @@ NuPG_PresetManager {
 
 	// Load presets from file
 	load { |path|
+		var content, loaded;
 		if (File.exists(path)) {
-			// Try to load as archive first (new format)
 			try {
-				var loaded = Object.readArchive(path);
+				File.use(path, "r", { |file| content = file.readAllString });
+				loaded = content.interpret;
 				if (loaded.isKindOf(List) or: loaded.isKindOf(Array)) {
 					presets = loaded.asList;
-					("Presets loaded from:" + path).postln;
-					^true;
+				} {
+					// Could be old Conductor format - try to convert
+					presets = this.prConvertOldFormat(loaded);
 				};
+				("Presets loaded from:" + path).postln;
+				^true;
 			} { |error|
-				// Archive load failed, try as text file
-				var file = File(path, "r");
-				var content = file.readAllString;
-				file.close;
-				try {
-					var loaded = content.interpret;
-					if (loaded.isKindOf(List) or: loaded.isKindOf(Array)) {
-						presets = loaded.asList;
-					} {
-						// Could be old Conductor format - try to convert
-						presets = this.prConvertOldFormat(loaded);
-					};
-					("Presets loaded from:" + path).postln;
-					^true;
-				} { |error2|
-					("Error loading presets:" + error2).warn;
-				};
+				("Error loading presets:" + error).warn;
 			};
 		} {
 			("Preset file not found:" + path).warn;
