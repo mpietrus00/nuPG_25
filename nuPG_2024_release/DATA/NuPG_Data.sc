@@ -636,6 +636,118 @@ NuPG_Data {
 		};
 	}
 
+	// =========================================
+	// PER-INSTANCE SERIALIZATION (for preset manager)
+	// =========================================
+
+	prSerializeStateForInstance { |index|
+		var state = Dictionary.new;
+		var i = index;
+
+		state[\data_main] = data_main[i].collect { |cv| cv.value };
+		state[\data_pulsaret] = data_pulsaret[i].value;
+		state[\data_envelope] = data_envelope[i].value;
+		state[\data_frequency] = data_frequency[i].value;
+		state[\data_fundamentalFrequency] = data_fundamentalFrequency[i].value;
+		state[\data_probabilityMask] = data_probabilityMask[i].value;
+		state[\data_formantFrequencyOne] = data_formantFrequencyOne[i].value;
+		state[\data_formantFrequencyTwo] = data_formantFrequencyTwo[i].value;
+		state[\data_formantFrequencyThree] = data_formantFrequencyThree[i].value;
+		state[\data_panOne] = data_panOne[i].value;
+		state[\data_panTwo] = data_panTwo[i].value;
+		state[\data_panThree] = data_panThree[i].value;
+		state[\data_ampOne] = data_ampOne[i].value;
+		state[\data_ampTwo] = data_ampTwo[i].value;
+		state[\data_ampThree] = data_ampThree[i].value;
+		state[\data_envelopeMulOne] = data_envelopeMulOne[i].value;
+		state[\data_envelopeMulTwo] = data_envelopeMulTwo[i].value;
+		state[\data_envelopeMulThree] = data_envelopeMulThree[i].value;
+		state[\data_modulators] = data_modulators[i].collect { |cv| cv.value };
+		state[\data_spatial] = data_spatial[i].collect { |cv| cv.value };
+		state[\data_matrix] = data_matrix[i].collect { |row| row.collect { |cv| cv.value } };
+		state[\data_pulsaret_maxMin] = data_pulsaret_maxMin[i].collect { |cv| cv.value };
+		state[\data_envelope_maxMin] = data_envelope_maxMin[i].collect { |cv| cv.value };
+		state[\data_fundamentalFrequency_maxMin] = data_fundamentalFrequency_maxMin[i].collect { |cv| cv.value };
+		state[\data_burstMask] = data_burstMask[i].collect { |cv| cv.value };
+		state[\data_channelMask] = data_channelMask[i].collect { |cv| cv.value };
+		state[\data_sieveMask] = [data_sieveMask[i][0].value, data_sieveMask[i][1].value];
+		state[\data_probabilityMaskSingular] = data_probabilityMaskSingular[i].value;
+		state[\data_trainDuration] = data_trainDuration[i].value;
+		state[\data_scrubber] = data_scrubber[i].value;
+
+		^state;
+	}
+
+	prDeserializeStateForInstance { |state, index|
+		var i = index;
+
+		state[\data_main].do { |val, j| data_main[i][j].value = val };
+		data_pulsaret[i].value = state[\data_pulsaret];
+		data_envelope[i].value = state[\data_envelope];
+		data_frequency[i].value = state[\data_frequency];
+		data_fundamentalFrequency[i].value = state[\data_fundamentalFrequency];
+		data_probabilityMask[i].value = state[\data_probabilityMask];
+		data_formantFrequencyOne[i].value = state[\data_formantFrequencyOne];
+		data_formantFrequencyTwo[i].value = state[\data_formantFrequencyTwo];
+		data_formantFrequencyThree[i].value = state[\data_formantFrequencyThree];
+		data_panOne[i].value = state[\data_panOne];
+		data_panTwo[i].value = state[\data_panTwo];
+		data_panThree[i].value = state[\data_panThree];
+		data_ampOne[i].value = state[\data_ampOne];
+		data_ampTwo[i].value = state[\data_ampTwo];
+		data_ampThree[i].value = state[\data_ampThree];
+		data_envelopeMulOne[i].value = state[\data_envelopeMulOne];
+		data_envelopeMulTwo[i].value = state[\data_envelopeMulTwo];
+		data_envelopeMulThree[i].value = state[\data_envelopeMulThree];
+		state[\data_modulators].do { |val, j| data_modulators[i][j].value = val };
+		state[\data_spatial].do { |val, j| data_spatial[i][j].value = val };
+		state[\data_matrix].do { |row, j| row.do { |val, k| data_matrix[i][j][k].value = val } };
+		state[\data_pulsaret_maxMin].do { |val, j| data_pulsaret_maxMin[i][j].value = val };
+		state[\data_envelope_maxMin].do { |val, j| data_envelope_maxMin[i][j].value = val };
+		state[\data_fundamentalFrequency_maxMin].do { |val, j| data_fundamentalFrequency_maxMin[i][j].value = val };
+		state[\data_burstMask].do { |val, j| data_burstMask[i][j].value = val };
+		state[\data_channelMask].do { |val, j| data_channelMask[i][j].value = val };
+		data_sieveMask[i][0].value = state[\data_sieveMask][0];
+		data_sieveMask[i][1].value = state[\data_sieveMask][1];
+		data_probabilityMaskSingular[i].value = state[\data_probabilityMaskSingular];
+		data_trainDuration[i].value = state[\data_trainDuration];
+		data_scrubber[i].value = state[\data_scrubber];
+	}
+
+	prInterpolateStatesForInstance { |stateA, stateB, blend, index|
+		var i = index;
+
+		stateA[\data_main].do { |valA, j|
+			var valB = stateB[\data_main][j];
+			data_main[i][j].value = valA.blend(valB, blend);
+		};
+
+		data_pulsaret[i].value = this.prBlendArrays(stateA[\data_pulsaret], stateB[\data_pulsaret], blend);
+		data_envelope[i].value = this.prBlendArrays(stateA[\data_envelope], stateB[\data_envelope], blend);
+		data_frequency[i].value = this.prBlendArrays(stateA[\data_frequency], stateB[\data_frequency], blend);
+		data_fundamentalFrequency[i].value = this.prBlendArrays(stateA[\data_fundamentalFrequency], stateB[\data_fundamentalFrequency], blend);
+		data_probabilityMask[i].value = this.prBlendArrays(stateA[\data_probabilityMask], stateB[\data_probabilityMask], blend);
+		data_formantFrequencyOne[i].value = this.prBlendArrays(stateA[\data_formantFrequencyOne], stateB[\data_formantFrequencyOne], blend);
+		data_formantFrequencyTwo[i].value = this.prBlendArrays(stateA[\data_formantFrequencyTwo], stateB[\data_formantFrequencyTwo], blend);
+		data_formantFrequencyThree[i].value = this.prBlendArrays(stateA[\data_formantFrequencyThree], stateB[\data_formantFrequencyThree], blend);
+		data_panOne[i].value = this.prBlendArrays(stateA[\data_panOne], stateB[\data_panOne], blend);
+		data_panTwo[i].value = this.prBlendArrays(stateA[\data_panTwo], stateB[\data_panTwo], blend);
+		data_panThree[i].value = this.prBlendArrays(stateA[\data_panThree], stateB[\data_panThree], blend);
+		data_ampOne[i].value = this.prBlendArrays(stateA[\data_ampOne], stateB[\data_ampOne], blend);
+		data_ampTwo[i].value = this.prBlendArrays(stateA[\data_ampTwo], stateB[\data_ampTwo], blend);
+		data_ampThree[i].value = this.prBlendArrays(stateA[\data_ampThree], stateB[\data_ampThree], blend);
+		data_envelopeMulOne[i].value = this.prBlendArrays(stateA[\data_envelopeMulOne], stateB[\data_envelopeMulOne], blend);
+		data_envelopeMulTwo[i].value = this.prBlendArrays(stateA[\data_envelopeMulTwo], stateB[\data_envelopeMulTwo], blend);
+		data_envelopeMulThree[i].value = this.prBlendArrays(stateA[\data_envelopeMulThree], stateB[\data_envelopeMulThree], blend);
+
+		stateA[\data_modulators].do { |valA, j|
+			var valB = stateB[\data_modulators][j];
+			data_modulators[i][j].value = valA.blend(valB, blend);
+		};
+
+		data_trainDuration[i].value = stateA[\data_trainDuration].blend(stateB[\data_trainDuration], blend);
+	}
+
 	// Timed interpolation between presets with easing
 	morphPresets { |slotA, slotB, duration = 5.0, curve = \linear|
 		var stateA = presets[slotA];
