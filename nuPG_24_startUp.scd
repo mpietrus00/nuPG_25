@@ -745,8 +745,7 @@ s.waitForBoot({
 	//presets
 	~presets = NuPG_GUI_Presets_View.new;
 	~presets.defaultPresetPath = ~presetsPath;
-	~presets.draw("_presets", ~guiDefinitions.presetsViewDimensions, n: ~numberOfInstances);
-	~presets.data = ~data;
+	~presets.draw("_presets", ~guiDefinitions.presetsViewDimensions, n: ~numberOfInstances, dataObj: ~data);
 	~numberOfInstances.collect{|i|
 		~data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.connect(~presets.currentPreset[i]);
 		~data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.connect(~presets.interpolationFromPreset[i]);

@@ -9,8 +9,11 @@ NuPG_GUI_Presets_View {
 	var <>currentPreset, <>interpolationToPreset, <>presetMenu, <>savePreset;
 	var <>presetSize, <>addPreset, <>removePreset, <>nextPreset, <>previousPreset;
 
-	draw {|name, dimensions, viewsList, n = 1|
+	draw {|name, dimensions, viewsList, n = 1, dataObj|
 		var view, viewLayout;
+
+		// Set data from parameter if provided
+		if (dataObj.notNil) { data = dataObj };
 
 		//get GUI defs
 		var guiDefinitions = NuPG_GUI_Definitions;
