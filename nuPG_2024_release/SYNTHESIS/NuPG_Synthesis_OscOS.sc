@@ -400,21 +400,23 @@ NuPG_Synthesis_OscOS {
 					oversample
 				);
 
-				// Envelope from buffer using OscOS
-				envelope_One = Select.ar(envelope_buffer > 0, [
-					EnvGen.ar(Env.sine(grainDur_One), DelayN.ar(trigger, 1, offset_1)),
-					OscOS.ar(envelope_buffer, envM_One, 0, oversample)
-				]);
+				// Triggered envelope using EnvGen
+				// Note: OscOS is free-running so envelope buffer isn't supported in OscOS mode
+				// Use EnvGen with triggered sine envelope for proper gating
+				envelope_One = EnvGen.ar(
+					Env([0, 1, 0], [grainDur_One * 0.5, grainDur_One * 0.5], \sine),
+					DelayN.ar(trigger, 1, offset_1)
+				);
 
-				envelope_Two = Select.ar(envelope_buffer > 0, [
-					EnvGen.ar(Env.sine(grainDur_Two), DelayN.ar(trigger, 1, offset_2)),
-					OscOS.ar(envelope_buffer, envM_Two, 0, oversample)
-				]);
+				envelope_Two = EnvGen.ar(
+					Env([0, 1, 0], [grainDur_Two * 0.5, grainDur_Two * 0.5], \sine),
+					DelayN.ar(trigger, 1, offset_2)
+				);
 
-				envelope_Three = Select.ar(envelope_buffer > 0, [
-					EnvGen.ar(Env.sine(grainDur_Three), DelayN.ar(trigger, 1, offset_3)),
-					OscOS.ar(envelope_buffer, envM_Three, 0, oversample)
-				]);
+				envelope_Three = EnvGen.ar(
+					Env([0, 1, 0], [grainDur_Three * 0.5, grainDur_Three * 0.5], \sine),
+					DelayN.ar(trigger, 1, offset_3)
+				);
 
 				// Pulsar outputs
 				pulsar_1 = pulsaret_One * envelope_One;
