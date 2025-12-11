@@ -57,8 +57,9 @@ NuPG_PresetManager {
 		});
 	}
 
-	// Alias for compatibility: preset.presetCV
+	// Aliases for compatibility with Conductor preset API
 	presetCV { ^currentPresetCV }
+	targetCV { ^targetPresetCV }
 
 	// Return self for compatibility with conductor[key].preset pattern
 	preset { ^this }
