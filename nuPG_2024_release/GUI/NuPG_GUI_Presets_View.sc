@@ -83,21 +83,17 @@ NuPG_GUI_Presets_View {
 			savePreset[i] = guiDefinitions.nuPGButton([["SAVE"]], 15, 35);
 			savePreset[i].action_{
 				var presetFilename, timestamp, presetNum;
-				// Generate automatic name if text field is empty
-				if (presetName[i].string.size == 0) {
-					timestamp = Date.getDate.format("%Y%m%d_%H%M%S");
-					presetNum = (presetMenu[i].items.size + 1).asString.padLeft(2, "0");
-					presetFilename = "preset_" ++ presetNum ++ "_" ++ timestamp;
-					presetName[i].string = presetFilename;
-				} {
-					presetFilename = presetName[i].string;
-				};
+				// Always generate automatic name: preset_XX_YYYYMMDD_HHMMSS
+				timestamp = Date.getDate.format("%Y%m%d_%H%M%S");
+				presetNum = (presetMenu[i].items.size + 1).asString.padLeft(2, "0");
+				presetFilename = "preset_" ++ presetNum ++ "_" ++ timestamp;
 				data.conductor[(\con_ ++ i).asSymbol].save(defaultPresetPath ++ presetFilename);
 				// Refresh the preset menu
 				files = {|tablePath| ["/*"].collect{|item| (tablePath ++ item).pathMatch}.flatten };
 				fileNames = files.value(defaultPresetPath).collect{|item| PathName(item).fileName};
 				presetMenu[i].items = [];
 				presetMenu[i].items = fileNames;
+				("Saved preset:" + presetFilename).postln;
 		};
 			presetMenu[i] = guiDefinitions.nuPGMenu(defState: 1, width: 70);
 			presetMenu[i].items = [];
@@ -212,7 +208,7 @@ NuPG_GUI_Presets_View {
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 				//place objects on view
 				n.collect{|i|
-			viewLayout[i].addSpanning(presetName[i], row: 0, column: 0, columnSpan: 2);
+			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("Presets:", 15, 60), row: 0, column: 0, columnSpan: 2);
 			viewLayout[i].addSpanning(savePreset[i], row: 0, column: 2);
 			viewLayout[i].addSpanning(presetMenu[i], row: 0, column: 3, columnSpan: 2);
 			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("Bank Size:", 15, 60), row: 0, column: 5, columnSpan: 2);
