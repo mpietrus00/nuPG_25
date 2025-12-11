@@ -10,18 +10,16 @@ NuPG_GUI_Presets_View {
 	var <>presetSize, <>addPreset, <>removePreset, <>nextPreset, <>previousPreset;
 
 	draw {|name, dimensions, viewsList, n = 1, dataObj|
+		// All var declarations must come first in SuperCollider
 		var view, viewLayout;
+		var guiDefinitions = NuPG_GUI_Definitions;
+		var files = {|tablePath| ["/*"].collect{|item|  (tablePath ++ item).pathMatch}.flatten };
+		var fileNames;
 
-		// Set data from parameter if provided
+		// Set data from parameter if provided (must come after var declarations)
 		if (dataObj.notNil) { data = dataObj };
 
-		//get GUI defs
-		var guiDefinitions = NuPG_GUI_Definitions;
-		//var sliderRecordPlayer = NuPG_Slider_Recorder_Palyer;
-		//sliderRecordPlayer.data = data.data_progressSlider;
-
-		var files = {|tablePath| ["/*"].collect{|item|  (tablePath ++ item).pathMatch}.flatten };
-		var fileNames = files.value(defaultPresetPath).collect{|i| PathName(i).fileName};
+		fileNames = files.value(defaultPresetPath).collect{|i| PathName(i).fileName};
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//window
 		window = Window(name, dimensions, resizable: false);
