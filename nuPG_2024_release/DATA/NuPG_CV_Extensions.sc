@@ -4,6 +4,17 @@
 
 + NumericControlValue {
 
+	// Set an action function to be called when value changes
+	// Mimics Conductor's cv.action = func behavior
+	action_ { |func|
+		this.addDependant({ |cv, what, val|
+			if (what == \value) {
+				func.value(this);
+			};
+		});
+		^this;
+	}
+
 	// Connect CV to a GUI View (Slider, NumberBox, MultiSliderView, etc.)
 	// Mimics Conductor's cv.connect(view) behavior
 	// Automatically detects view type and uses appropriate connection pattern

@@ -60,6 +60,9 @@ NuPG_PresetManager {
 	// Alias for compatibility: preset.presetCV
 	presetCV { ^currentPresetCV }
 
+	// Return self for compatibility with conductor[key].preset pattern
+	preset { ^this }
+
 	store { |slot|
 		presets[slot] = data.prSerializeState;
 		("Preset stored at slot:" + slot).postln;
@@ -124,20 +127,29 @@ NuPG_ConductorCompat {
 
 	// Mimics conductor.addCon(\name, func)
 	addCon { |name, generatorFunc|
+		// Convert key to symbol for consistent access
+		var key = name.asSymbol;
+
 		// Execute the generator function to create CVs
 		generatorFunc.value;
 
 		// Create a preset manager for this instance
-		instances[name] = NuPG_PresetManager(data);
+		instances[key] = NuPG_PresetManager(data);
 	}
 
 	// Allow dictionary-style access: conductor[\con_0]
 	at { |key|
-		^instances[key];
+		// Convert to symbol for consistent lookup
+		^instances[key.asSymbol];
 	}
 
 	// Allow conductor[\con_0] = value
 	put { |key, value|
-		instances[key] = value;
+		instances[key.asSymbol] = value;
+	}
+
+	// Return the preset manager for an instance (alias for compatibility)
+	preset { |key|
+		^instances[key.asSymbol];
 	}
 }
