@@ -64,6 +64,8 @@ s.waitForBoot({
 	~synthSwitcher.buffers[\pulsaret] = ~pulsaret_buffers;
 	~synthSwitcher.buffers[\envelope] = ~envelope_buffers;
 	~synthSwitcher.buffers[\frequency] = ~frequency_buffers;
+	// Initialize group states (3 groups per instance, all off by default)
+	~synthSwitcher.groupStates = ~numberOfInstances.collect { 3.collect { 0 } };
 	//map buffers<->data<->synthesis
 	~loopTask = NuPG_LoopTask.new;
 	~loopTask.load(data: ~data, synthesis: ~synthesis, n: ~numberOfInstances);
@@ -709,8 +711,9 @@ s.waitForBoot({
 
 
 	//groups control
+	// Pass synthSwitcher instead of synthesis so group toggles control active synth
 	~groupsControl = NuPG_GUI_GroupControl_View.new;
-	~groupsControl.draw(~guiDefinitions.groupsControlViewDimensions, ~synthesis, n: ~numberOfInstances);
+	~groupsControl.draw(~guiDefinitions.groupsControlViewDimensions, ~synthSwitcher, n: ~numberOfInstances);
 
 	//scrubber
 	~scrubber = NuPG_GUI_ScrubberView.new;
