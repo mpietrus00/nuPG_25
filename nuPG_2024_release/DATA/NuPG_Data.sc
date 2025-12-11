@@ -501,14 +501,193 @@ NuPG_Data {
 		// Interpolate table values
 		stateA[\data_pulsaret].do { |valA, i|
 			var valB = stateB[\data_pulsaret][i];
-			data_pulsaret[i].value = valA.blend(valB, blend);
+			data_pulsaret[i].value = this.prBlendArrays(valA, valB, blend);
 		};
 
 		stateA[\data_envelope].do { |valA, i|
 			var valB = stateB[\data_envelope][i];
-			data_envelope[i].value = valA.blend(valB, blend);
+			data_envelope[i].value = this.prBlendArrays(valA, valB, blend);
 		};
 
-		// Add more interpolations as needed...
+		stateA[\data_frequency].do { |valA, i|
+			var valB = stateB[\data_frequency][i];
+			data_frequency[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		stateA[\data_fundamentalFrequency].do { |valA, i|
+			var valB = stateB[\data_fundamentalFrequency][i];
+			data_fundamentalFrequency[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		stateA[\data_probabilityMask].do { |valA, i|
+			var valB = stateB[\data_probabilityMask][i];
+			data_probabilityMask[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Formant tables
+		stateA[\data_formantFrequencyOne].do { |valA, i|
+			var valB = stateB[\data_formantFrequencyOne][i];
+			data_formantFrequencyOne[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_formantFrequencyTwo].do { |valA, i|
+			var valB = stateB[\data_formantFrequencyTwo][i];
+			data_formantFrequencyTwo[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_formantFrequencyThree].do { |valA, i|
+			var valB = stateB[\data_formantFrequencyThree][i];
+			data_formantFrequencyThree[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Pan tables
+		stateA[\data_panOne].do { |valA, i|
+			var valB = stateB[\data_panOne][i];
+			data_panOne[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_panTwo].do { |valA, i|
+			var valB = stateB[\data_panTwo][i];
+			data_panTwo[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_panThree].do { |valA, i|
+			var valB = stateB[\data_panThree][i];
+			data_panThree[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Amp tables
+		stateA[\data_ampOne].do { |valA, i|
+			var valB = stateB[\data_ampOne][i];
+			data_ampOne[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_ampTwo].do { |valA, i|
+			var valB = stateB[\data_ampTwo][i];
+			data_ampTwo[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_ampThree].do { |valA, i|
+			var valB = stateB[\data_ampThree][i];
+			data_ampThree[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Envelope mult tables
+		stateA[\data_envelopeMulOne].do { |valA, i|
+			var valB = stateB[\data_envelopeMulOne][i];
+			data_envelopeMulOne[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_envelopeMulTwo].do { |valA, i|
+			var valB = stateB[\data_envelopeMulTwo][i];
+			data_envelopeMulTwo[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_envelopeMulThree].do { |valA, i|
+			var valB = stateB[\data_envelopeMulThree][i];
+			data_envelopeMulThree[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Modulators
+		stateA[\data_modulators].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_modulators][i][j];
+				data_modulators[i][j].value = valA.blend(valB, blend);
+			};
+		};
+
+		// Spatial
+		stateA[\data_spatial].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_spatial][i][j];
+				data_spatial[i][j].value = valA.blend(valB, blend);
+			};
+		};
+
+		// Burst mask
+		stateA[\data_burstMask].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_burstMask][i][j];
+				data_burstMask[i][j].value = valA.blend(valB, blend).round;
+			};
+		};
+
+		// Channel mask
+		stateA[\data_channelMask].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_channelMask][i][j];
+				data_channelMask[i][j].value = valA.blend(valB, blend).round;
+			};
+		};
+
+		// Probability singular
+		stateA[\data_probabilityMaskSingular].do { |valA, i|
+			var valB = stateB[\data_probabilityMaskSingular][i];
+			data_probabilityMaskSingular[i].value = valA.blend(valB, blend);
+		};
+
+		// Train duration
+		stateA[\data_trainDuration].do { |valA, i|
+			var valB = stateB[\data_trainDuration][i];
+			data_trainDuration[i].value = valA.blend(valB, blend);
+		};
+	}
+
+	// Helper to blend arrays element-wise
+	prBlendArrays { |arrA, arrB, blend|
+		if (arrA.isArray and: arrB.isArray) {
+			^arrA.collect { |valA, i|
+				valA.blend(arrB[i], blend)
+			};
+		} {
+			^arrA.blend(arrB, blend);
+		};
+	}
+
+	// Timed interpolation between presets with easing
+	morphPresets { |slotA, slotB, duration = 5.0, curve = \linear|
+		var stateA = presets[slotA];
+		var stateB = presets[slotB];
+
+		if (stateA.isNil or: stateB.isNil) {
+			"Cannot morph: one or both presets missing".warn;
+			^nil;
+		};
+
+		^Routine({
+			var steps = (duration * 30).asInteger;  // 30 fps
+			var dt = duration / steps;
+
+			steps.do { |i|
+				var t = (i + 1) / steps;
+				var blend = this.prApplyEasing(t, curve);
+				this.prInterpolateStates(stateA, stateB, blend);
+				dt.wait;
+			};
+
+			currentPreset = slotB;
+			("Morph complete to preset:" + slotB).postln;
+		}).play(AppClock);
+	}
+
+	// Apply easing curve to interpolation
+	prApplyEasing { |t, curve|
+		^switch(curve,
+			\linear, { t },
+			\sine, { (1 - cos(t * pi)) / 2 },
+			\quad, { t * t },
+			\cubic, { t * t * t },
+			\quart, { t * t * t * t },
+			\expo, { if (t == 0) { 0 } { 2.pow(10 * (t - 1)) } },
+			\circ, { 1 - sqrt(1 - (t * t)) },
+			\back, {
+				var s = 1.70158;
+				t * t * ((s + 1) * t - s);
+			},
+			\elastic, {
+				if (t == 0) { 0 } {
+					if (t == 1) { 1 } {
+						var p = 0.3;
+						var s = p / 4;
+						2.pow(-10 * t) * sin((t - s) * 2pi / p) + 1;
+					};
+				};
+			},
+			// Default: linear
+			{ t }
+		);
 	}
 }
+
