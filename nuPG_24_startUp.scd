@@ -905,9 +905,14 @@ s.waitForBoot({
 })
 .doWhenBooted({
 	~numberOfInstances.collect{|i|
+		// Standard synthesis buffers
 		~synthesis.trainInstances[i].set(\pulsaret_buffer, ~pulsaret_buffers[i].bufnum);
 		~synthesis.trainInstances[i].set(\envelope_buffer, ~envelope_buffers[i].bufnum);
 		~synthesis.trainInstances[i].set(\frequency_buffer, ~frequency_buffers[i].bufnum);
+		// OscOS synthesis buffers (for seamless switching)
+		~synthesisOscOS.trainInstances[i].set(\pulsaret_buffer, ~pulsaret_buffers[i].bufnum);
+		~synthesisOscOS.trainInstances[i].set(\envelope_buffer, ~envelope_buffers[i].bufnum);
+		~synthesisOscOS.trainInstances[i].set(\frequency_buffer, ~frequency_buffers[i].bufnum);
 
 		~synthesis.trainInstances[i].setControls([
 			fundamental_frequency: ~data.data_main[i][0],
@@ -984,7 +989,83 @@ s.waitForBoot({
 			ampThreeMod_two_active: ~data.data_matrix[i][1][12],
 			ampThreeMod_three_active: ~data.data_matrix[i][2][12],
 			ampThreeMod_four_active: ~data.data_matrix[i][3][12]
-			//offset
+		]);
+		// OscOS synthesis controls (for seamless switching)
+		~synthesisOscOS.trainInstances[i].setControls([
+			fundamental_frequency: ~data.data_main[i][0],
+			formant_frequency_One: ~data.data_main[i][1],
+			formant_frequency_Two: ~data.data_main[i][2],
+			formant_frequency_Three: ~data.data_main[i][3],
+			envMul_One: ~data.data_main[i][4],
+			envMul_Two: ~data.data_main[i][5],
+			envMul_Three: ~data.data_main[i][6],
+			pan_One: ~data.data_main[i][7],
+			pan_Two: ~data.data_main[i][8],
+			pan_Three: ~data.data_main[i][9],
+			amplitude_One: ~data.data_main[i][10],
+			amplitude_Two: ~data.data_main[i][11],
+			amplitude_Three: ~data.data_main[i][12],
+			fmAmt: ~data.data_modulators[i][0],
+			fmRatio: ~data.data_modulators[i][1],
+			allFluxAmt: ~data.data_modulators[i][2],
+			burst: ~data.data_burstMask[i][0],
+			rest: ~data.data_burstMask[i][1],
+			chanMask: ~data.data_channelMask[i][0],
+			centerMask: ~data.data_channelMask[i][1],
+			sieveMod: ~data.data_sieveMask[i][0],
+			sieveSequence: ~data.data_sieveMask[i][1],
+			probability: ~data.data_probabilityMaskSingular[i],
+			offset_1: ~data.data_groupsOffset[i][0],
+			offset_2: ~data.data_groupsOffset[i][1],
+			offset_3: ~data.data_groupsOffset[i][2],
+			modulation_frequency_one: ~data.data_modulator1[i][1],
+			modulation_frequency_two: ~data.data_modulator2[i][1],
+			modulation_frequency_three: ~data.data_modulator3[i][1],
+			modulation_frequency_four: ~data.data_modulator4[i][1],
+			modulation_index_one: ~data.data_modulator1[i][2],
+			modulation_index_two: ~data.data_modulator2[i][2],
+			modulation_index_three: ~data.data_modulator3[i][2],
+			modulation_index_four: ~data.data_modulator4[i][2],
+			fundamentalMod_one_active: ~data.data_matrix[i][0][0],
+			fundamentalMod_two_active: ~data.data_matrix[i][1][0],
+			fundamentalMod_three_active: ~data.data_matrix[i][2][0],
+			fundamentalMod_four_active: ~data.data_matrix[i][3][0],
+			formantOneMod_one_active: ~data.data_matrix[i][0][1],
+			formantOneMod_two_active: ~data.data_matrix[i][1][1],
+			formantOneMod_three_active: ~data.data_matrix[i][2][1],
+			formantOneMod_four_active: ~data.data_matrix[i][3][1],
+			formantTwoMod_one_active: ~data.data_matrix[i][0][2],
+			formantTwoMod_two_active: ~data.data_matrix[i][1][2],
+			formantTwoMod_three_active: ~data.data_matrix[i][2][2],
+			formantTwoMod_four_active: ~data.data_matrix[i][3][2],
+			formantThreeMod_one_active: ~data.data_matrix[i][0][3],
+			formantThreeMod_two_active: ~data.data_matrix[i][1][3],
+			formantThreeMod_three_active: ~data.data_matrix[i][2][3],
+			formantThreeMod_four_active: ~data.data_matrix[i][3][3],
+			panOneMod_one_active: ~data.data_matrix[i][0][7],
+			panOneMod_two_active: ~data.data_matrix[i][1][7],
+			panOneMod_three_active: ~data.data_matrix[i][2][7],
+			panOneMod_four_active: ~data.data_matrix[i][3][7],
+			panTwoMod_one_active: ~data.data_matrix[i][0][8],
+			panTwoMod_two_active: ~data.data_matrix[i][1][8],
+			panTwoMod_three_active: ~data.data_matrix[i][2][8],
+			panTwoMod_four_active: ~data.data_matrix[i][3][8],
+			panThreeMod_one_active: ~data.data_matrix[i][0][9],
+			panThreeMod_two_active: ~data.data_matrix[i][1][9],
+			panThreeMod_three_active: ~data.data_matrix[i][2][9],
+			panThreeMod_four_active: ~data.data_matrix[i][3][9],
+			ampOneMod_one_active: ~data.data_matrix[i][0][10],
+			ampOneMod_two_active: ~data.data_matrix[i][1][10],
+			ampOneMod_three_active: ~data.data_matrix[i][2][10],
+			ampOneMod_four_active: ~data.data_matrix[i][3][10],
+			ampTwoMod_one_active: ~data.data_matrix[i][0][11],
+			ampTwoMod_two_active: ~data.data_matrix[i][1][11],
+			ampTwoMod_three_active: ~data.data_matrix[i][2][11],
+			ampTwoMod_four_active: ~data.data_matrix[i][3][11],
+			ampThreeMod_one_active: ~data.data_matrix[i][0][12],
+			ampThreeMod_two_active: ~data.data_matrix[i][1][12],
+			ampThreeMod_three_active: ~data.data_matrix[i][2][12],
+			ampThreeMod_four_active: ~data.data_matrix[i][3][12]
 		]);
 };})
 )
