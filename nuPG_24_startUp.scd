@@ -40,7 +40,7 @@ s.waitForBoot({
 	//generate global data structure
 	//add local data structures to it, number of local data = number of instances
 	// Using new Connection Quark-based data class for testing
-	~data = NuPG_Data_New.new;
+	~data = NuPG_Data.new;
 	~data.conductorInit(~numberOfInstances);
 	~numberOfInstances.collect{|i|
 		~data.conductor.addCon(\con_ ++ i, ~data.instanceGeneratorFunction(i));
