@@ -141,9 +141,7 @@ NuPG_Synthesis_OscOS {
 
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
 				// Oversampling factor for OscOS (2, 4, or 8)
-				oversample = 4,
-				// NEW: Explicit overlap parameters (1 = grains touch, >1 = overlap, <1 = gaps)
-				overlap_One = 1, overlap_Two = 1, overlap_Three = 1;
+				oversample = 4;
 
 				// Sub-sample accurate trigger generation variables
 				var stepPhase, stepTrigger, stepSlope;
@@ -152,6 +150,8 @@ NuPG_Synthesis_OscOS {
 				// Formant/grain variables
 				var ffreq_One, ffreq_Two, ffreq_Three;
 				var grainSlope_One, grainSlope_Two, grainSlope_Three;
+				// Overlap derived from envMul (dilation control)
+				var overlap_One, overlap_Two, overlap_Three;
 				var maxOverlap_One, maxOverlap_Two, maxOverlap_Three;
 				var windowSlope_One, windowSlope_Two, windowSlope_Three;
 				var windowPhase_One, windowPhase_Two, windowPhase_Three;
@@ -339,8 +339,21 @@ NuPG_Synthesis_OscOS {
 
 				// ============================================================
 				// OVERLAP AND PHASE CALCULATIONS
-				// Using reference implementation approach
+				// Overlap is derived from envMul (dilation) - controlled by GUI
 				// ============================================================
+
+				// First calculate envMul values (including loop from group tables)
+				// These come from the dilation GUI sliders
+				envMul_One_loop = Select.kr(group_1_onOff, [1, envMul_One_loop]);
+				envMul_Two_loop = Select.kr(group_2_onOff, [1, envMul_Two_loop]);
+				envMul_Three_loop = Select.kr(group_3_onOff, [1, envMul_Three_loop]);
+
+				// Derive overlap from envMul (dilation control)
+				// envMul controls how many pulsaret cycles play per grain
+				// Higher envMul = more cycles = higher overlap potential
+				overlap_One = envMul_One * envMul_One_loop;
+				overlap_Two = envMul_Two * envMul_Two_loop;
+				overlap_Three = envMul_Three * envMul_Three_loop;
 
 				// Calculate grain slopes (phase increment per sample)
 				grainSlope_One = ffreq_One * SampleDur.ir;
@@ -372,12 +385,9 @@ NuPG_Synthesis_OscOS {
 				grainPhase_Three = (windowPhase_Three * Latch.ar(maxOverlap_Three, stepTrigger)).wrap(0, 1);
 
 				// Legacy grain duration calculation (for compatibility)
-				envMul_One_loop = Select.kr(group_1_onOff, [1, envMul_One_loop]);
-				envM_One = ffreq_One * (envMul_One * envMul_One_loop) * (2048/Server.default.sampleRate);
-				envMul_Two_loop = Select.kr(group_2_onOff, [1, envMul_Two_loop]);
-				envM_Two = ffreq_Two * (envMul_Two * envMul_Two_loop) * (2048/Server.default.sampleRate);
-				envMul_Three_loop = Select.kr(group_3_onOff, [1, envMul_Three_loop]);
-				envM_Three = ffreq_Three * (envMul_Three * envMul_Three_loop) * (2048/Server.default.sampleRate);
+				envM_One = ffreq_One * overlap_One * (2048/Server.default.sampleRate);
+				envM_Two = ffreq_Two * overlap_Two * (2048/Server.default.sampleRate);
+				envM_Three = ffreq_Three * overlap_Three * (2048/Server.default.sampleRate);
 
 				grainDur_One = 2048 / Server.default.sampleRate / max(0.0001, envM_One);
 				grainDur_Two = 2048 / Server.default.sampleRate / max(0.0001, envM_Two);
