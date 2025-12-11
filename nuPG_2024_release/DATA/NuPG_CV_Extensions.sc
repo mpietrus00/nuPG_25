@@ -4,6 +4,21 @@
 
 + NumericControlValue {
 
+	// Array-like access for table CVs - delegates to value
+	at { |index|
+		^this.value.at(index);
+	}
+
+	put { |index, val|
+		var arr = this.value.copy;
+		arr.put(index, val);
+		this.value = arr;
+	}
+
+	size {
+		^this.value.size;
+	}
+
 	// Set an action function to be called when value changes
 	// Mimics Conductor's cv.action = func behavior
 	action_ { |func|
