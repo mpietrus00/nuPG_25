@@ -55,7 +55,7 @@ NuPG_GUI_Presets_View {
 		//load gridLayouts into corresponding views
 		n.collect{|i| view[i].layout_(viewLayout[i])};
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		data = n.collect{};
+		// Note: data instance variable must be set externally before calling draw()
 		presetName = n.collect{};
 		savePreset = n.collect{};
 		presetSize = n.collect{};
