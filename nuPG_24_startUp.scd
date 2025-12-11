@@ -48,6 +48,22 @@ s.waitForBoot({
 	//generate equal number of synthesis graphs
 	~synthesis = NuPG_Synthesis.new;
 	~synthesis.trains(~numberOfInstances, numChannels: ~numChannels);
+	// Create OscOS synthesis variant (non-aliasing, requires OversamplingOscillators quark)
+	~synthesisOscOS = NuPG_Synthesis_OscOS.new;
+	~synthesisOscOS.trains(~numberOfInstances, numChannels: ~numChannels);
+	// Setup synthesis switcher for easy switching between engines
+	// Usage: ~synthSwitcher.useOscOS; ~synthSwitcher.useStandard; ~synthSwitcher.toggle;
+	~synthSwitcher = NuPG_SynthesisSwitcher.new;
+	~synthSwitcher.numInstances = ~numberOfInstances;
+	~synthSwitcher.numChannels = ~numChannels;
+	~synthSwitcher.standardSynth = ~synthesis;
+	~synthSwitcher.oscOSSynth = ~synthesisOscOS;
+	~synthSwitcher.activeSynth = ~synthesis;
+	~synthSwitcher.activeMode = \standard;
+	~synthSwitcher.data = ~data;
+	~synthSwitcher.buffers[\pulsaret] = ~pulsaret_buffers;
+	~synthSwitcher.buffers[\envelope] = ~envelope_buffers;
+	~synthSwitcher.buffers[\frequency] = ~frequency_buffers;
 	//map buffers<->data<->synthesis
 	~loopTask = NuPG_LoopTask.new;
 	~loopTask.load(data: ~data, synthesis: ~synthesis, n: ~numberOfInstances);
