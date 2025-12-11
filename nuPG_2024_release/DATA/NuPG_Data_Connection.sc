@@ -160,10 +160,13 @@ NuPG_Data_New {
 			NuPG_Data_New.makeCV(defVal[i], ranges[i][0], ranges[i][1], 0.001, \lin);
 		};
 
-		// Matrix (13 rows x 4 columns = 52 values)
-		data_matrix[index] = 52.collect { |i|
-			NuPG_Data_New.makeCV(0, 0, 1, 1, \lin);
-		}.clump(4);
+		// Matrix (4 columns x 13 rows = 52 values)
+		// Accessed as data_matrix[instance][column][row] where col=0-3, row=0-12
+		data_matrix[index] = 4.collect {
+			13.collect {
+				NuPG_Data_New.makeCV(0, 0, 1, 1, \lin);
+			};
+		};
 
 		// Modulators 1-4
 		data_modulator1[index] = this.prMakeModulatorCV;
