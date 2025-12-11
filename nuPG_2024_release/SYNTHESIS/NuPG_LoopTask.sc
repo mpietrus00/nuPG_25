@@ -1,6 +1,9 @@
 NuPG_LoopTask {
 
 	var <>tasks, <>taskSingleShot;
+	var <>synthesis;  // Mutable reference for seamless switching
+	var <>data;
+	var <>numInstances;
 
 	loadSingleshot {|data, synthesis, progressSlider, n = 1|
 
@@ -102,56 +105,57 @@ NuPG_LoopTask {
 				);*/
 
 
+				// Connection Quark: [idx] returns value directly via at() method
 				var fundamentalPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_fundamentalFrequency[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_fundamentalFrequency[i][idx].yield }}}).asStream;
 
 				var formantOnePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_formantFrequencyOne[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_formantFrequencyOne[i][idx].yield }}}).asStream;
 
 				var formantTwoPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_formantFrequencyTwo[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_formantFrequencyTwo[i][idx].yield }}}).asStream;
 
 				var formantThreePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_formantFrequencyThree[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_formantFrequencyThree[i][idx].yield }}}).asStream;
 
 				var panOnePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_panOne[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_panOne[i][idx].yield }}}).asStream;
 
 				var panTwoPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_panTwo[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_panTwo[i][idx].yield }}}).asStream;
 
 				var panThreePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_panThree[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_panThree[i][idx].yield }}}).asStream;
 
 				var ampOnePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_ampOne[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_ampOne[i][idx].yield }}}).asStream;
 
 				var ampTwoPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_ampTwo[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_ampTwo[i][idx].yield }}}).asStream;
 
 				var ampThreePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_ampThree[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_ampThree[i][idx].yield }}}).asStream;
 
 				var probabilityPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_probabilityMask[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_probabilityMask[i][idx].yield }}}).asStream;
 
 				var envOnePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_envelopeMulOne[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_envelopeMulOne[i][idx].yield }}}).asStream;
 
 				var envTwoPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_envelopeMulTwo[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_envelopeMulTwo[i][idx].yield }}}).asStream;
 
 				var envThreePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_envelopeMulThree[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_envelopeMulThree[i][idx].yield }}}).asStream;
 
 				var modAmtPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_modulationAmount[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_modulationAmount[i][idx].yield }}}).asStream;
 
 				var modRatioPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_modulationRatio[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_modulationRatio[i][idx].yield }}}).asStream;
 
 				var multiParamModPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_multiParamModulation[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_multiParamModulation[i][idx].yield }}}).asStream;
 
 				synthesis.trainInstances[i].play;
 
@@ -228,7 +232,18 @@ NuPG_LoopTask {
 		^taskSingleShot;
 	}
 
-	load {|data, synthesis, n = 1|
+	// Switch synthesis engine (for seamless switching)
+	switchSynthesis { |newSynthesis|
+		synthesis = newSynthesis;
+		("LoopTask: switched to" + newSynthesis.class).postln;
+	}
+
+	load { |data, synthesis, n = 1|
+		// Store references as instance variables for later switching
+		var loopTask = this;  // Capture self for use in Tdef closures
+		this.data = data;
+		this.synthesis = synthesis;
+		numInstances = n;
 
 		tasks = n.collect{|i|
 
@@ -328,61 +343,64 @@ NuPG_LoopTask {
 				);*/
 
 
+				// Connection Quark: [idx] returns value directly via at() method
 				var fundamentalPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_fundamentalFrequency[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_fundamentalFrequency[i][idx].yield }}}).asStream;
 
 				var formantOnePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_formantFrequencyOne[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_formantFrequencyOne[i][idx].yield }}}).asStream;
 
 				var formantTwoPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_formantFrequencyTwo[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_formantFrequencyTwo[i][idx].yield }}}).asStream;
 
 				var formantThreePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_formantFrequencyThree[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_formantFrequencyThree[i][idx].yield }}}).asStream;
 
 				var panOnePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_panOne[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_panOne[i][idx].yield }}}).asStream;
 
 				var panTwoPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_panTwo[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_panTwo[i][idx].yield }}}).asStream;
 
 				var panThreePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_panThree[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_panThree[i][idx].yield }}}).asStream;
 
 				var ampOnePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_ampOne[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_ampOne[i][idx].yield }}}).asStream;
 
 				var ampTwoPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_ampTwo[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_ampTwo[i][idx].yield }}}).asStream;
 
 				var ampThreePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_ampThree[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_ampThree[i][idx].yield }}}).asStream;
 
 				var probabilityPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_probabilityMask[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_probabilityMask[i][idx].yield }}}).asStream;
 
 				var envOnePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_envelopeMulOne[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_envelopeMulOne[i][idx].yield }}}).asStream;
 
 				var envTwoPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_envelopeMulTwo[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_envelopeMulTwo[i][idx].yield }}}).asStream;
 
 				var envThreePatt = Prout({ loop{
-				loopSize.do{|idx| data.data_envelopeMulThree[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_envelopeMulThree[i][idx].yield }}}).asStream;
 
 				var modAmtPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_modulationAmount[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_modulationAmount[i][idx].yield }}}).asStream;
 
 				var modRatioPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_modulationRatio[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_modulationRatio[i][idx].yield }}}).asStream;
 
 				var multiParamModPatt = Prout({ loop{
-				loopSize.do{|idx| data.data_multiParamModulation[i][idx].value.yield }}}).asStream;
+				loopSize.do{|idx| data.data_multiParamModulation[i][idx].yield }}}).asStream;
 
 
 
 				loop{
-					synthesis.trainInstances[i].set(
+					// Only send values if the synth is playing (prevents "Node not found" errors)
+					if (loopTask.synthesis.trainInstances[i].isPlaying) {
+					loopTask.synthesis.trainInstances[i].set(
 						\fundamental_frequency_loop, fundamentalPatt.linlin(-1, 1,
 				data.data_fundamentalFrequency_maxMin[i][1].value,
 				data.data_fundamentalFrequency_maxMin[i][0].value).next,
@@ -435,6 +453,7 @@ NuPG_LoopTask {
 							data.data_mulParamModulation_maxMin[i][1].value,
 				data.data_mulParamModulation_maxMin[i][0].value).next
 					);
+					};  // end isPlaying check
 					(data.data_trainDuration[i].value/2048).wait;
 				}
 
