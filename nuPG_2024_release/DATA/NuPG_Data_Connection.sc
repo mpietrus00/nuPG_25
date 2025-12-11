@@ -157,12 +157,12 @@ NuPG_Data_New {
 				[0.0, 1.0], [0.0, 1.0], [0.0, 1.0],      // gains
 				[1.0, 8.0], [1.0, 8.0], [1.0, 8.0]       // widths
 			];
-			NuPG_Data.makeCV(defVal[i], ranges[i][0], ranges[i][1], 0.001, \lin);
+			NuPG_Data_New.makeCV(defVal[i], ranges[i][0], ranges[i][1], 0.001, \lin);
 		};
 
 		// Matrix (13 rows x 4 columns = 52 values)
 		data_matrix[index] = 52.collect { |i|
-			NuPG_Data.makeCV(0, 0, 1, 1, \lin);
+			NuPG_Data_New.makeCV(0, 0, 1, 1, \lin);
 		}.clump(4);
 
 		// Modulators 1-4
@@ -172,76 +172,76 @@ NuPG_Data_New {
 		data_modulator4[index] = this.prMakeModulatorCV;
 
 		// Table shift
-		data_tableShift[index] = NuPG_Data.makeCV(150, 1, 2048, 1, \lin);
+		data_tableShift[index] = NuPG_Data_New.makeCV(150, 1, 2048, 1, \lin);
 
 		// Burst mask [burst, rest]
 		data_burstMask[index] = [
-			NuPG_Data.makeCV(1, 1, 2999, 1, \lin),
-			NuPG_Data.makeCV(0, 0, 2998, 1, \lin)
+			NuPG_Data_New.makeCV(1, 1, 2999, 1, \lin),
+			NuPG_Data_New.makeCV(0, 0, 2998, 1, \lin)
 		];
 
 		// Channel mask [channel, channelCenter]
 		data_channelMask[index] = [
-			NuPG_Data.makeCV(0, 0, 1500, 1, \lin),
-			NuPG_Data.makeCV(1, 0, 1, 1, \lin)
+			NuPG_Data_New.makeCV(0, 0, 1500, 1, \lin),
+			NuPG_Data_New.makeCV(1, 0, 1, 1, \lin)
 		];
 
 		// Groups offset
 		data_groupsOffset[index] = 3.collect {
-			NuPG_Data.makeCV(0, 0, 1, 0.001, \lin);
+			NuPG_Data_New.makeCV(0, 0, 1, 0.001, \lin);
 		};
 
 		// Sieve mask [sieveSize, sieveSequence]
 		data_sieveMask[index] = [
-			NuPG_Data.makeCV(1, 1, 100, 1, \lin),
-			NuPG_Data.makeTableCV((0..99) / 100, 0, 1)
+			NuPG_Data_New.makeCV(1, 1, 100, 1, \lin),
+			NuPG_Data_New.makeTableCV((0..99) / 100, 0, 1)
 		];
 
 		// Probability singular
-		data_probabilityMaskSingular[index] = NuPG_Data.makeCV(1, 0.0, 1.0, 0.01, \lin);
+		data_probabilityMaskSingular[index] = NuPG_Data_New.makeCV(1, 0.0, 1.0, 0.01, \lin);
 
 		// Main parameters (13 values)
 		data_main[index] = this.prMakeMainCVs;
 
 		// Modulators [fmAmount, fmRatio, multiParam]
 		data_modulators[index] = [
-			NuPG_Data.makeCV(0, 0.0, 16.0, 0.001, \lin),
-			NuPG_Data.makeCV(0, 0.0, 16.0, 0.001, \lin),
-			NuPG_Data.makeCV(0, 0.0, 2.0, 0.001, \lin)
+			NuPG_Data_New.makeCV(0, 0.0, 16.0, 0.001, \lin),
+			NuPG_Data_New.makeCV(0, 0.0, 16.0, 0.001, \lin),
+			NuPG_Data_New.makeCV(0, 0.0, 2.0, 0.001, \lin)
 		];
 
 		// Table CVs
-		data_pulsaret[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_envelope[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_frequency[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_fourier[index] = NuPG_Data.makeTableCV(fourierTypeData, -1, 1);
-		data_fundamentalFrequency[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_probabilityMask[index] = NuPG_Data.makeTableCV((0..2047).collect{1}, -1, 1);
+		data_pulsaret[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_envelope[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_frequency[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_fourier[index] = NuPG_Data_New.makeTableCV(fourierTypeData, -1, 1);
+		data_fundamentalFrequency[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_probabilityMask[index] = NuPG_Data_New.makeTableCV((0..2047).collect{1}, -1, 1);
 
 		// Formant frequencies
-		data_formantFrequencyOne[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_formantFrequencyTwo[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_formantFrequencyThree[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_formantFrequencyOne[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_formantFrequencyTwo[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_formantFrequencyThree[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
 
 		// Pan
-		data_panOne[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_panTwo[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_panThree[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_panOne[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_panTwo[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_panThree[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
 
 		// Amp
-		data_ampOne[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_ampTwo[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_ampThree[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_ampOne[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_ampTwo[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_ampThree[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
 
 		// Envelope multiplication tables
-		data_envelopeMulOne[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_envelopeMulTwo[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_envelopeMulThree[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_envelopeMulOne[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_envelopeMulTwo[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_envelopeMulThree[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
 
 		// Modulation tables
-		data_modulationAmount[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_modulationRatio[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
-		data_multiParamModulation[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_modulationAmount[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_modulationRatio[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
+		data_multiParamModulation[index] = NuPG_Data_New.makeTableCV(tableTypeData, -1, 1);
 
 		// Max/Min ranges
 		data_pulsaret_maxMin[index] = this.prMakeRangeCV(1.0, -1.0, -1, 1);
@@ -266,19 +266,19 @@ NuPG_Data_New {
 		data_mulParamModulation_maxMin[index] = this.prMakeRangeCV(1.0, 1.0, 0.0, 10);
 
 		// Train duration and progress
-		data_trainDuration[index] = NuPG_Data.makeCV(6.0, 0.3, 120.0, 0.1, \lin);
-		data_progressSlider[index] = NuPG_Data.makeCV(1, 1, 2048, 0.01, \lin);
+		data_trainDuration[index] = NuPG_Data_New.makeCV(6.0, 0.3, 120.0, 0.1, \lin);
+		data_progressSlider[index] = NuPG_Data_New.makeCV(1, 1, 2048, 0.01, \lin);
 
 		// Scrubber
-		data_scrubber[index] = NuPG_Data.makeCV(0, 0, 2047, 1, \lin);
+		data_scrubber[index] = NuPG_Data_New.makeCV(0, 0, 2047, 1, \lin);
 	}
 
 	// Private helper methods
 	prMakeModulatorCV {
 		^[
-			NuPG_Data.makeCV(0, 0, 4, 1, \lin),        // type
-			NuPG_Data.makeCV(0.5, 0.001, 150.0, 0.001, \lin), // freq
-			NuPG_Data.makeCV(0, 0, 10, 1, \lin)        // depth
+			NuPG_Data_New.makeCV(0, 0, 4, 1, \lin),        // type
+			NuPG_Data_New.makeCV(0.5, 0.001, 150.0, 0.001, \lin), // freq
+			NuPG_Data_New.makeCV(0, 0, 10, 1, \lin)        // depth
 		];
 	}
 
@@ -302,14 +302,14 @@ NuPG_Data_New {
 		var warp = [\exp, \exp, \exp, \exp, \lin, \lin, \lin, \lin, \lin, \lin, \lin, \lin, \lin];
 
 		^13.collect { |i|
-			NuPG_Data.makeCV(defVal[i], ranges[i][0], ranges[i][1], 0.001, warp[i]);
+			NuPG_Data_New.makeCV(defVal[i], ranges[i][0], ranges[i][1], 0.001, warp[i]);
 		};
 	}
 
 	prMakeRangeCV { |defMin, defMax, min, max|
 		^[
-			NuPG_Data.makeCV(defMin, min, max, 0.01, \lin),
-			NuPG_Data.makeCV(defMax, min, max, 0.01, \lin)
+			NuPG_Data_New.makeCV(defMin, min, max, 0.01, \lin),
+			NuPG_Data_New.makeCV(defMax, min, max, 0.01, \lin)
 		];
 	}
 
