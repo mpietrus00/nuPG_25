@@ -150,6 +150,7 @@ NuPG_Synthesis_OscOS {
 				var channelMask;
 				var sieveMask;
 				var phase_One, phase_Two, phase_Three;
+				var ffreq_One_modulated, ffreq_Two_modulated, ffreq_Three_modulated;
 				var pulsaret_One, pulsaret_Two, pulsaret_Three;
 				var envelope_One, envelope_Two, envelope_Three;
 				var pulsar_1, pulsar_2, pulsar_3;
@@ -348,56 +349,66 @@ NuPG_Synthesis_OscOS {
 				freqEnvPlayBuf_Three = PlayBuf.ar(1, frequency_buffer,
 					(ffreq_Three * 2048/Server.default.sampleRate), trigger, 0, loop: 0);
 
+				// Calculate FM-modulated frequencies for pulsaret
+				ffreq_One_modulated = ffreq_One * (1 + (freqEnvPlayBuf_One * fmAmt)) *
+					(1 + Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_One * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_1)),
+						Latch.ar(LFSaw.ar(ffreq_One - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_1))
+					]));
+
+				ffreq_Two_modulated = ffreq_Two * (1 + (freqEnvPlayBuf_Two * fmAmt)) *
+					(1 + Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_Two * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_2)),
+						Latch.ar(LFSaw.ar(ffreq_Two - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_2))
+					]));
+
+				ffreq_Three_modulated = ffreq_Three * (1 + (freqEnvPlayBuf_Three * fmAmt)) *
+					(1 + Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_Three * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_3)),
+						Latch.ar(LFSaw.ar(ffreq_Three - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_3))
+					]));
+
 				// Phase accumulators for OscOS (reset on trigger)
+				// OscOS expects phase 0-1, not frequency
+				// Phasor rate = frequency * SampleDur converts freq to phase increment
 				phase_One = Phasor.ar(
 					DelayN.ar(trigger, 1, offset_1),
-					ffreq_One * SampleDur.ir,
+					ffreq_One_modulated * SampleDur.ir,
 					0, 1
 				);
 				phase_Two = Phasor.ar(
 					DelayN.ar(trigger, 1, offset_2),
-					ffreq_Two * SampleDur.ir,
+					ffreq_Two_modulated * SampleDur.ir,
 					0, 1
 				);
 				phase_Three = Phasor.ar(
 					DelayN.ar(trigger, 1, offset_3),
-					ffreq_Three * SampleDur.ir,
+					ffreq_Three_modulated * SampleDur.ir,
 					0, 1
 				);
 
 				// OscOS: Oversampled wavetable oscillator
-				// Uses buffer with anti-aliased interpolation
+				// Signature: OscOS.ar(buffer, phase, oversample, position, mul, add)
+				// phase should be 0-1 from Phasor, not frequency
 				pulsaret_One = OscOS.ar(
 					pulsaret_buffer,
-					ffreq_One * (1 + (freqEnvPlayBuf_One * fmAmt)) *
-					(1 + Select.kr(modulationMode, [
-						Latch.ar(LFSaw.ar(ffreq_One * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_1)),
-						Latch.ar(LFSaw.ar(ffreq_One - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_1))
-					])),
-					0,
-					oversample
+					phase_One,
+					oversample,
+					0  // position in buffer
 				);
 
 				pulsaret_Two = OscOS.ar(
 					pulsaret_buffer,
-					ffreq_Two * (1 + (freqEnvPlayBuf_Two * fmAmt)) *
-					(1 + Select.kr(modulationMode, [
-						Latch.ar(LFSaw.ar(ffreq_Two * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_2)),
-						Latch.ar(LFSaw.ar(ffreq_Two - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_2))
-					])),
-					0,
-					oversample
+					phase_Two,
+					oversample,
+					0
 				);
 
 				pulsaret_Three = OscOS.ar(
 					pulsaret_buffer,
-					ffreq_Three * (1 + (freqEnvPlayBuf_Three * fmAmt)) *
-					(1 + Select.kr(modulationMode, [
-						Latch.ar(LFSaw.ar(ffreq_Three * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_3)),
-						Latch.ar(LFSaw.ar(ffreq_Three - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_3))
-					])),
-					0,
-					oversample
+					phase_Three,
+					oversample,
+					0
 				);
 
 				// Envelope using OscOS with triggered Phasor
