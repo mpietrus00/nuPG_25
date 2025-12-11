@@ -150,6 +150,12 @@ NuPG_SynthesisSwitcher {
 		// Update loopTask synthesis reference for seamless switching
 		if (loopTask.notNil) {
 			loopTask.switchSynthesis(newSynth);
+			// Also check if loopTask Tdefs are running
+			numInstances.do { |i|
+				if (loopTask.tasks[i].isPlaying) {
+					wasPlaying[i] = true;
+				};
+			};
 		};
 
 		// Map buffers to new synth

@@ -238,11 +238,11 @@ NuPG_LoopTask {
 		("LoopTask: switched to" + newSynthesis.class).postln;
 	}
 
-	load { |dataArg, synthesisArg, n = 1|
+	load { |data, synthesis, n = 1|
 		// Store references as instance variables for later switching
 		var loopTask = this;  // Capture self for use in Tdef closures
-		data = dataArg;
-		synthesis = synthesisArg;
+		this.data = data;
+		this.synthesis = synthesis;
 		numInstances = n;
 
 		tasks = n.collect{|i|
