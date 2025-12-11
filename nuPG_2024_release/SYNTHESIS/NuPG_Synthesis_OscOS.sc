@@ -153,6 +153,7 @@ NuPG_Synthesis_OscOS {
 				var ffreq_One_modulated, ffreq_Two_modulated, ffreq_Three_modulated;
 				var pulsaret_One, pulsaret_Two, pulsaret_Three;
 				var envelope_One, envelope_Two, envelope_Three;
+				var envPhase_One, envPhase_Two, envPhase_Three;
 				var pulsar_1, pulsar_2, pulsar_3;
 				var freqEnvPlayBuf_One, freqEnvPlayBuf_Two, freqEnvPlayBuf_Three;
 				var mix;
@@ -411,38 +412,31 @@ NuPG_Synthesis_OscOS {
 					0
 				);
 
-				// Envelope using OscOS with triggered Phasor
-				// Phasor resets on trigger and goes 0->1 over grain duration
-				// This allows reading custom envelope shapes from buffer
+				// Envelope using OscOS with one-shot phase (Sweep + clip)
+				// Sweep counts time since trigger, divide by grain duration for 0->1 phase
+				// clip(0,1) ensures envelope stays at end after completing (one-shot)
+				// This matches the reference implementation's accumulator approach
+				envPhase_One = (Sweep.ar(DelayN.ar(trigger, 1, offset_1)) / max(0.0001, grainDur_One)).clip(0, 1);
+				envPhase_Two = (Sweep.ar(DelayN.ar(trigger, 1, offset_2)) / max(0.0001, grainDur_Two)).clip(0, 1);
+				envPhase_Three = (Sweep.ar(DelayN.ar(trigger, 1, offset_3)) / max(0.0001, grainDur_Three)).clip(0, 1);
+
 				envelope_One = OscOS.ar(
 					envelope_buffer,
-					Phasor.ar(
-						DelayN.ar(trigger, 1, offset_1),
-						envM_One * SampleDur.ir,
-						0, 1
-					),
+					envPhase_One,
 					oversample,
 					0  // position in buffer (single waveform)
 				);
 
 				envelope_Two = OscOS.ar(
 					envelope_buffer,
-					Phasor.ar(
-						DelayN.ar(trigger, 1, offset_2),
-						envM_Two * SampleDur.ir,
-						0, 1
-					),
+					envPhase_Two,
 					oversample,
 					0
 				);
 
 				envelope_Three = OscOS.ar(
 					envelope_buffer,
-					Phasor.ar(
-						DelayN.ar(trigger, 1, offset_3),
-						envM_Three * SampleDur.ir,
-						0, 1
-					),
+					envPhase_Three,
 					oversample,
 					0
 				);
