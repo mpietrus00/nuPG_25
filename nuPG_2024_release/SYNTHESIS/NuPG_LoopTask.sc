@@ -398,7 +398,8 @@ NuPG_LoopTask {
 
 
 				loop{
-					// Use loopTask.synthesis for seamless switching support
+					// Only send values if the synth is playing (prevents "Node not found" errors)
+					if (loopTask.synthesis.trainInstances[i].isPlaying) {
 					loopTask.synthesis.trainInstances[i].set(
 						\fundamental_frequency_loop, fundamentalPatt.linlin(-1, 1,
 				data.data_fundamentalFrequency_maxMin[i][1].value,
@@ -452,6 +453,7 @@ NuPG_LoopTask {
 							data.data_mulParamModulation_maxMin[i][1].value,
 				data.data_mulParamModulation_maxMin[i][0].value).next
 					);
+					};  // end isPlaying check
 					(data.data_trainDuration[i].value/2048).wait;
 				}
 
