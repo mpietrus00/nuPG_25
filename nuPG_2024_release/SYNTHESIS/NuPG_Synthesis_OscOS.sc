@@ -418,22 +418,22 @@ NuPG_Synthesis_OscOS {
 					DelayN.ar(trigger, 1, offset_3)
 				);
 
-				// Pulsar outputs
-				pulsar_1 = pulsaret_One * envelope_One;
+				// Pulsar outputs - OscOS needs gain boost compared to GrainBuf
+				pulsar_1 = pulsaret_One * envelope_One * 4;
 				pulsar_1 = Pan2.ar(pulsar_1, pan_One);
 				pulsar_1 = pulsar_1 * amplitude_One * amplitude_local_One;
 
-				pulsar_2 = pulsaret_Two * envelope_Two;
+				pulsar_2 = pulsaret_Two * envelope_Two * 4;
 				pulsar_2 = Pan2.ar(pulsar_2, pan_Two);
 				pulsar_2 = pulsar_2 * amplitude_Two * amplitude_local_Two;
 
-				pulsar_3 = pulsaret_Three * envelope_Three;
+				pulsar_3 = pulsaret_Three * envelope_Three * 4;
 				pulsar_3 = Pan2.ar(pulsar_3, pan_Three);
 				pulsar_3 = pulsar_3 * amplitude_Three * amplitude_local_Three;
 
 				mix = Mix.new([pulsar_1, pulsar_2, pulsar_3]) * globalAmplitude;
 
-				LeakDC.ar(mix)
+				LeakDC.ar(mix).softclip
 			});
 		};
 
