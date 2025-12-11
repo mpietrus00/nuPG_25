@@ -1,8 +1,10 @@
 // NuPG_Data_Connection.sc
 // Data layer using Connection Quark instead of Conductor
 // Migration from Conductor Quark
+// NOTE: Class is named NuPG_Data_New to avoid conflict with old NuPG_Data
+// When ready to switch, rename this class to NuPG_Data and delete/rename the old file
 
-NuPG_Data {
+NuPG_Data_New {
 
 	var <>cvEnvir;  // ControlValueEnvir for preset management
 	var <>data_pulsaret, <>data_envelope;
