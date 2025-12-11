@@ -727,7 +727,8 @@ s.waitForBoot({
 	~singleShotTask.loadSingleshot(data: ~data, synthesis: ~synthesis, progressSlider: ~progressSlider,  n: ~numberOfInstances);
 	//train control
 	~trainControl = NuPG_GUI_TrainControl_View.new;
-	~trainControl.draw(~guiDefinitions.trainControlViewDimensions, ~loopTask, ~singleShotTask, ~scrubber, ~synthesis, ~progressSlider, n: ~numberOfInstances);
+	// Pass synthSwitcher instead of synthesis so GUI controls active synth
+	~trainControl.draw(~guiDefinitions.trainControlViewDimensions, ~loopTask, ~singleShotTask, ~scrubber, ~synthSwitcher, ~progressSlider, n: ~numberOfInstances);
 	//progress slider tasks
 	~progressSlider = NuPG_ProgressSliderPlay.new;
 	~progressSlider.load(~data, ~trainControl, n: ~numberOfInstances);
