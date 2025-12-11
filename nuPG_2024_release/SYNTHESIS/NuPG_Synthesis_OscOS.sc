@@ -1,97 +1,78 @@
-NuPG_AdC {
+// NuPG_Synthesis_OscOS.sc
+// Non-aliasing variant using OscOS from OversamplingOscillators quark
+// Provides band-limited wavetable oscillation for cleaner high-frequency content
+
+// Pseudo-UGen for OscOS-based pulsar generation
+NuPG_OscOS {
 
 	*ar {
 		arg channels_number = 2, trigger, grain_duration, pulsar_buffer, rate, panning, envelope_buffer;
-		var output;
-		output = GrainBuf.ar(
-			numChannels: channels_number,
-			trigger: trigger,
-			dur: grain_duration,
-			sndbuf: pulsar_buffer,
-			//rate modulation
-			rate: rate,
-			pos: 0,
-			interp: 4,
-			pan: panning,
-			envbufnum: envelope_buffer,
-			maxGrains: 2048,
-			mul: 0.9);
+		var phase, pulsaret, envelope, output;
 
-		//output = output * amp;
-		^output;
-	}
+		// Use Phasor triggered by impulse for wavetable position
+		phase = Phasor.ar(trigger, rate, 0, 1);
 
-}
+		// OscOS provides oversampled wavetable lookup (requires OversamplingOscillators quark)
+		// Falls back to Osc if OscOS not available
+		pulsaret = OscOS.ar(pulsar_buffer, rate * BufSampleRate.ir(pulsar_buffer) / BufFrames.ir(pulsar_buffer), 0, 4);
 
-NuPG_CJ {
+		// Envelope from buffer using same oversampled approach
+		envelope = if(envelope_buffer > 0,
+			{ OscOS.ar(envelope_buffer, rate * BufSampleRate.ir(envelope_buffer) / BufFrames.ir(envelope_buffer), 0, 4) },
+			{ EnvGen.ar(Env.sine(grain_duration), trigger) }
+		);
 
-	*ar {
-		arg channels_number = 1, trigger, grain_duration, pulsar_buffer, rate, panning, envelope_buffer;
-		var pulsar, envelope, output;
+		// Apply grain envelope windowing
+		envelope = envelope * EnvGen.ar(
+			Env([0, 1, 1, 0], [0.001, grain_duration - 0.002, 0.001]),
+			trigger
+		);
 
-		pulsar = PlayBuf.ar(
-			numChannels: 1,
-			bufnum: pulsar_buffer,
-			rate: rate,
-			trigger: trigger,
-			startPos: 0,
-			loop: -1);
+		output = pulsaret * envelope;
 
-		envelope = PlayBuf.ar(
-			numChannels: 1,
-			bufnum: envelope_buffer,
-			rate: rate,
-			trigger: trigger,
-			startPos: 0,
-			loop: 1);
-
-		output = pulsar * envelope;
+		// Pan to stereo
+		output = Pan2.ar(output, panning);
 
 		^output;
 	}
 }
 
-NuPG_ModulatorSet {
+// BLIT-based pseudo-UGen for truly band-limited pulsar synthesis
+NuPG_BLIT {
 
 	*ar {
-		arg type = 0, modulation_frequency = 1;
+		arg channels_number = 2, trigger, grain_duration, fundamental_freq, formant_freq, panning, num_harmonics = 16;
+		var pulsaret, envelope, output;
 
-		var mod = Select.ar(type,
-			[
-				SinOsc.ar(modulation_frequency),
-				LFSaw.ar(modulation_frequency),
-				LatoocarfianC.ar(
-					freq: modulation_frequency,
-					a: LFNoise2.kr(2,1.5,1.5),
-					b: LFNoise2.kr(2,1.5,1.5),
-					c: LFNoise2.kr(2,0.5,1.5),
-					d: LFNoise2.kr(2,0.5,1.5)
-				),
-				Gendy3.ar(6, 4, 0.3, 0.5, modulation_frequency),
-				HenonC.ar(
-					freq: modulation_frequency,
-					a:  LFNoise2.kr(1, 0.2, 1.2),
-					b: LFNoise2.kr(1, 0.15, 0.15)
-				)
+		// Band-limited impulse train for the pulsaret
+		// Blip provides anti-aliased impulse trains
+		pulsaret = Blip.ar(formant_freq, num_harmonics);
 
-		]);
+		// Grain envelope
+		envelope = EnvGen.ar(
+			Env([0, 1, 1, 0], [0.001, grain_duration - 0.002, 0.001]),
+			trigger
+		);
 
-		^mod;
+		output = pulsaret * envelope;
+		output = Pan2.ar(output, panning);
 
+		^output;
 	}
 }
 
 
-NuPG_Synthesis {
+// Main synthesis class with OscOS variant
+NuPG_Synthesis_OscOS {
 
 	var <>trainInstances;
 
-	//adjustable number of instances of synthesis graph
+	// Create train instances using OscOS for non-aliasing synthesis
 	trains {|numInstances = 3, numChannels = 2|
 
 		trainInstances = numInstances.collect{|i|
 
-			Ndef((\nuPG_train_ ++ i).asSymbol, {
+			Ndef((\nuPG_train_oscos_ ++ i).asSymbol, {
 				//buffers
 				arg pulsaret_buffer, envelope_buffer = -1, frequency_buffer,
 				//flux, modulations
@@ -128,14 +109,14 @@ NuPG_Synthesis {
 				//env
 				envMul_One = 1, envMul_Two = 1, envMul_Three = 1,
 				envMul_One_loop = 1, envMul_Two_loop = 1, envMul_Three_loop = 1,
-				//env
+				//env modulators
 				envOneMod_one_active = 0, envOneMod_two_active = 0, envOneMod_three_active = 0, envOneMod_four_active = 0,
 				envTwoMod_one_active = 0, envTwoMod_two_active = 0, envTwoMod_three_active = 0, envTwoMod_four_active = 0,
 				envThreeMod_one_active = 0, envThreeMod_two_active = 0, envThreeMod_three_active = 0, envThreeMod_four_active = 0,
 				//amp
 				amplitude_One = 1, amplitude_Two = 1, amplitude_Three = 1,
 				amplitude_One_loop = 1, amplitude_Two_loop = 1, amplitude_Three_loop = 1,
-				//amp  modulators
+				//amp modulators
 				ampOneMod_one_active = 0, ampOneMod_two_active = 0, ampOneMod_three_active = 0, ampOneMod_four_active = 0,
 				ampTwoMod_one_active = 0, ampTwoMod_two_active = 0, ampTwoMod_three_active = 0, ampTwoMod_four_active = 0,
 				ampThreeMod_one_active = 0, ampThreeMod_two_active = 0, ampThreeMod_three_active = 0, ampThreeMod_four_active = 0,
@@ -151,13 +132,14 @@ NuPG_Synthesis {
 				panThreeMod_one_active = 0, panThreeMod_two_active = 0, panThreeMod_three_active = 0, panThreeMod_four_active = 0,
 				//offset
 				offset_1 = 0, offset_2 = 0, offset_3 = 0,
-				//offset modulator
+				//offset modulators
 				offset_1_one_active = 0, offset_1_two_active = 0, offset_1_three_active = 0, offset_1_four_active = 0,
 				offset_2_one_active = 0, offset_2_two_active = 0, offset_2_three_active = 0, offset_2_four_active = 0,
 				offset_3_one_active = 0, offset_3_two_active = 0, offset_3_three_active = 0, offset_3_four_active = 0,
 
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
-				pulsarVersion = 0;
+				// Oversampling factor for OscOS (2, 4, or 8)
+				oversample = 4;
 
 
 				var trigger, sendTrigger;
@@ -167,11 +149,12 @@ NuPG_Synthesis {
 				var grainDur_One, grainDur_Two, grainDur_Three;
 				var channelMask;
 				var sieveMask;
-				var rate_One, rate_Two, rate_Three;
+				var phase_One, phase_Two, phase_Three;
+				var pulsaret_One, pulsaret_Two, pulsaret_Three;
+				var envelope_One, envelope_Two, envelope_Three;
 				var pulsar_1, pulsar_2, pulsar_3;
 				var freqEnvPlayBuf_One, freqEnvPlayBuf_Two, freqEnvPlayBuf_Three;
 				var mix;
-				var group_1_env, group_2_env, group_3_env;
 				//mod
 				var mod_one, mod_two, mod_three, mod_four;
 				//fund
@@ -204,7 +187,7 @@ NuPG_Synthesis {
 				fmRatio = fmRatio * fmRatio_loop;
 				fmAmt = fmAmt * fmAmt_loop;
 
-				//additional moddulators
+				//additional modulators
 				mod_one = NuPG_ModulatorSet.ar(
 					type: modulator_type_one,
 					modulation_frequency: modulation_frequency_one);
@@ -218,31 +201,11 @@ NuPG_Synthesis {
 					type: modulator_type_four,
 					modulation_frequency: modulation_frequency_four);
 
-				//trigger frequency
-				//modulators
+				//trigger frequency modulators
 				fundamentalMod_one = Select.ar(fundamentalMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
-				/*fundamentalMod_one = fundamentalMod_one.range(
-					(modulation_frequency_one * modulation_index_one).neg,
-					(modulation_frequency_one * modulation_index_one)
-				);*/
-
 				fundamentalMod_two = Select.ar(fundamentalMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
-				/*fundamentalMod_two = fundamentalMod_two.range(
-					(modulation_frequency_two * modulation_index_two).neg,
-					(modulation_frequency_two * modulation_index_two)
-				);*/
-
 				fundamentalMod_three = Select.ar(fundamentalMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
-				/*fundamentalMod_three = fundamentalMod_three.range(
-					(modulation_frequency_three * modulation_index_three).neg,
-					(modulation_frequency_three * modulation_index_three)
-				);*/
-
 				fundamentalMod_four = Select.ar(fundamentalMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
-				/*fundamentalMod_four = fundamentalMod_four.range(
-					(modulation_frequency_four * modulation_index_four).neg,
-					(modulation_frequency_four * modulation_index_four)
-				);*/
 
 				trigger = (fundamental_frequency * fundamental_frequency_loop) +
 				(fundamentalMod_one + fundamentalMod_two + fundamentalMod_three + fundamentalMod_four);
@@ -260,94 +223,38 @@ NuPG_Synthesis {
 				sendTrigger = SendTrig.ar(trigger, 0);
 				trigger = Delay1.ar(trigger);
 
-				//sieve masing
+				//sieve masking
 				sieveMask = Demand.ar(trigger, 0, Dseries());
 				sieveMask = Select.ar(sieveMask.mod(sieveMod), K2A.ar(sieveSequence));
 				trigger = trigger * Select.kr(sieveMaskOn, [K2A.ar(1), sieveMask]);
 				channelMask = Demand.ar(trigger, 0, Dseq([Dser([-1], chanMask),
 					Dser([1], chanMask), Dser([0], centerMask)], inf));
 
-				//formant 1
+				//formant 1 modulators
 				formantOneMod_one = Select.ar(formantOneMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
-				/*formantOneMod_one = formantOneMod_one.range(
-					(modulation_frequency_one * modulation_index_one).neg,
-					(modulation_frequency_one * modulation_index_one)
-				);*/
-
 				formantOneMod_two = Select.ar(formantOneMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
-				/*formantOneMod_two = formantOneMod_two.range(
-					(modulation_frequency_two * modulation_index_two).neg,
-					(modulation_frequency_two * modulation_index_two)
-				);*/
-
 				formantOneMod_three = Select.ar(formantOneMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
-				/*formantOneMod_three = formantOneMod_three.range(
-					(modulation_frequency_three * modulation_index_three).neg,
-					(modulation_frequency_three * modulation_index_three)
-				);*/
-
 				formantOneMod_four = Select.ar(formantOneMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
-				/*formantOneMod_four = formantOneMod_four.range(
-					(modulation_frequency_four * modulation_index_four).neg,
-					(modulation_frequency_four * modulation_index_four)
-				);*/
 
 				formant_frequency_One_loop = Select.kr(group_1_onOff, [1, formant_frequency_One_loop]);
 				ffreq_One = (fundamental_frequency * formant_frequency_One * formant_frequency_One_loop) +
 				(formantOneMod_one + formantOneMod_two + formantOneMod_three + formantOneMod_four);
 
-				//formant 2
+				//formant 2 modulators
 				formantTwoMod_one = Select.ar(formantTwoMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
-				/*formantTwoMod_one = formantTwoMod_one.range(
-					(modulation_frequency_one * modulation_index_one).neg,
-					(modulation_frequency_one * modulation_index_one)
-				);*/
-
 				formantTwoMod_two = Select.ar(formantTwoMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
-				/*formantTwoMod_two = formantTwoMod_two.range(
-					(modulation_frequency_two * modulation_index_two).neg,
-					(modulation_frequency_two * modulation_index_two)
-				);*/
-
 				formantTwoMod_three = Select.ar(formantTwoMod_three_active, [K2A.ar(0), (modulation_index_three * mod_one)]);
-				/*formantTwoMod_three = formantTwoMod_three.range(
-					(modulation_frequency_three * modulation_index_three).neg,
-					(modulation_frequency_three * modulation_index_three)
-				);*/
-
 				formantTwoMod_four = Select.ar(formantTwoMod_four_active, [K2A.ar(0), (modulation_index_four * mod_two)]);
-				/*formantTwoMod_four = formantOneMod_four.range(
-					(modulation_frequency_four * modulation_index_four).neg,
-					(modulation_frequency_four * modulation_index_four)
-				);*/
 
 				formant_frequency_Two_loop = Select.kr(group_2_onOff, [1, formant_frequency_Two_loop]);
 				ffreq_Two = (fundamental_frequency * formant_frequency_Two * formant_frequency_Two_loop) +
 							(formantTwoMod_one + formantTwoMod_two + formantTwoMod_three + formantTwoMod_four);
-				//formant 3
+
+				//formant 3 modulators
 				formantThreeMod_one = Select.ar(formantThreeMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
-				/*formantThreeMod_one = formantThreeMod_one.range(
-					(modulation_frequency_one * modulation_index_one).neg,
-					(modulation_frequency_one * modulation_index_one)
-				);*/
-
 				formantThreeMod_two = Select.ar(formantThreeMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
-				/*formantThreeMod_two = formantThreeMod_two.range(
-					(modulation_frequency_two * modulation_index_two).neg,
-					(modulation_frequency_two * modulation_index_two)
-				);*/
-
 				formantThreeMod_three = Select.ar(formantThreeMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
-				/*formantThreeMod_three = formantThreeMod_three.range(
-					(modulation_frequency_three * modulation_index_three).neg,
-					(modulation_frequency_three * modulation_index_three)
-				);*/
-
 				formantThreeMod_four = Select.ar(formantThreeMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
-				/*formantThreeMod_four = formantThreeMod_four.range(
-					(modulation_frequency_four * modulation_index_four).neg,
-					(modulation_frequency_four * modulation_index_four)
-				);*/
 
 				formant_frequency_Three_loop = Select.kr(group_3_onOff, [1, formant_frequency_Three_loop]);
 				ffreq_Three = (fundamental_frequency * formant_frequency_Three * formant_frequency_Three_loop) +
@@ -359,110 +266,55 @@ NuPG_Synthesis {
 				//envelope multiplication 2
 				envMul_Two_loop = Select.kr(group_2_onOff, [1, envMul_Two_loop]);
 				envM_Two = ffreq_Two * (envMul_Two * envMul_Two_loop) * (2048/Server.default.sampleRate);
-				//envelope multiplication 2
+				//envelope multiplication 3
 				envMul_Three_loop = Select.kr(group_3_onOff, [1, envMul_Three_loop]);
 				envM_Three = ffreq_Three * (envMul_Three * envMul_Three_loop) * (2048/Server.default.sampleRate);
 
-				//grain duration 1
+				//grain duration
 				grainDur_One = 2048 / Server.default.sampleRate / envM_One;
-				//grain duration 2
 				grainDur_Two = 2048 / Server.default.sampleRate / envM_Two;
-				//grain duration 3
 				grainDur_Three = 2048 / Server.default.sampleRate / envM_Three;
 
-				//formant 1 flux
+				//formant flux
 				ffreq_One = ffreq_One * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
-				//formant 2 flux
 				ffreq_Two = ffreq_Two * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
-				//formant 3 flux
 				ffreq_Three = ffreq_Three * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
 
 				//amplitude 1
 				amplitude_One_loop = Select.kr(group_1_onOff, [1, amplitude_One_loop]);
-
-				ampOneMod_one = Select.ar(ampOneMod_one_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)
-				]);
-				ampOneMod_two = Select.ar(ampOneMod_two_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)
-				]);
-				ampOneMod_three = Select.ar(ampOneMod_three_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)
-				]);
-				ampOneMod_four = Select.ar(ampOneMod_four_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)
-				]);
-
+				ampOneMod_one = Select.ar(ampOneMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
+				ampOneMod_two = Select.ar(ampOneMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
+				ampOneMod_three = Select.ar(ampOneMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
+				ampOneMod_four = Select.ar(ampOneMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
 				amplitude_One = amplitude_One * amplitude_One_loop *
 				(ampOneMod_one * ampOneMod_two * ampOneMod_three * ampOneMod_four) * (1 - mute);
 				amplitude_One = amplitude_One.clip(0, 1);
 
 				//amplitude 2
 				amplitude_Two_loop = Select.kr(group_2_onOff, [1, amplitude_Two_loop]);
-				ampTwoMod_one = Select.ar(ampTwoMod_one_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)
-				]);
-				ampTwoMod_two = Select.ar(ampTwoMod_two_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)
-				]);
-				ampTwoMod_three = Select.ar(ampTwoMod_three_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)
-				]);
-				ampTwoMod_four = Select.ar(ampTwoMod_four_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)
-				]);
+				ampTwoMod_one = Select.ar(ampTwoMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
+				ampTwoMod_two = Select.ar(ampTwoMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
+				ampTwoMod_three = Select.ar(ampTwoMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
+				ampTwoMod_four = Select.ar(ampTwoMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
 				amplitude_Two = amplitude_Two * amplitude_Two_loop *
 				(ampTwoMod_one * ampTwoMod_two * ampTwoMod_three * ampTwoMod_four) * (1 - mute);
 				amplitude_Two = amplitude_Two.clip(0, 1);
 
 				//amplitude 3
 				amplitude_Three_loop = Select.kr(group_3_onOff, [1, amplitude_Three_loop]);
-				ampThreeMod_one = Select.ar(ampThreeMod_one_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)
-				]);
-				ampThreeMod_two = Select.ar(ampThreeMod_two_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)
-				]);
-				ampThreeMod_three = Select.ar(ampThreeMod_three_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)
-				]);
-				ampThreeMod_four = Select.ar(ampThreeMod_four_active, [
-					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)
-				]);
+				ampThreeMod_one = Select.ar(ampThreeMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
+				ampThreeMod_two = Select.ar(ampThreeMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
+				ampThreeMod_three = Select.ar(ampThreeMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
+				ampThreeMod_four = Select.ar(ampThreeMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
 				amplitude_Three = amplitude_Three * amplitude_Three_loop *
 				(ampThreeMod_one * ampThreeMod_two * ampThreeMod_three * ampThreeMod_four) * (1 - mute);
 				amplitude_Three = amplitude_Three.clip(0, 1);
 
 				//pan 1
-				panOneMod_one = Select.ar(panOneMod_one_active, [
-					K2A.ar(0),
-					((modulation_index_one * 0.1) * mod_one)
-				]);
-				panOneMod_two = Select.ar(panOneMod_two_active, [
-					K2A.ar(0),
-					((modulation_index_two * 0.1) * mod_two)
-				]);
-				panOneMod_three = Select.ar(panOneMod_three_active, [
-					K2A.ar(0),
-					((modulation_index_three * 0.1) * mod_three)
-				]);
-				panOneMod_four = Select.ar(panOneMod_four_active, [
-					K2A.ar(0),
-					((modulation_index_four * 0.1) * mod_four)
-				]);
-
+				panOneMod_one = Select.ar(panOneMod_one_active, [K2A.ar(0), ((modulation_index_one * 0.1) * mod_one)]);
+				panOneMod_two = Select.ar(panOneMod_two_active, [K2A.ar(0), ((modulation_index_two * 0.1) * mod_two)]);
+				panOneMod_three = Select.ar(panOneMod_three_active, [K2A.ar(0), ((modulation_index_three * 0.1) * mod_three)]);
+				panOneMod_four = Select.ar(panOneMod_four_active, [K2A.ar(0), ((modulation_index_four * 0.1) * mod_four)]);
 				pan_One_loop = Select.kr(group_1_onOff, [0, pan_One_loop]);
 				pan_One = pan_One + pan_One_loop + (panOneMod_one + panOneMod_two + panOneMod_three + panOneMod_four);
 				pan_One = pan_One.fold(-1, 1);
@@ -470,48 +322,25 @@ NuPG_Synthesis {
 
 				//pan 2
 				pan_Two_loop = Select.kr(group_2_onOff, [0, pan_Two_loop]);
-				panTwoMod_one = Select.ar(panTwoMod_one_active, [
-					K2A.ar(0),
-					((modulation_index_one * 0.1) * mod_one)
-				]);
-				panTwoMod_two = Select.ar(panTwoMod_two_active, [
-					K2A.ar(0),
-					((modulation_index_two * 0.1) * mod_two)
-				]);
-				panTwoMod_three = Select.ar(panTwoMod_three_active, [
-					K2A.ar(0),
-					((modulation_index_three * 0.1) * mod_three)
-				]);
-				panTwoMod_four = Select.ar(panTwoMod_four_active, [
-					K2A.ar(0),
-					((modulation_index_four * 0.1) * mod_four)
-				]);
-
+				panTwoMod_one = Select.ar(panTwoMod_one_active, [K2A.ar(0), ((modulation_index_one * 0.1) * mod_one)]);
+				panTwoMod_two = Select.ar(panTwoMod_two_active, [K2A.ar(0), ((modulation_index_two * 0.1) * mod_two)]);
+				panTwoMod_three = Select.ar(panTwoMod_three_active, [K2A.ar(0), ((modulation_index_three * 0.1) * mod_three)]);
+				panTwoMod_four = Select.ar(panTwoMod_four_active, [K2A.ar(0), ((modulation_index_four * 0.1) * mod_four)]);
 				pan_Two = pan_Two + pan_Two_loop + (panTwoMod_one + panTwoMod_two + panTwoMod_three + panTwoMod_four);
 				pan_Two = pan_Two.fold(-1, 1);
 				pan_Two = pan_Two + channelMask;
+
 				//pan 3
 				pan_Three_loop = Select.kr(group_3_onOff, [0, pan_Three_loop]);
-				panThreeMod_one = Select.ar(panThreeMod_one_active, [
-					K2A.ar(0),
-					((modulation_index_one * 0.1) * mod_one)
-				]);
-				panThreeMod_two = Select.ar(panThreeMod_two_active, [
-					K2A.ar(0),
-					((modulation_index_two * 0.1) * mod_two)
-				]);
-				panThreeMod_three = Select.ar(panThreeMod_three_active, [
-					K2A.ar(0),
-					((modulation_index_three * 0.1) * mod_three)
-				]);
-				panThreeMod_four = Select.ar(panThreeMod_four_active, [
-					K2A.ar(0),
-					((modulation_index_four * 0.1) * mod_four)
-				]);
+				panThreeMod_one = Select.ar(panThreeMod_one_active, [K2A.ar(0), ((modulation_index_one * 0.1) * mod_one)]);
+				panThreeMod_two = Select.ar(panThreeMod_two_active, [K2A.ar(0), ((modulation_index_two * 0.1) * mod_two)]);
+				panThreeMod_three = Select.ar(panThreeMod_three_active, [K2A.ar(0), ((modulation_index_three * 0.1) * mod_three)]);
+				panThreeMod_four = Select.ar(panThreeMod_four_active, [K2A.ar(0), ((modulation_index_four * 0.1) * mod_four)]);
 				pan_Three = pan_Three + pan_Three_loop + (panThreeMod_one + panThreeMod_two + panThreeMod_three + panThreeMod_four);
 				pan_Three = pan_Three.fold(-1, 1);
 				pan_Three = pan_Three + channelMask;
 
+				// FM envelope from frequency buffer
 				freqEnvPlayBuf_One = PlayBuf.ar(1, frequency_buffer,
 					(ffreq_One * 2048/Server.default.sampleRate), trigger, 0, loop: 0);
 				freqEnvPlayBuf_Two = PlayBuf.ar(1, frequency_buffer,
@@ -519,76 +348,86 @@ NuPG_Synthesis {
 				freqEnvPlayBuf_Three = PlayBuf.ar(1, frequency_buffer,
 					(ffreq_Three * 2048/Server.default.sampleRate), trigger, 0, loop: 0);
 
-				//rate 1
-				rate_One = (ffreq_One * 2048/Server.default.sampleRate) * (1 + (freqEnvPlayBuf_One * fmAmt));
-				//rate_One = rate_One *
-				//(1 + Latch.ar(LFSaw.ar(ffreq_One * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), trigger));
-				//rate 2
-				rate_Two = (ffreq_Two * 2048/Server.default.sampleRate) * (1 + (freqEnvPlayBuf_Two * fmAmt));
-				//rate_Two = rate_Two *
-				//(1 + Latch.ar(LFSaw.ar(ffreq_Two * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), trigger));
-				//rate 3
-				rate_Three = (ffreq_Three * 2048/Server.default.sampleRate) * (1 + (freqEnvPlayBuf_Three * fmAmt));
-				//rate_Three = rate_Three *
-				//(1 + Latch.ar(LFSaw.ar(ffreq_Three * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), trigger));
-
-				fmRatio = fmRatio * fmRatio_loop;
-				fmAmt = fmAmt * fmAmt_loop;
-
-				//pulsar generator pseudo-ugen
-				pulsar_1 = NuPG_AdC.ar(
-					channels_number: numChannels,
-					trigger:  DelayN.ar(trigger, 1, offset_1),
-					grain_duration: grainDur_One,
-					pulsar_buffer: pulsaret_buffer,
-					rate: rate_One *
-					(1 + Select.kr(modulationMode,
-						[
-							Latch.ar(LFSaw.ar(ffreq_One * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_1)),
-							Latch.ar(LFSaw.ar(ffreq_One - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_1))
-					]))
-					,
-					panning: pan_One,
-					envelope_buffer: envelope_buffer
+				// Phase accumulators for OscOS (reset on trigger)
+				phase_One = Phasor.ar(
+					DelayN.ar(trigger, 1, offset_1),
+					ffreq_One * SampleDur.ir,
+					0, 1
+				);
+				phase_Two = Phasor.ar(
+					DelayN.ar(trigger, 1, offset_2),
+					ffreq_Two * SampleDur.ir,
+					0, 1
+				);
+				phase_Three = Phasor.ar(
+					DelayN.ar(trigger, 1, offset_3),
+					ffreq_Three * SampleDur.ir,
+					0, 1
 				);
 
-				pulsar_1 = pulsar_1 * amplitude_One;
-				pulsar_1 = pulsar_1 * amplitude_local_One;
-
-
-				pulsar_2 = NuPG_AdC.ar(
-					channels_number: numChannels,
-					trigger: DelayN.ar(trigger, 1, offset_2),
-					grain_duration: grainDur_Two,
-					pulsar_buffer: pulsaret_buffer,
-					rate: rate_Two *
-					(1 + Select.kr(modulationMode,
-						[
-							Latch.ar(LFSaw.ar(ffreq_Two * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_2)),
-							Latch.ar(LFSaw.ar(ffreq_Two - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_2))
+				// OscOS: Oversampled wavetable oscillator
+				// Uses buffer with anti-aliased interpolation
+				pulsaret_One = OscOS.ar(
+					pulsaret_buffer,
+					ffreq_One * (1 + (freqEnvPlayBuf_One * fmAmt)) *
+					(1 + Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_One * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_1)),
+						Latch.ar(LFSaw.ar(ffreq_One - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_1))
 					])),
-					panning: pan_Two,
-					envelope_buffer: envelope_buffer
+					0,
+					oversample
 				);
-				pulsar_2 = pulsar_2 * amplitude_Two;
-				pulsar_2 = pulsar_2 * amplitude_local_Two;
 
-				pulsar_3 = NuPG_AdC.ar(
-					channels_number: numChannels,
-					trigger:  DelayN.ar(trigger, 1, offset_3),
-					grain_duration: grainDur_Three,
-					pulsar_buffer: pulsaret_buffer,
-					rate: rate_Three *
-					(1 + Select.kr(modulationMode,
-						[
-							Latch.ar(LFSaw.ar(ffreq_Three * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_3)),
-							Latch.ar(LFSaw.ar(ffreq_Three - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_3))
+				pulsaret_Two = OscOS.ar(
+					pulsaret_buffer,
+					ffreq_Two * (1 + (freqEnvPlayBuf_Two * fmAmt)) *
+					(1 + Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_Two * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_2)),
+						Latch.ar(LFSaw.ar(ffreq_Two - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_2))
 					])),
-					panning: pan_Three,
-					envelope_buffer: envelope_buffer
+					0,
+					oversample
 				);
-				pulsar_3 = pulsar_3 * amplitude_Three;
-				pulsar_3 = pulsar_3 * amplitude_local_Three;
+
+				pulsaret_Three = OscOS.ar(
+					pulsaret_buffer,
+					ffreq_Three * (1 + (freqEnvPlayBuf_Three * fmAmt)) *
+					(1 + Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_Three * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_3)),
+						Latch.ar(LFSaw.ar(ffreq_Three - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_3))
+					])),
+					0,
+					oversample
+				);
+
+				// Envelope from buffer using OscOS
+				envelope_One = Select.ar(envelope_buffer > 0, [
+					EnvGen.ar(Env.sine(grainDur_One), DelayN.ar(trigger, 1, offset_1)),
+					OscOS.ar(envelope_buffer, envM_One, 0, oversample)
+				]);
+
+				envelope_Two = Select.ar(envelope_buffer > 0, [
+					EnvGen.ar(Env.sine(grainDur_Two), DelayN.ar(trigger, 1, offset_2)),
+					OscOS.ar(envelope_buffer, envM_Two, 0, oversample)
+				]);
+
+				envelope_Three = Select.ar(envelope_buffer > 0, [
+					EnvGen.ar(Env.sine(grainDur_Three), DelayN.ar(trigger, 1, offset_3)),
+					OscOS.ar(envelope_buffer, envM_Three, 0, oversample)
+				]);
+
+				// Pulsar outputs
+				pulsar_1 = pulsaret_One * envelope_One;
+				pulsar_1 = Pan2.ar(pulsar_1, pan_One);
+				pulsar_1 = pulsar_1 * amplitude_One * amplitude_local_One;
+
+				pulsar_2 = pulsaret_Two * envelope_Two;
+				pulsar_2 = Pan2.ar(pulsar_2, pan_Two);
+				pulsar_2 = pulsar_2 * amplitude_Two * amplitude_local_Two;
+
+				pulsar_3 = pulsaret_Three * envelope_Three;
+				pulsar_3 = Pan2.ar(pulsar_3, pan_Three);
+				pulsar_3 = pulsar_3 * amplitude_Three * amplitude_local_Three;
 
 				mix = Mix.new([pulsar_1, pulsar_2, pulsar_3]) * globalAmplitude;
 
