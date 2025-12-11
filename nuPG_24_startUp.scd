@@ -39,6 +39,7 @@ s.waitForBoot({
 	~frequency_buffers = ~numberOfInstances.collect{|i| Buffer.loadCollection(s, ~freq, 1) };
 	//generate global data structure
 	//add local data structures to it, number of local data = number of instances
+	// Using new Connection Quark-based data class for testing
 	~data = NuPG_Data.new;
 	~data.conductorInit(~numberOfInstances);
 	~numberOfInstances.collect{|i|

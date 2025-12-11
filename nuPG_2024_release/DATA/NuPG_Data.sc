@@ -1,6 +1,10 @@
+// NuPG_Data.sc
+// Data layer using Connection Quark
+// Manages all control values for nuPG pulsar synthesis
+
 NuPG_Data {
 
-	var <>conductor;
+	var <>cvEnvir;  // ControlValueEnvir for preset management
 	var <>data_pulsaret, <>data_envelope;
 	var <>data_fundamentalFrequency;
 	var <>data_probabilityMask;
@@ -34,13 +38,46 @@ NuPG_Data {
 	var <>data_groupsOffset;
 	var <>data_modulator1, <>data_modulator2, <>data_modulator3, <>data_modulator4;
 	var <>data_matrix;
-	var <>data_spatial; // NEW: spatial control data
+	var <>data_spatial;
 
-	//conductor initialisation method
-	conductorInit {|n = 1|
+	// Conductor compatibility layer
+	var <>conductor;  // Dictionary that mimics Conductor access pattern
 
-		//create data arrays of a size = n (numberOfInstances)
+	// Preset storage
+	var <>presets;
+	var <>currentPreset;
 
+	*new {
+		^super.new.init;
+	}
+
+	init {
+		presets = Dictionary.new;
+		currentPreset = 0;
+		conductor = NuPG_ConductorCompat(this);
+	}
+
+	// For compatibility: allows ~data.instanceGeneratorFunction(i) pattern
+	instanceGeneratorFunction { |index|
+		^{ this.instanceGenerator(index) };
+	}
+
+	// Helper method to create a NumericControlValue with spec
+	// Mimics the old .sp(default, min, max, step, warp) pattern
+	*makeCV { |default, min, max, step = 0.01, warp = \lin|
+		var spec = ControlSpec(min, max, warp, step, default);
+		^NumericControlValue(default, spec);
+	}
+
+	// Helper for array-type CVs (tables with 2048 values)
+	*makeTableCV { |default, min = -1, max = 1|
+		var spec = ControlSpec(min, max, \lin, 0, 0);
+		^NumericControlValue(default, spec);
+	}
+
+	// Initialize data arrays
+	conductorInit { |n = 1|
+		// Create data arrays of size n (numberOfInstances)
 		data_pulsaret = Array.newClear(n);
 		data_envelope = Array.newClear(n);
 		data_fundamentalFrequency = Array.newClear(n);
@@ -98,961 +135,559 @@ NuPG_Data {
 		data_modulator3 = Array.newClear(n);
 		data_modulator4 = Array.newClear(n);
 		data_matrix = Array.newClear(n);
-		data_spatial = Array.newClear(n); // NEW: initialize spatial data array
+		data_spatial = Array.newClear(n);
 
-		//global data structure, empty to be populated by a number of instances
-		conductor = Conductor.make {
-			arg
-			conductor,
-			//tables
-			pulsaret, envelope, frequency,
-			fundamentalFrequency,
-			//masking
-			probabilityMask,
-			//formant
-			formantFrequencyOne, formantFrequencyTwo, formantFrequencyThree,
-			//pan
-			panOne, panTwo, panThree,
-			//amp
-			ampOne, ampTwo, ampThree,
-			//envelope multiplication
-			envelopeMulOne, envelopeMulTwo, envelopeMulThree,
-			//local amplitudes
-			ampLocalOne, ampLocalTwo, ampLocalThree,
-			//fourier
-			fourier,
-			//main (intermediary control)
-			//fundamental
-			fundamentalFrequencyMain,
-			//formants
-			formantFrequencyMainOne, formantFrequencyMainTwo, formantFrequencyMainThree,
-			envelopeMultiplicationMainOne, envelopeMultiplicationMainTwo, envelopeMultiplicationMainThree,
-			panMainOne, panMainTwo, panMainThree,
-			amplitudeOne, amplitudeTwo, amplitudeThree,
-			//ranges
-			pulsaretMin, pulsaretMax,
-			envelopeMin, envelopeMax,
-			frequencyMin, frequencyMax,
-			fundamentalFrequencyMin, fundamentalFrequencyMax,
-			formantFrequencyOneMin, formantFrequencyOneMax,
-			formantFrequencyTwoMin, formantFrequencyTwoMax,
-			formantFrequencyThreeMin, formantFrequencyThreeMax,
-			panOneMin, panOneMax, panTwoMin, panTwoMax, panThreeMin, panThreeMax,
-			ampOneMin, ampOneMax, ampTwoMin, ampTwoMax, ampThreeMin, ampThreeMax,
-			probabilityMin, probabilityMax,
-			envelopeMulOneMin, envelopeMulOneMax,
-			envelopeMulTwoMin, envelopeMulTwoMax,
-			envelopeMulThreeMin, envelopeMulThreeMax,
-			//modulation
-			frequencyModAmount, frequencyModRatio, frequencyModIndex, multiParameterMod,
-			//modulation tables
-			frequencyModAmountTable, frequencyModRatioTable, multiParameterModTable,
-			//ranges
-			frequencyModRatioMin, frequencyModRatioMax,
-			frequencyModAmountMin, frequencyModAmountMax,
-			frequencymultiParameterModMin, multiParameterModMax,
-			//burst
-			burst, rest,
-			//channel
-			channel, channelCenter,
-			//sieve
-			sieveSize, sieveSequence,
-			//probability
-			probability,
-			//train duration
-			trainDuration,
-			//progress slider
-			progressSlider,
-			//scrubber
-			scrubber,
-			//table shift
-			tableShift,
-			//groupOffset
-			groupOffset_1, groupOffset_2, groupOffset_3,
-			//matrix modulators
-			modFreq1, modFreq2, modFreq3, modFreq4,
-			modDepth1, modDepth2, modDepth3, modDepth4,
-			modType1, modType2, modType3, modType4,
-			m00, m01, m02, m03,
-			m10, m11, m12, m13,
-			m20, m21, m22, m23,
-			m30, m31, m32, m33,
-			m40, m41, m42, m43,
-			m50, m51, m52, m53,
-			m60, m61, m62, m63,
-			m70, m71, m72, m73,
-			m80, m81, m82, m83,
-			m90, m91, m92, m93,
-			m100, m101, m102, m103,
-			m110, m111, m112, m113,
-			m120, m121, m122, m123,
-			//spatial control - NEW
-			spatialPosOne, spatialPosTwo, spatialPosThree,
-			spatialGainOne, spatialGainTwo, spatialGainThree,
-			spatialWidthOne, spatialWidthTwo, spatialWidthThree;
-
-			conductor.usePresets;
-			conductor.useInterpolator;
-
-			//presets and interpolation
-			conductor.presetKeys_(#[
-				//tables
-				pulsaret, envelope, frequency,
-				fundamentalFrequency,
-				//masking
-				probabilityMask,
-				//formant
-				formantFrequencyOne, formantFrequencyTwo, formantFrequencyThree,
-				//pan
-				panOne, panTwo, panThree,
-				//amp
-				ampOne, ampTwo, ampThree,
-				//envelope multiplication
-				envelopeMulOne, envelopeMulTwo, envelopeMulThree,
-				//local amplitudes
-				ampLocalOne, ampLocalTwo, ampLocalThree,
-				//fourier
-				fourier,
-				//main (intermediary control)
-				//fundamental
-				fundamentalFrequencyMain,
-				//formants
-				formantFrequencyMainOne, formantFrequencyMainTwo, formantFrequencyMainThree,
-				envelopeMultiplicationMainOne, envelopeMultiplicationMainTwo, envelopeMultiplicationMainThree,
-				panMainOne, panMainTwo, panMainThree,
-				amplitudeOne, amplitudeTwo, amplitudeThree,
-				//ranges
-				pulsaretMin, pulsaretMax,
-				envelopeMin, envelopeMax,
-				frequencyMin, frequencyMax,
-				fundamentalFrequencyMin, fundamentalFrequencyMax,
-				formantFrequencyOneMin, formantFrequencyOneMax,
-				formantFrequencyTwoMin, formantFrequencyTwoMax,
-				formantFrequencyThreeMin, formantFrequencyThreeMax,
-				panOneMin, panOneMax, panTwoMin, panTwoMax, panThreeMin, panThreeMax,
-				ampOneMin, ampOneMax, ampTwoMin, ampTwoMax, ampThreeMin, ampThreeMax,
-				probabilityMin, probabilityMax,
-				envelopeMulOneMin, envelopeMulOneMax,
-				envelopeMulTwoMin, envelopeMulTwoMax,
-				envelopeMulThreeMin, envelopeMulThreeMax,
-				//modulation
-				frequencyModAmount, frequencyModRatio, frequencyModIndex, multiParameterMod,
-				//modulation tables
-				frequencyModAmountTable, frequencyModRatioTable, multiParameterModTable,
-				//ranges
-				frequencyModRatioMin, frequencyModRatioMax,
-				frequencyModAmountMin, frequencyModAmountMax,
-				frequencymultiParameterModMin, multiParameterModMax,
-				//burst
-				burst, rest,
-				//channel
-				channel, channelCenter,
-				//sieve
-				sieveSize, sieveSequence,
-				//probability
-				probability,
-				//train duration
-				trainDuration,
-				//progress slider
-				progressSlider,
-				//scrubber
-				scrubber,
-				//groupOffset
-				groupOffset_1, groupOffset_2, groupOffset_3,
-				//matrix modulators
-				modFreq1, modFreq2, modFreq3, modFreq4,
-				modDepth1, modDepth2, modDepth3, modDepth4,
-				modType1, modType2, modType3, modType4,
-				m00, m01, m02, m03,
-				m10, m11, m12, m13,
-				m20, m21, m22, m23,
-				m30, m31, m32, m33,
-				m40, m41, m42, m43,
-				m50, m51, m52, m53,
-				m60, m61, m62, m63,
-				m70, m71, m72, m73,
-				m80, m81, m82, m83,
-				m90, m91, m92, m93,
-				m100, m101, m102, m103,
-				m110, m111, m112, m113,
-				m120, m121, m122, m123,
-				//spatial control - NEW
-				spatialPosOne, spatialPosTwo, spatialPosThree,
-				spatialGainOne, spatialGainTwo, spatialGainThree,
-				spatialWidthOne, spatialWidthTwo, spatialWidthThree
-			]);
-
-			conductor.interpKeys_(#[
-				//tables
-				pulsaret, envelope, frequency,
-				fundamentalFrequency,
-				//masking
-				probabilityMask,
-				//formant
-				formantFrequencyOne, formantFrequencyTwo, formantFrequencyThree,
-				//pan
-				panOne, panTwo, panThree,
-				//amp
-				ampOne, ampTwo, ampThree,
-				//envelope multiplication
-				envelopeMulOne, envelopeMulTwo, envelopeMulThree,
-				//local amplitudes
-				ampLocalOne, ampLocalTwo, ampLocalThree,
-				//fourier
-				fourier,
-				//main (intermediary control)
-				//fundamental
-				fundamentalFrequencyMain,
-				//formants
-				formantFrequencyMainOne, formantFrequencyMainTwo, formantFrequencyMainThree,
-				envelopeMultiplicationMainOne, envelopeMultiplicationMainTwo, envelopeMultiplicationMainThree,
-				panMainOne, panMainTwo, panMainThree,
-				amplitudeOne, amplitudeTwo, amplitudeThree,
-				//ranges
-				pulsaretMin, pulsaretMax,
-				envelopeMin, envelopeMax,
-				frequencyMin, frequencyMax,
-				fundamentalFrequencyMin, fundamentalFrequencyMax,
-				formantFrequencyOneMin, formantFrequencyOneMax,
-				formantFrequencyTwoMin, formantFrequencyTwoMax,
-				formantFrequencyThreeMin, formantFrequencyThreeMax,
-				panOneMin, panOneMax, panTwoMin, panTwoMax, panThreeMin, panThreeMax,
-				ampOneMin, ampOneMax, ampTwoMin, ampTwoMax, ampThreeMin, ampThreeMax,
-				probabilityMin, probabilityMax,
-				envelopeMulOneMin, envelopeMulOneMax,
-				envelopeMulTwoMin, envelopeMulTwoMax,
-				envelopeMulThreeMin, envelopeMulThreeMax,
-				//modulation
-				frequencyModAmount, frequencyModRatio, frequencyModIndex, multiParameterMod,
-				//modulation tables
-				frequencyModAmountTable, frequencyModRatioTable, multiParameterModTable,
-				//ranges
-				frequencyModRatioMin, frequencyModRatioMax,
-				frequencyModAmountMin, frequencyModAmountMax,
-				frequencymultiParameterModMin, multiParameterModMax,
-				//burst
-				burst, rest,
-				//channel
-				channel, channelCenter,
-				//sieve
-				sieveSize, sieveSequence,
-				//probability
-				probability,
-				//train duration
-				trainDuration,
-				//progress slider
-				progressSlider,
-				//scrubber
-				scrubber,
-				//groupOffset
-				groupOffset_1, groupOffset_2, groupOffset_3,
-				//matrix modulators
-				modFreq1, modFreq2, modFreq3, modFreq4,
-				modDepth1, modDepth2, modDepth3, modDepth4,
-				modType1, modType2, modType3, modType4,
-				m00, m01, m02, m03,
-				m10, m11, m12, m13,
-				m20, m21, m22, m23,
-				m30, m31, m32, m33,
-				m40, m41, m42, m43,
-				m50, m51, m52, m53,
-				m60, m61, m62, m63,
-				m70, m71, m72, m73,
-				m80, m81, m82, m83,
-				m90, m91, m92, m93,
-				m100, m101, m102, m103,
-				m110, m111, m112, m113,
-				m120, m121, m122, m123,
-				//spatial control - NEW
-				spatialPosOne, spatialPosTwo, spatialPosThree,
-				spatialGainOne, spatialGainTwo, spatialGainThree,
-				spatialWidthOne, spatialWidthTwo, spatialWidthThree
-			]);
-		}
-		^conductor;
+		// Create ControlValueEnvir for this data instance
+		cvEnvir = ControlValueEnvir.new;
 	}
 
-	//instance data generator
-	//generates a data structure for a single instance of pulsar stream
-
-	instanceGeneratorFunction {|index|
-		var instance;
-		instance = {
-			arg
-			con, //local
-			//tables
-			pulsaret, envelope, frequency,
-			fundamentalFrequency,
-			//masking
-			probabilityMask,
-			//formant
-			formantFrequencyOne, formantFrequencyTwo, formantFrequencyThree,
-			//pan
-			panOne, panTwo, panThree,
-			//amp
-			ampOne, ampTwo, ampThree,
-			//envelope multiplication
-			envelopeMulOne, envelopeMulTwo, envelopeMulThree,
-			//local amplitudes
-			ampLocalOne, ampLocalTwo, ampLocalThree,
-			//fourier
-			fourier,
-			//main (intermediary control)
-			//fundamental
-			fundamentalFrequencyMain,
-			//formants
-			formantFrequencyMainOne, formantFrequencyMainTwo, formantFrequencyMainThree,
-			envelopeMultiplicationMainOne, envelopeMultiplicationMainTwo, envelopeMultiplicationMainThree,
-			panMainOne, panMainTwo, panMainThree,
-			amplitudeOne, amplitudeTwo, amplitudeThree,
-			//ranges
-			pulsaretMin, pulsaretMax,
-			envelopeMin, envelopeMax,
-			frequencyMin, frequencyMax,
-			fundamentalFrequencyMin, fundamentalFrequencyMax,
-			formantFrequencyOneMin, formantFrequencyOneMax,
-			formantFrequencyTwoMin, formantFrequencyTwoMax,
-			formantFrequencyThreeMin, formantFrequencyThreeMax,
-			panOneMin, panOneMax, panTwoMin, panTwoMax, panThreeMin, panThreeMax,
-			ampOneMin, ampOneMax, ampTwoMin, ampTwoMax, ampThreeMin, ampThreeMax,
-			probabilityMin, probabilityMax,
-			envelopeMulOneMin, envelopeMulOneMax,
-			envelopeMulTwoMin, envelopeMulTwoMax,
-			envelopeMulThreeMin, envelopeMulThreeMax,
-			//modulation
-			frequencyModAmount, frequencyModRatio, frequencyModIndex, multiParameterMod,
-			//modulation tables
-			frequencyModAmountTable, frequencyModRatioTable, multiParameterModTable,
-			//ranges
-			frequencyModRatioMin, frequencyModRatioMax,
-			frequencyModAmountMin, frequencyModAmountMax,
-			frequencymultiParameterModMin, multiParameterModMax,
-			//burst
-			burst, rest,
-			//channel
-			channel, channelCenter,
-			//sieve
-			sieveSize, sieveSequence,
-			//probability
-			probability,
-			//train duration
-			trainDuration,
-			//progress slider
-			progressSlider,
-			//scrubber
-			scrubber,
-			//table shift
-			tableShift,
-			//groupOffset
-			groupOffset_1, groupOffset_2, groupOffset_3,
-			//matrix modulators
-			modFreq1, modFreq2, modFreq3, modFreq4,
-			modDepth1, modDepth2, modDepth3, modDepth4,
-			modType1, modType2, modType3, modType4,
-			//matrix
-			m00, m01, m02, m03,
-			m10, m11, m12, m13,
-			m20, m21, m22, m23,
-			m30, m31, m32, m33,
-			m40, m41, m42, m43,
-			m50, m51, m52, m53,
-			m60, m61, m62, m63,
-			m70, m71, m72, m73,
-			m80, m81, m82, m83,
-			m90, m91, m92, m93,
-			m100, m101, m102, m103,
-			m110, m111, m112, m113,
-			m120, m121, m122, m123,
-			//spatial control - NEW
-			spatialPosOne, spatialPosTwo, spatialPosThree,
-			spatialGainOne, spatialGainTwo, spatialGainThree,
-			spatialWidthOne, spatialWidthTwo, spatialWidthThree;
-
-			var tableTypeData = (0..2047)/2048;
-			var tableTypeDataMinMax = [-1,1];
-			var fourierTypeData = (0..15)/16;
-
-			//spatial control data - NEW
-// In NuPG_Data, around line 320, change this:
-data_spatial[index] = [
-    spatialPosOne, spatialPosTwo, spatialPosThree,
-    spatialGainOne, spatialGainTwo, spatialGainThree,
-    spatialWidthOne, spatialWidthTwo, spatialWidthThree
-].collect{|item, i|
-    var defVal = [1.0, 1.33, 1.66, 0.5, 0.5, 0.5, 1, 5, 8]; // ← Changed width defaults
-    var ranges = [
-        [0.1, 1.99], [0.1, 1.99], [0.1, 1.99], // positions: 0 to 2
-        [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], // gains: 0 to 1 (unchanged)
-        [1.0, 8.0], [1.0, 8.0], [1.0, 8.0]  // widths: 0 to 1 ← FIXED!
-    ];
-    var warp = [\lin, \lin, \lin, \lin, \lin, \lin, \lin, \lin, \lin];
-
-    item.sp(defVal[i], ranges[i][0], ranges[i][1], 0.001, warp[i]);
-};
-
-
-
-			//matrix
-			data_matrix[index] = [
-				m00, m01, m02, m03,
-				m10, m11, m12, m13,
-				m20, m21, m22, m23,
-				m30, m31, m32, m33,
-				m40, m41, m42, m43,
-				m50, m51, m52, m53,
-				m60, m61, m62, m63,
-				m70, m71, m72, m73,
-				m80, m81, m82, m83,
-				m90, m91, m92, m93,
-				m100, m101, m102, m103,
-				m110, m111, m112, m113,
-				m120, m121, m122, m123
-			].collect{|item, i| item.sp(0, 0, 1, 1)}.clump(13);
-
-			//modulators matrix
-			data_modulator1[index] = [modType1, modFreq1, modDepth1].collect{|item ,i|
-				var defVal = [0, 0.5, 0];
-				var ranges = [
-					[0, 4], //type
-					[0.001, 150.0], //mod freq
-					[0, 10], //mod freq
-				];
-				var step = [1, 0.001, 1];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], step[i], \lin);
-			};
-
-			data_modulator2[index] = [modType2, modFreq2, modDepth2].collect{|item ,i|
-				var defVal = [0, 0.5, 0];
-				var ranges = [
-					[0, 4], //type
-					[0.001, 150.0], //mod freq
-					[0, 10], //mod freq
-				];
-				var step = [1, 0.001, 1];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], step[i], \lin);
-			};
-
-			data_modulator3[index] = [modType3, modFreq3, modDepth3].collect{|item ,i|
-				var defVal = [0, 0.5, 0];
-				var ranges = [
-					[0, 4], //type
-					[0.001, 150.0], //mod freq
-					[0, 10], //mod freq
-				];
-				var step = [1, 0.001, 1];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], step[i], \lin);
-			};
-
-			data_modulator4[index] = [modType4, modFreq4, modDepth4].collect{|item ,i|
-				var defVal = [0, 0.5, 0];
-				var ranges = [
-					[0, 4], //type
-					[0.001, 150.0], //mod freq
-					[0, 10], //mod freq
-				];
-				var step = [1, 0.001, 1];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], step[i], \lin);
-			};
-
-			//tableshift
-			data_tableShift[index] = tableShift.sp(150, 1, 2048, 1);
-			//burst mask
-			data_burstMask[index] = [burst, rest].collect{|item, i|
-				var defVal = [1, 0];
-				var ranges = [
-					[1, 2999], //burst
-					[0, 2998], //rest
-				];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], 1);
-			};
-
-			//channel mask
-			data_channelMask[index] = [channel, channelCenter].collect{|item, i|
-				var defVal = [0, 1];
-				var ranges = [
-					[0, 1500], //channelMask
-					[0, 1], //center repeat
-				];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], 1);
-			};
-
-			data_groupsOffset[index] = [groupOffset_1, groupOffset_2, groupOffset_3].collect{|item|
-				item.sp(0, 0, 1, 0.001);
-			};
-
-			//sieve
-			data_sieveMask[index] = [sieveSize, sieveSequence].collect{|item, i|
-				var defVal = [1, (0..99)/100];
-				var ranges = [
-					[1, 100], //mod
-					[0, 1], //sequence
-				];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], 1);
-			};
-
-			//probabiliyty
-			data_probabilityMaskSingular[index] = probability.sp(1, 0.0, 1.0, 0.01);
-
-			//intermediary control
-			data_main[index] = [
-				fundamentalFrequencyMain,
-				formantFrequencyMainOne, formantFrequencyMainTwo, formantFrequencyMainThree,
-				envelopeMultiplicationMainOne, envelopeMultiplicationMainTwo, envelopeMultiplicationMainThree,
-				panMainOne, panMainTwo, panMainThree,
-				amplitudeOne, amplitudeTwo, amplitudeThree].collect{|item, i|
-
-				var defVal = [1, 15, 15, 15, 1, 1, 1, 0, 0, 0, 0.5, 0.5, 0.5];
-				var ranges = [
-					[1.0, 3000], //fundamental
-					[0.05, 16.0], //formant 1
-					[0.05, 16.0], //formant 2
-					[0.05, 16.0], //formant 3
-					[0.0, 2], //envMult 1
-					[0.0, 2], //envMult 2
-					[0.01, 2], //envMult 3
-					[-1.0, 1.0], //pan 1
-					[-1.0, 1.0], //pan 2
-					[-1.0, 1.0], //pan 3
-					[0.0, 1.0], //amp 1
-					[0.0, 1.0], //amp 2
-					[0.0, 1.0] //amp 3
-				];
-				var warp = [\exp, \exp, \exp, \exp, \lin, \lin, \lin, \lin, \lin, \lin, \lin, \lin, \lin];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], 0.001, warp[i]);
-
-			};
-
-			data_modulators[index] = [frequencyModAmount, frequencyModRatio, multiParameterMod].collect{|item, i|
-
-				var defVal = [0, 0, 0];
-				var ranges = [
-					[0.0, 16.0], //mod amt
-					[0.0, 16.0], //mod ratio
-					[0.0, 2.0], //multi parameter modulation
-
-				];
-				var warp = [\lin, \lin, \lin];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], 0.001, warp[i]);
-
-			};
-
-			data_pulsaret[index] = pulsaret.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			data_envelope[index] = envelope.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			data_frequency[index] = frequency.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			//fourier sliders -> 16
-			data_fourier[index] = fourier.sp(fourierTypeData, -1.0, 1.0);
-
-			data_fundamentalFrequency[index] =
-			fundamentalFrequency.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			data_probabilityMask[index] =
-			probabilityMask.sp((0..2047).collect{1}, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			data_burstMask[index] = [burst, rest].collect{|item, i|
-				var defVal = [1, 0];
-				var ranges = [
-					[1, 2999], //burst
-					[0, 2998], //rest
-				];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], 1);
-			};
-
-			data_channelMask[index] = [channel, channelCenter].collect{|item, i|
-				var defVal = [0, 1];
-				var ranges = [
-					[0, 1500], //channelMask
-					[0, 1], //center repeat
-				];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], 1);
-			};
-
-			data_sieveMask[index] = [sieveSize, sieveSequence].collect{|item, i|
-				var defVal = [1, (0..99)/100];
-				var ranges = [
-					[1, 100], //mod
-					[0, 1], //sequence
-				];
-
-				item.sp(defVal[i], ranges[i][0], ranges[i][1], 1);
-			};
-
-			data_formantFrequencyOne[index] =
-			formantFrequencyOne.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			data_formantFrequencyTwo[index] =
-			formantFrequencyTwo.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			data_formantFrequencyThree[index] =
-			formantFrequencyThree.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			data_panOne[index] = panOne.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			data_panTwo[index] = panTwo.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			data_panThree[index] = panThree.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			data_ampOne[index] = ampOne.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			data_ampTwo[index] = ampTwo.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			data_ampThree[index] = ampThree.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			//ranges
-			data_pulsaret_maxMin[index] = [pulsaretMin, pulsaretMax].collect{|item, i|
-				var defaultVal = [1.0, -1.0];
-
-				item.sp(defaultVal[i], -1, 1, 0.01)
-
-			};
-
-			data_envelope_maxMin[index] = [envelopeMin, envelopeMax].collect{|item, i|
-				var defaultVal = [1, -1];
-
-				item.sp(defaultVal[i], -1, 1, 0.01)
-
-			};
-
-			data_frequency_maxMin[index] = [frequencyMin, frequencyMax].collect{|item, i|
-				var defaultVal = [1, 0.0];
-
-				item.sp(defaultVal[i], defaultVal[1], 1)
-
-			};
-
-			data_fundamentalFrequency_maxMin[index] = [fundamentalFrequencyMin, fundamentalFrequencyMax].collect{|item, i|
-				var defaultVal = [10, 0];
-
-				item.sp(defaultVal[i], 0, 20, 0.001)
-
-			};
-
-			data_formantFrequencyOne_maxMin[index] = [formantFrequencyOneMin, formantFrequencyOneMax].collect{|item, i|
-				var defaultVal = [10, 0.01];
-
-				item.sp(defaultVal[i], 0, 10, 0.01)
-
-			};
-
-			data_formantFrequencyTwo_maxMin[index] = [formantFrequencyTwoMin, formantFrequencyTwoMax].collect{|item, i|
-				var defaultVal = [10, 0.01];
-
-				item.sp(defaultVal[i], 0, 10, 0.01)
-
-			};
-
-			data_formantFrequencyThree_maxMin[index] = [formantFrequencyThreeMin, formantFrequencyThreeMax].collect{|item, i|
-				var defaultVal = [10, 0.01];
-
-				item.sp(defaultVal[i], 0, 10, 0.01)
-
-			};
-
-			data_panOne_maxMin[index] = [panOneMin, panOneMax].collect{|item, i|
-				var defaultVal = [1, -1];
-
-				item.sp(defaultVal[i], -1, 1, 0.01)
-
-			};
-
-			data_panTwo_maxMin[index] = [panTwoMin, panTwoMax].collect{|item, i|
-				var defaultVal = [1, -1];
-
-				item.sp(defaultVal[i], -1, 1, 0.01)
-
-			};
-
-			data_panThree_maxMin[index] = [panThreeMin, panThreeMax].collect{|item, i|
-				var defaultVal = [1, -1];
-
-				item.sp(defaultVal[i], -1, 1, 0.01)
-
-			};
-
-			data_ampOne_maxMin[index] = [ampOneMin, ampOneMax].collect{|item, i|
-				var defaultVal = [1, 0];
-
-				item.sp(defaultVal[i], 0, 1, 0.01)
-
-			};
-
-			data_ampTwo_maxMin[index] = [ampTwoMin, ampTwoMax].collect{|item, i|
-				var defaultVal = [1, 0];
-
-				item.sp(defaultVal[i], 0, 1, 0.01)
-
-			};
-
-			data_ampThree_maxMin[index] = [ampThreeMin, ampThreeMax].collect{|item, i|
-				var defaultVal = [1, 0];
-
-				item.sp(defaultVal[i], 0, 1, 0.01)
-
-			};
-
-			data_probabilityMask_maxMin[index] = [probabilityMin, probabilityMax].collect{|item, i|
-				var defaultVal = [1, 0];
-
-				item.sp(defaultVal[i], 0, 1, 0.01)
-
-			};
-
-			data_trainDuration[index] = trainDuration.sp(6.0, 0.3, 120.0);
-
-			data_progressSlider[index] = progressSlider.sp(1, 1, 2048, 0.01);
-
-			//modulation amount
-			data_modulationAmount[index] = frequencyModAmountTable.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			//ranges
-			data_modulationAmount_maxMin[index] = [frequencyModAmountMin, frequencyModAmountMax].collect{|item, i|
-				var defaultVal = [1.0, 1.0];
-
-				item.sp(defaultVal[i], 0.0, 10, 0.01)
-
-			};
-			//modulation ratio
-			data_modulationRatio[index] = frequencyModRatioTable.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			//ranges
-			data_modulationRatio_maxMin[index] = [frequencyModRatioMin, frequencyModRatioMax].collect{|item, i|
-				var defaultVal = [1.0, 1.0];
-
-				item.sp(defaultVal[i], 0.0, 10, 0.01)
-
-			};
-			//multi paramater modulation
-			data_multiParamModulation[index] = multiParameterModTable.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			//ranges
-			data_mulParamModulation_maxMin[index] = [frequencymultiParameterModMin, multiParameterModMax].collect{|item, i|
-				var defaultVal = [1.0, 1.0];
-
-				item.sp(defaultVal[i], 0.0, 10, 0.01)
-
-			};
-
-			data_envelopeMulOne[index] = envelopeMulOne.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			data_envelopeMulTwo[index] = envelopeMulTwo.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-			data_envelopeMulThree[index] = envelopeMulThree.sp(tableTypeData, tableTypeDataMinMax[0], tableTypeDataMinMax[1]);
-
-			data_envelopeMulOne_maxMin[index] = [envelopeMulOneMin, envelopeMulOneMax].collect{|item, i|
-				var defaultVal = [1, 0];
-
-				item.sp(defaultVal[i], 0, 1, 0.01)
-
-			};
-
-			data_envelopeMulTwo_maxMin[index] = [envelopeMulTwoMin, envelopeMulTwoMax].collect{|item, i|
-				var defaultVal = [1, 0];
-
-				item.sp(defaultVal[i], 0, 1, 0.01)
-
-			};
-
-			data_envelopeMulThree_maxMin[index] = [envelopeMulThreeMin, envelopeMulThreeMax].collect{|item, i|
-				var defaultVal = [1, 0];
-
-				item.sp(defaultVal[i], 0, 1, 0.01)
-
-			};
-
-			//probabiliyty
-			data_scrubber[index] = scrubber.sp(0, 0, 2047, 1);
-
-			//presets and interpolation
-			con.usePresets;
-			con.useInterpolator;
-
-			con.presetKeys_(#[
-				//tables
-				pulsaret, envelope, frequency,
-				fundamentalFrequency,
-				//masking
-				probabilityMask,
-				//formant
-				formantFrequencyOne, formantFrequencyTwo, formantFrequencyThree,
-				//pan
-				panOne, panTwo, panThree,
-				//amp
-				ampOne, ampTwo, ampThree,
-				//envelope multiplication
-				envelopeMulOne, envelopeMulTwo, envelopeMulThree,
-				//local amplitudes
-				ampLocalOne, ampLocalTwo, ampLocalThree,
-				//fourier
-				fourier,
-				//main (intermediary control)
-				//fundamental
-				fundamentalFrequencyMain,
-				//formants
-				formantFrequencyMainOne, formantFrequencyMainTwo, formantFrequencyMainThree,
-				envelopeMultiplicationMainOne, envelopeMultiplicationMainTwo, envelopeMultiplicationMainThree,
-				panMainOne, panMainTwo, panMainThree,
-				amplitudeOne, amplitudeTwo, amplitudeThree,
-				//ranges
-				pulsaretMin, pulsaretMax,
-				envelopeMin, envelopeMax,
-				frequencyMin, frequencyMax,
-				fundamentalFrequencyMin, fundamentalFrequencyMax,
-				formantFrequencyOneMin, formantFrequencyOneMax,
-				formantFrequencyTwoMin, formantFrequencyTwoMax,
-				formantFrequencyThreeMin, formantFrequencyThreeMax,
-				panOneMin, panOneMax, panTwoMin, panTwoMax, panThreeMin, panThreeMax,
-				ampOneMin, ampOneMax, ampTwoMin, ampTwoMax, ampThreeMin, ampThreeMax,
-				probabilityMin, probabilityMax,
-				envelopeMulOneMin, envelopeMulOneMax,
-				envelopeMulTwoMin, envelopeMulTwoMax,
-				envelopeMulThreeMin, envelopeMulThreeMax,
-				//modulation
-				frequencyModAmount, frequencyModRatio, frequencyModIndex, multiParameterMod,
-				//modulation tables
-				frequencyModAmountTable, frequencyModRatioTable, multiParameterModTable,
-				//ranges
-				frequencyModRatioMin, frequencyModRatioMax,
-				frequencyModAmountMin, frequencyModAmountMax,
-				frequencymultiParameterModMin, multiParameterModMax,
-				//burst
-				burst, rest,
-				//channel
-				channel, channelCenter,
-				//sieve
-				sieveSize, sieveSequence,
-				//probability
-				probability,
-				//train duration
-				trainDuration,
-				//progress slider
-				progressSlider,
-				//scrubber
-				scrubber,
-				//groupOffset
-				groupOffset_1, groupOffset_2, groupOffset_3,
-				//matrix modulators
-				modFreq1, modFreq2, modFreq3, modFreq4,
-				modDepth1, modDepth2, modDepth3, modDepth4,
-				modType1, modType2, modType3, modType4,
-				//matrix
-				m00, m01, m02, m03,
-				m10, m11, m12, m13,
-				m20, m21, m22, m23,
-				m30, m31, m32, m33,
-				m40, m41, m42, m43,
-				m50, m51, m52, m53,
-				m60, m61, m62, m63,
-				m70, m71, m72, m73,
-				m80, m81, m82, m83,
-				m90, m91, m92, m93,
-				m100, m101, m102, m103,
-				m110, m111, m112, m113,
-				m120, m121, m122, m123,
-				//spatial control - NEW
-				spatialPosOne, spatialPosTwo, spatialPosThree,
-				spatialGainOne, spatialGainTwo, spatialGainThree,
-				spatialWidthOne, spatialWidthTwo, spatialWidthThree
-			]);
-
-			con.interpKeys_(#[
-				//tables
-				pulsaret, envelope, frequency,
-				fundamentalFrequency,
-				//masking
-				probabilityMask,
-				//formant
-				formantFrequencyOne, formantFrequencyTwo, formantFrequencyThree,
-				//pan
-				panOne, panTwo, panThree,
-				//amp
-				ampOne, ampTwo, ampThree,
-				//envelope multiplication
-				envelopeMulOne, envelopeMulTwo, envelopeMulThree,
-				//local amplitudes
-				ampLocalOne, ampLocalTwo, ampLocalThree,
-				//fourier
-				fourier,
-				//main (intermediary control)
-				//fundamental
-				fundamentalFrequencyMain,
-				//formants
-				formantFrequencyMainOne, formantFrequencyMainTwo, formantFrequencyMainThree,
-				envelopeMultiplicationMainOne, envelopeMultiplicationMainTwo, envelopeMultiplicationMainThree,
-				panMainOne, panMainTwo, panMainThree,
-				amplitudeOne, amplitudeTwo, amplitudeThree,
-				//ranges
-				pulsaretMin, pulsaretMax,
-				envelopeMin, envelopeMax,
-				frequencyMin, frequencyMax,
-				fundamentalFrequencyMin, fundamentalFrequencyMax,
-				formantFrequencyOneMin, formantFrequencyOneMax,
-				formantFrequencyTwoMin, formantFrequencyTwoMax,
-				formantFrequencyThreeMin, formantFrequencyThreeMax,
-				panOneMin, panOneMax, panTwoMin, panTwoMax, panThreeMin, panThreeMax,
-				ampOneMin, ampOneMax, ampTwoMin, ampTwoMax, ampThreeMin, ampThreeMax,
-				probabilityMin, probabilityMax,
-				envelopeMulOneMin, envelopeMulOneMax,
-				envelopeMulTwoMin, envelopeMulTwoMax,
-				envelopeMulThreeMin, envelopeMulThreeMax,
-				//modulation
-				frequencyModAmount, frequencyModRatio, frequencyModIndex, multiParameterMod,
-				//modulation tables
-				frequencyModAmountTable, frequencyModRatioTable, multiParameterModTable,
-				//ranges
-				frequencyModRatioMin, frequencyModRatioMax,
-				frequencyModAmountMin, frequencyModAmountMax,
-				frequencymultiParameterModMin, multiParameterModMax,
-				//burst
-				burst, rest,
-				//channel
-				channel, channelCenter,
-				//sieve
-				sieveSize, sieveSequence,
-				//probability
-				probability,
-				//train duration
-				trainDuration,
-				//progress slider
-				progressSlider,
-				//scrubber
-				scrubber,
-				//groupOffset
-				groupOffset_1, groupOffset_2, groupOffset_3,
-				//mod
-				modFreq1, modFreq2, modFreq3, modFreq4,
-				modDepth1, modDepth2, modDepth3, modDepth4,
-				modType1, modType2, modType3, modType4,
-				//matrix
-				m00, m01, m02, m03,
-				m10, m11, m12, m13,
-				m20, m21, m22, m23,
-				m30, m31, m32, m33,
-				m40, m41, m42, m43,
-				m50, m51, m52, m53,
-				m60, m61, m62, m63,
-				m70, m71, m72, m73,
-				m80, m81, m82, m83,
-				m90, m91, m92, m93,
-				m100, m101, m102, m103,
-				m110, m111, m112, m113,
-				m120, m121, m122, m123,
-				//spatial control - NEW
-				spatialPosOne, spatialPosTwo, spatialPosThree,
-				spatialGainOne, spatialGainTwo, spatialGainThree,
-				spatialWidthOne, spatialWidthTwo, spatialWidthThree
-			]);
-
+	// Instance data generator - creates CVs for a single pulsar stream instance
+	instanceGenerator { |index|
+		var tableTypeData = (0..2047) / 2048;
+		var tableTypeDataMinMax = [-1, 1];
+		var fourierTypeData = (0..15) / 16;
+
+		// Spatial control data
+		data_spatial[index] = 9.collect { |i|
+			var defVal = [1.0, 1.33, 1.66, 0.5, 0.5, 0.5, 1, 5, 8];
+			var ranges = [
+				[0.1, 1.99], [0.1, 1.99], [0.1, 1.99],  // positions
+				[0.0, 1.0], [0.0, 1.0], [0.0, 1.0],      // gains
+				[1.0, 8.0], [1.0, 8.0], [1.0, 8.0]       // widths
+			];
+			NuPG_Data.makeCV(defVal[i], ranges[i][0], ranges[i][1], 0.001, \lin);
 		};
 
-		^instance
+		// Matrix (4 columns x 13 rows = 52 values)
+		// Accessed as data_matrix[instance][column][row] where col=0-3, row=0-12
+		data_matrix[index] = 4.collect {
+			13.collect {
+				NuPG_Data.makeCV(0, 0, 1, 1, \lin);
+			};
+		};
+
+		// Modulators 1-4
+		data_modulator1[index] = this.prMakeModulatorCV;
+		data_modulator2[index] = this.prMakeModulatorCV;
+		data_modulator3[index] = this.prMakeModulatorCV;
+		data_modulator4[index] = this.prMakeModulatorCV;
+
+		// Table shift
+		data_tableShift[index] = NuPG_Data.makeCV(150, 1, 2048, 1, \lin);
+
+		// Burst mask [burst, rest]
+		data_burstMask[index] = [
+			NuPG_Data.makeCV(1, 1, 2999, 1, \lin),
+			NuPG_Data.makeCV(0, 0, 2998, 1, \lin)
+		];
+
+		// Channel mask [channel, channelCenter]
+		data_channelMask[index] = [
+			NuPG_Data.makeCV(0, 0, 1500, 1, \lin),
+			NuPG_Data.makeCV(1, 0, 1, 1, \lin)
+		];
+
+		// Groups offset
+		data_groupsOffset[index] = 3.collect {
+			NuPG_Data.makeCV(0, 0, 1, 0.001, \lin);
+		};
+
+		// Sieve mask [sieveSize, sieveSequence]
+		data_sieveMask[index] = [
+			NuPG_Data.makeCV(1, 1, 100, 1, \lin),
+			NuPG_Data.makeTableCV((0..99) / 100, 0, 1)
+		];
+
+		// Probability singular
+		data_probabilityMaskSingular[index] = NuPG_Data.makeCV(1, 0.0, 1.0, 0.01, \lin);
+
+		// Main parameters (13 values)
+		data_main[index] = this.prMakeMainCVs;
+
+		// Modulators [fmAmount, fmRatio, multiParam]
+		data_modulators[index] = [
+			NuPG_Data.makeCV(0, 0.0, 16.0, 0.001, \lin),
+			NuPG_Data.makeCV(0, 0.0, 16.0, 0.001, \lin),
+			NuPG_Data.makeCV(0, 0.0, 2.0, 0.001, \lin)
+		];
+
+		// Table CVs
+		data_pulsaret[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_envelope[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_frequency[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_fourier[index] = NuPG_Data.makeTableCV(fourierTypeData, -1, 1);
+		data_fundamentalFrequency[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_probabilityMask[index] = NuPG_Data.makeTableCV((0..2047).collect{1}, -1, 1);
+
+		// Formant frequencies
+		data_formantFrequencyOne[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_formantFrequencyTwo[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_formantFrequencyThree[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+
+		// Pan
+		data_panOne[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_panTwo[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_panThree[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+
+		// Amp
+		data_ampOne[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_ampTwo[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_ampThree[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+
+		// Envelope multiplication tables
+		data_envelopeMulOne[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_envelopeMulTwo[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_envelopeMulThree[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+
+		// Modulation tables
+		data_modulationAmount[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_modulationRatio[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+		data_multiParamModulation[index] = NuPG_Data.makeTableCV(tableTypeData, -1, 1);
+
+		// Max/Min ranges
+		data_pulsaret_maxMin[index] = this.prMakeRangeCV(1.0, -1.0, -1, 1);
+		data_envelope_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
+		data_frequency_maxMin[index] = this.prMakeRangeCV(1, 0.0, 0, 1);
+		data_fundamentalFrequency_maxMin[index] = this.prMakeRangeCV(10, 0, 0, 20);
+		data_formantFrequencyOne_maxMin[index] = this.prMakeRangeCV(10, 0.01, 0, 10);
+		data_formantFrequencyTwo_maxMin[index] = this.prMakeRangeCV(10, 0.01, 0, 10);
+		data_formantFrequencyThree_maxMin[index] = this.prMakeRangeCV(10, 0.01, 0, 10);
+		data_panOne_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
+		data_panTwo_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
+		data_panThree_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
+		data_ampOne_maxMin[index] = this.prMakeRangeCV(1, 0, 0, 1);
+		data_ampTwo_maxMin[index] = this.prMakeRangeCV(1, 0, 0, 1);
+		data_ampThree_maxMin[index] = this.prMakeRangeCV(1, 0, 0, 1);
+		data_probabilityMask_maxMin[index] = this.prMakeRangeCV(1, 0, 0, 1);
+		data_envelopeMulOne_maxMin[index] = this.prMakeRangeCV(1, 0, 0, 1);
+		data_envelopeMulTwo_maxMin[index] = this.prMakeRangeCV(1, 0, 0, 1);
+		data_envelopeMulThree_maxMin[index] = this.prMakeRangeCV(1, 0, 0, 1);
+		data_modulationAmount_maxMin[index] = this.prMakeRangeCV(1.0, 1.0, 0.0, 10);
+		data_modulationRatio_maxMin[index] = this.prMakeRangeCV(1.0, 1.0, 0.0, 10);
+		data_mulParamModulation_maxMin[index] = this.prMakeRangeCV(1.0, 1.0, 0.0, 10);
+
+		// Train duration and progress
+		data_trainDuration[index] = NuPG_Data.makeCV(6.0, 0.3, 120.0, 0.1, \lin);
+		data_progressSlider[index] = NuPG_Data.makeCV(1, 1, 2048, 0.01, \lin);
+
+		// Scrubber
+		data_scrubber[index] = NuPG_Data.makeCV(0, 0, 2047, 1, \lin);
+	}
+
+	// Private helper methods
+	prMakeModulatorCV {
+		^[
+			NuPG_Data.makeCV(0, 0, 4, 1, \lin),        // type
+			NuPG_Data.makeCV(0.5, 0.001, 150.0, 0.001, \lin), // freq
+			NuPG_Data.makeCV(0, 0, 10, 1, \lin)        // depth
+		];
+	}
+
+	prMakeMainCVs {
+		var defVal = [1, 15, 15, 15, 1, 1, 1, 0, 0, 0, 0.5, 0.5, 0.5];
+		var ranges = [
+			[1.0, 3000],    // fundamental
+			[0.05, 16.0],   // formant 1
+			[0.05, 16.0],   // formant 2
+			[0.05, 16.0],   // formant 3
+			[0.0, 2],       // envMult 1
+			[0.0, 2],       // envMult 2
+			[0.01, 2],      // envMult 3
+			[-1.0, 1.0],    // pan 1
+			[-1.0, 1.0],    // pan 2
+			[-1.0, 1.0],    // pan 3
+			[0.0, 1.0],     // amp 1
+			[0.0, 1.0],     // amp 2
+			[0.0, 1.0]      // amp 3
+		];
+		var warp = [\exp, \exp, \exp, \exp, \lin, \lin, \lin, \lin, \lin, \lin, \lin, \lin, \lin];
+
+		^13.collect { |i|
+			NuPG_Data.makeCV(defVal[i], ranges[i][0], ranges[i][1], 0.001, warp[i]);
+		};
+	}
+
+	prMakeRangeCV { |defMin, defMax, min, max|
+		^[
+			NuPG_Data.makeCV(defMin, min, max, 0.01, \lin),
+			NuPG_Data.makeCV(defMax, min, max, 0.01, \lin)
+		];
+	}
+
+	// =========================================
+	// PRESET MANAGEMENT (replacing Conductor presets)
+	// =========================================
+
+	storePreset { |slot|
+		presets[slot] = this.prSerializeState;
+		("Preset stored at slot:" + slot).postln;
+	}
+
+	recallPreset { |slot|
+		var state = presets[slot];
+		if (state.notNil) {
+			this.prDeserializeState(state);
+			currentPreset = slot;
+			("Preset recalled from slot:" + slot).postln;
+		} {
+			("No preset at slot:" + slot).postln;
+		};
+	}
+
+	// Interpolate between two presets
+	interpolatePresets { |slotA, slotB, blend|
+		var stateA = presets[slotA];
+		var stateB = presets[slotB];
+
+		if (stateA.notNil and: stateB.notNil) {
+			this.prInterpolateStates(stateA, stateB, blend);
+		} {
+			"Cannot interpolate: one or both presets missing".postln;
+		};
+	}
+
+	// Save presets to file
+	savePresetsToFile { |path|
+		var file = File(path, "w");
+		file.write(presets.asCompileString);
+		file.close;
+		("Presets saved to:" + path).postln;
+	}
+
+	// Load presets from file
+	loadPresetsFromFile { |path|
+		var file = File(path, "r");
+		var content = file.readAllString;
+		file.close;
+		presets = content.interpret;
+		("Presets loaded from:" + path).postln;
 	}
 
 	presetsNumber {
-
-		^this.conductor.preset.presets.size
+		^presets.size;
 	}
 
+	// =========================================
+	// SERIALIZATION (for presets)
+	// =========================================
+
+	prSerializeState {
+		var state = Dictionary.new;
+
+		// Serialize all CVs by collecting their values
+		state[\data_main] = data_main.collect { |arr|
+			arr.collect { |cv| cv.value }
+		};
+
+		state[\data_pulsaret] = data_pulsaret.collect { |cv| cv.value };
+		state[\data_envelope] = data_envelope.collect { |cv| cv.value };
+		state[\data_frequency] = data_frequency.collect { |cv| cv.value };
+		state[\data_fundamentalFrequency] = data_fundamentalFrequency.collect { |cv| cv.value };
+		state[\data_probabilityMask] = data_probabilityMask.collect { |cv| cv.value };
+
+		state[\data_formantFrequencyOne] = data_formantFrequencyOne.collect { |cv| cv.value };
+		state[\data_formantFrequencyTwo] = data_formantFrequencyTwo.collect { |cv| cv.value };
+		state[\data_formantFrequencyThree] = data_formantFrequencyThree.collect { |cv| cv.value };
+
+		state[\data_panOne] = data_panOne.collect { |cv| cv.value };
+		state[\data_panTwo] = data_panTwo.collect { |cv| cv.value };
+		state[\data_panThree] = data_panThree.collect { |cv| cv.value };
+
+		state[\data_ampOne] = data_ampOne.collect { |cv| cv.value };
+		state[\data_ampTwo] = data_ampTwo.collect { |cv| cv.value };
+		state[\data_ampThree] = data_ampThree.collect { |cv| cv.value };
+
+		state[\data_envelopeMulOne] = data_envelopeMulOne.collect { |cv| cv.value };
+		state[\data_envelopeMulTwo] = data_envelopeMulTwo.collect { |cv| cv.value };
+		state[\data_envelopeMulThree] = data_envelopeMulThree.collect { |cv| cv.value };
+
+		state[\data_modulators] = data_modulators.collect { |arr|
+			arr.collect { |cv| cv.value }
+		};
+
+		state[\data_spatial] = data_spatial.collect { |arr|
+			arr.collect { |cv| cv.value }
+		};
+
+		state[\data_matrix] = data_matrix.collect { |arr|
+			arr.collect { |row| row.collect { |cv| cv.value } }
+		};
+
+		// Range CVs
+		state[\data_pulsaret_maxMin] = data_pulsaret_maxMin.collect { |arr| arr.collect { |cv| cv.value } };
+		state[\data_envelope_maxMin] = data_envelope_maxMin.collect { |arr| arr.collect { |cv| cv.value } };
+		state[\data_fundamentalFrequency_maxMin] = data_fundamentalFrequency_maxMin.collect { |arr| arr.collect { |cv| cv.value } };
+
+		state[\data_burstMask] = data_burstMask.collect { |arr| arr.collect { |cv| cv.value } };
+		state[\data_channelMask] = data_channelMask.collect { |arr| arr.collect { |cv| cv.value } };
+		state[\data_sieveMask] = data_sieveMask.collect { |arr|
+			[arr[0].value, arr[1].value]
+		};
+
+		state[\data_probabilityMaskSingular] = data_probabilityMaskSingular.collect { |cv| cv.value };
+		state[\data_trainDuration] = data_trainDuration.collect { |cv| cv.value };
+		state[\data_scrubber] = data_scrubber.collect { |cv| cv.value };
+
+		^state;
+	}
+
+	prDeserializeState { |state|
+		// Restore all CVs from serialized state
+		state[\data_main].do { |arr, i|
+			arr.do { |val, j|
+				data_main[i][j].value = val;
+			};
+		};
+
+		state[\data_pulsaret].do { |val, i| data_pulsaret[i].value = val };
+		state[\data_envelope].do { |val, i| data_envelope[i].value = val };
+		state[\data_frequency].do { |val, i| data_frequency[i].value = val };
+		state[\data_fundamentalFrequency].do { |val, i| data_fundamentalFrequency[i].value = val };
+		state[\data_probabilityMask].do { |val, i| data_probabilityMask[i].value = val };
+
+		state[\data_formantFrequencyOne].do { |val, i| data_formantFrequencyOne[i].value = val };
+		state[\data_formantFrequencyTwo].do { |val, i| data_formantFrequencyTwo[i].value = val };
+		state[\data_formantFrequencyThree].do { |val, i| data_formantFrequencyThree[i].value = val };
+
+		state[\data_panOne].do { |val, i| data_panOne[i].value = val };
+		state[\data_panTwo].do { |val, i| data_panTwo[i].value = val };
+		state[\data_panThree].do { |val, i| data_panThree[i].value = val };
+
+		state[\data_ampOne].do { |val, i| data_ampOne[i].value = val };
+		state[\data_ampTwo].do { |val, i| data_ampTwo[i].value = val };
+		state[\data_ampThree].do { |val, i| data_ampThree[i].value = val };
+
+		state[\data_envelopeMulOne].do { |val, i| data_envelopeMulOne[i].value = val };
+		state[\data_envelopeMulTwo].do { |val, i| data_envelopeMulTwo[i].value = val };
+		state[\data_envelopeMulThree].do { |val, i| data_envelopeMulThree[i].value = val };
+
+		state[\data_modulators].do { |arr, i|
+			arr.do { |val, j|
+				data_modulators[i][j].value = val;
+			};
+		};
+
+		state[\data_spatial].do { |arr, i|
+			arr.do { |val, j|
+				data_spatial[i][j].value = val;
+			};
+		};
+
+		state[\data_burstMask].do { |arr, i|
+			arr.do { |val, j| data_burstMask[i][j].value = val };
+		};
+
+		state[\data_channelMask].do { |arr, i|
+			arr.do { |val, j| data_channelMask[i][j].value = val };
+		};
+
+		state[\data_probabilityMaskSingular].do { |val, i|
+			data_probabilityMaskSingular[i].value = val;
+		};
+
+		state[\data_trainDuration].do { |val, i| data_trainDuration[i].value = val };
+		state[\data_scrubber].do { |val, i| data_scrubber[i].value = val };
+	}
+
+	prInterpolateStates { |stateA, stateB, blend|
+		// Interpolate numeric values between two states
+		stateA[\data_main].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_main][i][j];
+				data_main[i][j].value = valA.blend(valB, blend);
+			};
+		};
+
+		// Interpolate table values
+		stateA[\data_pulsaret].do { |valA, i|
+			var valB = stateB[\data_pulsaret][i];
+			data_pulsaret[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		stateA[\data_envelope].do { |valA, i|
+			var valB = stateB[\data_envelope][i];
+			data_envelope[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		stateA[\data_frequency].do { |valA, i|
+			var valB = stateB[\data_frequency][i];
+			data_frequency[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		stateA[\data_fundamentalFrequency].do { |valA, i|
+			var valB = stateB[\data_fundamentalFrequency][i];
+			data_fundamentalFrequency[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		stateA[\data_probabilityMask].do { |valA, i|
+			var valB = stateB[\data_probabilityMask][i];
+			data_probabilityMask[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Formant tables
+		stateA[\data_formantFrequencyOne].do { |valA, i|
+			var valB = stateB[\data_formantFrequencyOne][i];
+			data_formantFrequencyOne[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_formantFrequencyTwo].do { |valA, i|
+			var valB = stateB[\data_formantFrequencyTwo][i];
+			data_formantFrequencyTwo[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_formantFrequencyThree].do { |valA, i|
+			var valB = stateB[\data_formantFrequencyThree][i];
+			data_formantFrequencyThree[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Pan tables
+		stateA[\data_panOne].do { |valA, i|
+			var valB = stateB[\data_panOne][i];
+			data_panOne[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_panTwo].do { |valA, i|
+			var valB = stateB[\data_panTwo][i];
+			data_panTwo[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_panThree].do { |valA, i|
+			var valB = stateB[\data_panThree][i];
+			data_panThree[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Amp tables
+		stateA[\data_ampOne].do { |valA, i|
+			var valB = stateB[\data_ampOne][i];
+			data_ampOne[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_ampTwo].do { |valA, i|
+			var valB = stateB[\data_ampTwo][i];
+			data_ampTwo[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_ampThree].do { |valA, i|
+			var valB = stateB[\data_ampThree][i];
+			data_ampThree[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Envelope mult tables
+		stateA[\data_envelopeMulOne].do { |valA, i|
+			var valB = stateB[\data_envelopeMulOne][i];
+			data_envelopeMulOne[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_envelopeMulTwo].do { |valA, i|
+			var valB = stateB[\data_envelopeMulTwo][i];
+			data_envelopeMulTwo[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+		stateA[\data_envelopeMulThree].do { |valA, i|
+			var valB = stateB[\data_envelopeMulThree][i];
+			data_envelopeMulThree[i].value = this.prBlendArrays(valA, valB, blend);
+		};
+
+		// Modulators
+		stateA[\data_modulators].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_modulators][i][j];
+				data_modulators[i][j].value = valA.blend(valB, blend);
+			};
+		};
+
+		// Spatial
+		stateA[\data_spatial].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_spatial][i][j];
+				data_spatial[i][j].value = valA.blend(valB, blend);
+			};
+		};
+
+		// Burst mask
+		stateA[\data_burstMask].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_burstMask][i][j];
+				data_burstMask[i][j].value = valA.blend(valB, blend).round;
+			};
+		};
+
+		// Channel mask
+		stateA[\data_channelMask].do { |arr, i|
+			arr.do { |valA, j|
+				var valB = stateB[\data_channelMask][i][j];
+				data_channelMask[i][j].value = valA.blend(valB, blend).round;
+			};
+		};
+
+		// Probability singular
+		stateA[\data_probabilityMaskSingular].do { |valA, i|
+			var valB = stateB[\data_probabilityMaskSingular][i];
+			data_probabilityMaskSingular[i].value = valA.blend(valB, blend);
+		};
+
+		// Train duration
+		stateA[\data_trainDuration].do { |valA, i|
+			var valB = stateB[\data_trainDuration][i];
+			data_trainDuration[i].value = valA.blend(valB, blend);
+		};
+	}
+
+	// Helper to blend arrays element-wise
+	prBlendArrays { |arrA, arrB, blend|
+		if (arrA.isArray and: arrB.isArray) {
+			^arrA.collect { |valA, i|
+				valA.blend(arrB[i], blend)
+			};
+		} {
+			^arrA.blend(arrB, blend);
+		};
+	}
+
+	// Timed interpolation between presets with easing
+	morphPresets { |slotA, slotB, duration = 5.0, curve = \linear|
+		var stateA = presets[slotA];
+		var stateB = presets[slotB];
+
+		if (stateA.isNil or: stateB.isNil) {
+			"Cannot morph: one or both presets missing".warn;
+			^nil;
+		};
+
+		^Routine({
+			var steps = (duration * 30).asInteger;  // 30 fps
+			var dt = duration / steps;
+
+			steps.do { |i|
+				var t = (i + 1) / steps;
+				var blend = this.prApplyEasing(t, curve);
+				this.prInterpolateStates(stateA, stateB, blend);
+				dt.wait;
+			};
+
+			currentPreset = slotB;
+			("Morph complete to preset:" + slotB).postln;
+		}).play(AppClock);
+	}
+
+	// Apply easing curve to interpolation
+	prApplyEasing { |t, curve|
+		^switch(curve,
+			\linear, { t },
+			\sine, { (1 - cos(t * pi)) / 2 },
+			\quad, { t * t },
+			\cubic, { t * t * t },
+			\quart, { t * t * t * t },
+			\expo, { if (t == 0) { 0 } { 2.pow(10 * (t - 1)) } },
+			\circ, { 1 - sqrt(1 - (t * t)) },
+			\back, {
+				var s = 1.70158;
+				t * t * ((s + 1) * t - s);
+			},
+			\elastic, {
+				if (t == 0) { 0 } {
+					if (t == 1) { 1 } {
+						var p = 0.3;
+						var s = p / 4;
+						2.pow(-10 * t) * sin((t - s) * 2pi / p) + 1;
+					};
+				};
+			},
+			// Default: linear
+			{ t }
+		);
+	}
 }
 
