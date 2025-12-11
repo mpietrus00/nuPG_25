@@ -92,66 +92,96 @@ NuPG_GUI_Presets_View {
 			presetMenu[i].items = fileNames;
 			presetMenu[i].action_({|item|
 				var menuItem = fileNames[presetMenu[i].value];
-			data.conductor[(\con_ ++ i).asSymbol].load(defaultPresetPath ++ menuItem);
+				var presetMgr = data.conductor[(\con_ ++ i).asSymbol];
+				presetMgr.load(defaultPresetPath ++ menuItem);
 				pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
 				envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
-			//(defaultPresetPath ++ menuItem).postln;
-			presetSize.value = data.conductor[(\con_ ++ i).asSymbol].preset.presets.size;
+				// Update preset size and reset to first preset (index 0)
+				presetSize[i].value = presetMgr.preset.presets.size;
+				currentPreset[i].value = 0;
+				presetMgr.preset.presetCV.value = 0;
 		});
 			presetSize[i] = guiDefinitions.nuPGNumberBox(15, 30);
 
 			addPreset[i] = guiDefinitions.nuPGButton([["+"]], 15, 20);
 			addPreset[i].action_{
-			data.conductor[(\con_ ++ i).asSymbol].preset.addPreset;
-			data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value =
-				data.conductor[(\con_ ++ i).asSymbol].preset.presets.size - 1;
-				presetSize[i].value = data.conductor[(\con_ ++ i).asSymbol].preset.presets.size;
+				var presetMgr = data.conductor[(\con_ ++ i).asSymbol].preset;
+				var newIdx;
+				presetMgr.addPreset;
+				// Update to show the newly added preset (last in list)
+				newIdx = presetMgr.presets.size - 1;
+				presetMgr.presetCV.value = newIdx;
+				currentPreset[i].value = newIdx;
+				presetSize[i].value = presetMgr.presets.size;
 		};
 			removePreset[i] = guiDefinitions.nuPGButton([["-"]], 15, 20);
 			removePreset[i].action_{
-			data.conductor[(\con_ ++ i).asSymbol].preset.removePreset(
-					data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value);
-			data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value =
-				data.conductor[(\con_ ++ i).asSymbol].preset.presets.size - 1;
-				presetSize[i].value = data.conductor[(\con_ ++ i).asSymbol].preset.presets.size;
+				var presetMgr = data.conductor[(\con_ ++ i).asSymbol].preset;
+				var currentIdx = presetMgr.presetCV.value.asInteger;
+				var newIdx;
+				// Only remove if we have presets
+				if (presetMgr.presets.size > 0) {
+					presetMgr.removePreset(currentIdx);
+					// Update to last preset or 0 if empty
+					newIdx = max(0, presetMgr.presets.size - 1);
+					presetMgr.presetCV.value = newIdx;
+					currentPreset[i].value = newIdx;
+					presetSize[i].value = presetMgr.presets.size;
+				} {
+					"No presets to remove".postln;
+				};
 		};
 			previousPreset[i] = guiDefinitions.nuPGButton([["<"]], 15, 20);
 			previousPreset[i].action_{
-			data.conductor[(\con_ ++ i).asSymbol].preset.set(
-					data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value - 1);
-			data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value =
-			data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value - 1;
-				pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
-				envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
+				var presetMgr = data.conductor[(\con_ ++ i).asSymbol].preset;
+				var currentIdx = presetMgr.presetCV.value.asInteger;
+				var newIdx = currentIdx - 1;
+				// Bounds check - don't go below 0
+				if (newIdx >= 0 and: { presetMgr.presets.size > 0 }) {
+					presetMgr.set(newIdx);
+					currentPreset[i].value = newIdx;
+					pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
+					envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
+				} {
+					"Already at first preset".postln;
+				};
 		};
 			nextPreset[i] = guiDefinitions.nuPGButton([[">"]], 15, 20);
 			nextPreset[i].action_{
-			data.conductor[(\con_ ++ i).asSymbol].preset.set(
-					data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value + 1);
-			data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value =
-			data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.value + 1;
-				pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
-				envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
+				var presetMgr = data.conductor[(\con_ ++ i).asSymbol].preset;
+				var currentIdx = presetMgr.presetCV.value.asInteger;
+				var newIdx = currentIdx + 1;
+				// Bounds check - don't go beyond presets.size - 1
+				if (newIdx < presetMgr.presets.size) {
+					presetMgr.set(newIdx);
+					currentPreset[i].value = newIdx;
+					pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
+					envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
+				} {
+					"Already at last preset".postln;
+				};
 		};
 			currentPreset[i] = guiDefinitions.nuPGNumberBox(15, 30);
-			currentPreset[i].action_{};
-			currentPreset[i].keyDownAction_({arg view,char,modifiers,unicode,keycode;
-			if(keycode == 36,
-				{
+			currentPreset[i].action_{|num|
+				var presetMgr = data.conductor[(\con_ ++ i).asSymbol].preset;
+				var idx = num.value.asInteger;
+				// Bounds check before recalling
+				if (idx >= 0 and: { idx < presetMgr.presets.size }) {
+					presetMgr.set(idx);
 					pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
-				envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
-
-				},
-				{});
-			if(keycode == 76,
-				{
-						pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
-				envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
-
-				},
-				{});
-		});
-
+					envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
+				} {
+					("Invalid preset index:" + idx + "- valid range: 0 to" + (presetMgr.presets.size - 1)).postln;
+					// Reset to current valid value
+					num.value = presetMgr.presetCV.value;
+				};
+			};
+			// Connect presetCV to numberbox so it auto-updates when preset changes
+			data.conductor[(\con_ ++ i).asSymbol].preset.presetCV.addDependant({ |cv, what, val|
+				if (what == \value) {
+					defer { currentPreset[i].value = val };
+				};
+			});
 
 			interpolationFromPreset[i] = guiDefinitions.nuPGNumberBox(15, 30);
 			interpolationFromPreset[i].action_{};
