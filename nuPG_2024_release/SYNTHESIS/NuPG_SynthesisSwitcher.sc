@@ -115,6 +115,12 @@ NuPG_SynthesisSwitcher {
 	prSwitchTo { |mode|
 		var oldSynth = activeSynth;
 		var newSynth, newMode;
+		var wasPlaying;
+
+		// Check if old synths were playing
+		wasPlaying = numInstances.collect { |i|
+			oldSynth.trainInstances[i].isPlaying;
+		};
 
 		// Determine new synth
 		if (mode == \standard) {
@@ -146,6 +152,13 @@ NuPG_SynthesisSwitcher {
 		// Map data controls to new synth
 		if (data.notNil) {
 			this.prMapControls;
+		};
+
+		// Play new synths if old ones were playing
+		numInstances.do { |i|
+			if (wasPlaying[i] == true) {
+				newSynth.trainInstances[i].play;
+			};
 		};
 
 		("Switched to" + mode + "synthesis").postln;
