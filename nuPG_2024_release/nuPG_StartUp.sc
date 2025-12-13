@@ -858,8 +858,10 @@ NuPG_StartUp {
 			], n: instances);
 
 		}).doWhenBooted({
+	">>> doWhenBooted block executing <<<".postln;
 	// Setup the synth switcher after server boots
 	control.setupSwitcher(data, pulsaret_buffers, envelope_buffers, frequency_buffers, channels);
+	"Synthesis switcher initialized".postln;
 
 	instances.collect{|i|
 		synthesis.trainInstances[i].set(\pulsaret_buffer, pulsaret_buffers[i].bufnum);
