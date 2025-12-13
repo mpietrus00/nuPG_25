@@ -906,6 +906,10 @@ s.waitForBoot({
 	);
 })
 .doWhenBooted({
+	// Setup the synth switcher for the control GUI
+	~control.setupSwitcher(~data, ~pulsaret_buffers, ~envelope_buffers, ~frequency_buffers, ~numChannels);
+	"Synthesis switcher initialized".postln;
+
 	~numberOfInstances.collect{|i|
 		// Standard synthesis buffers
 		~synthesis.trainInstances[i].set(\pulsaret_buffer, ~pulsaret_buffers[i].bufnum);
