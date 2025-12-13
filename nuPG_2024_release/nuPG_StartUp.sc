@@ -856,10 +856,11 @@ NuPG_StartUp {
 				multiparameterModulationTable, multiparameterModulationTableEditor,
 				groupsOffest, matrixMod, modulator1, modulator2, modulator3, modulator4
 			], n: instances);
-			// Setup the synth switcher in control view
-			control.setupSwitcher(data, pulsaret_buffers, envelope_buffers, frequency_buffers, channels);
 
 		}).doWhenBooted({
+	// Setup the synth switcher after server boots
+	control.setupSwitcher(data, pulsaret_buffers, envelope_buffers, frequency_buffers, channels);
+
 	instances.collect{|i|
 		synthesis.trainInstances[i].set(\pulsaret_buffer, pulsaret_buffers[i].bufnum);
 		synthesis.trainInstances[i].set(\envelope_buffer, envelope_buffers[i].bufnum);
