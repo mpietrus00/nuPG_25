@@ -7,11 +7,13 @@ NuPG_GUI_SynthSwitcher {
 	var <>stack;
 	var <>classicButton, <>oversamplingButton;
 	var <>switcher;  // Reference to NuPG_SynthesisSwitcher
+	var <>numInstances;
 
 	draw {|name, dimensions, synthSwitcher, n = 1|
 		var view, viewLayout;
 		var guiDefinitions = NuPG_GUI_Definitions;
 
+		numInstances = n;
 		// Store reference to synthesis switcher
 		switcher = synthSwitcher;
 
@@ -48,12 +50,7 @@ NuPG_GUI_SynthSwitcher {
 			// Start with Classic selected (value 0 = highlighted state)
 			classicButton[i].value = 0;
 			classicButton[i].action_{|btn|
-				if (switcher.notNil) {
-					switcher.useStandard;
-					// Update button states
-					classicButton[i].value = 0;
-					oversamplingButton[i].value = 0;
-				};
+				this.switchToClassic;
 			};
 
 			// Oversampling button
@@ -64,17 +61,7 @@ NuPG_GUI_SynthSwitcher {
 			);
 			oversamplingButton[i].value = 0;
 			oversamplingButton[i].action_{|btn|
-				if (switcher.notNil) {
-					if (switcher.oscOSAvailable) {
-						switcher.useOscOS;
-						// Update button states
-						classicButton[i].value = 1;
-						oversamplingButton[i].value = 1;
-					} {
-						"OscOS not available - install OversamplingOscillators quark".warn;
-						oversamplingButton[i].value = 0;
-					};
-				};
+				this.switchToOversampling;
 			};
 
 			// Place buttons on layout
@@ -91,10 +78,39 @@ NuPG_GUI_SynthSwitcher {
 		^window.front;
 	}
 
+	// Setup the switcher with references (call after draw)
+	setupSwitcher {|data, pulsaretBufs, envelopeBufs, freqBufs, numChan = 2|
+		switcher = NuPG_SynthesisSwitcher.new;
+		switcher.setup(numInstances, numChan, data, pulsaretBufs, envelopeBufs, freqBufs);
+		"Synthesis switcher initialized".postln;
+	}
+
+	switchToClassic {
+		if (switcher.notNil) {
+			switcher.useStandard;
+			this.updateButtonStates;
+		} {
+			"Switcher not setup - use setupSwitcher method first".warn;
+		};
+	}
+
+	switchToOversampling {
+		if (switcher.notNil) {
+			if (switcher.oscOSAvailable) {
+				switcher.useOscOS;
+				this.updateButtonStates;
+			} {
+				"OscOS not available - install OversamplingOscillators quark".warn;
+			};
+		} {
+			"Switcher not setup - use setupSwitcher method first".warn;
+		};
+	}
+
 	// Update button states to reflect current synth mode
 	updateButtonStates {
 		if (switcher.notNil) {
-			classicButton.do{|btn, i|
+			numInstances.do{|i|
 				if (switcher.mode == \standard) {
 					classicButton[i].value = 0;
 					oversamplingButton[i].value = 0;
