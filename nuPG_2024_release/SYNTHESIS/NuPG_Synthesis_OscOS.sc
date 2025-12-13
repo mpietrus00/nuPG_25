@@ -523,26 +523,20 @@ NuPG_Synthesis_OscOS {
 				);
 
 				// Envelope: window using one-shot phase
-				envelope_One = OscOS.ar(
-					envelope_buffer,
-					windowPhase_One,
-					oversample,
-					0
-				);
+				// Use BufRd for phase-based reading (OscOS expects frequency, not phase)
+				// windowPhase is 0-1, multiply by buffer frames for sample position
+				// interpolation: 4 = cubic for smooth envelope
+				envelope_One = BufRd.ar(1, envelope_buffer,
+					windowPhase_One * BufFrames.ir(envelope_buffer),
+					loop: 0, interpolation: 4);
 
-				envelope_Two = OscOS.ar(
-					envelope_buffer,
-					windowPhase_Two,
-					oversample,
-					0
-				);
+				envelope_Two = BufRd.ar(1, envelope_buffer,
+					windowPhase_Two * BufFrames.ir(envelope_buffer),
+					loop: 0, interpolation: 4);
 
-				envelope_Three = OscOS.ar(
-					envelope_buffer,
-					windowPhase_Three,
-					oversample,
-					0
-				);
+				envelope_Three = BufRd.ar(1, envelope_buffer,
+					windowPhase_Three * BufFrames.ir(envelope_buffer),
+					loop: 0, interpolation: 4);
 
 				// ============================================================
 				// OUTPUT MIX
