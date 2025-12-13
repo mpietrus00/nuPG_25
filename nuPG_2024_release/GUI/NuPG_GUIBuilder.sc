@@ -26,6 +26,7 @@ NuPG_GUIBuilder {
 	var <>groupsControl, <>trainControl, <>fourier, <>sieves, <>masking, <>modulators;
 	var <>groupsOffest, <>matrixMod, <>modulator1, <>modulator2, <>modulator3, <>modulator4;
 	var <>presets, <>control, <>extensions, <>progressSlider, <>scrubber, <>record;
+	var <>synthSwitcherView;
 
 	*new { |data, synthesis, instances, tablesPath|
 		^super.new.init(data, synthesis, instances, tablesPath);
@@ -58,6 +59,7 @@ NuPG_GUIBuilder {
 		this.buildMasking;
 		this.buildModulators;
 		this.buildPresets;
+		this.buildSynthSwitcher;
 		this.buildControlView;
 		this.buildExtensionsView;
 	}
@@ -689,6 +691,14 @@ NuPG_GUIBuilder {
 		};
 	}
 
+	// Synth switcher view (Classic/Oversampling)
+	buildSynthSwitcher {
+		synthSwitcherView = NuPG_GUI_SynthSwitcher.new;
+		// Pass the synthesis switcher if available
+		synthSwitcherView.draw("_synth", guiDefinitions.synthSwitcherViewDimensions,
+			synthSwitcher: synthesis, n: instances);
+	}
+
 	// Control view (main navigation)
 	buildControlView {
 		control = NuPG_GUI_Control_View.new;
@@ -701,7 +711,7 @@ NuPG_GUIBuilder {
 			probabilityTableEditor, fundamentalTableEditor, formantOneTableEditor, formantTwoTableEditor, formantThreeTableEditor,
 			envelopeMult_One_Editor, envelopeMult_Two_Editor, envelopeMult_Three_Editor,
 			panOneTable_Editor, panTwoTable_Editor, panThreeTable_Editor,
-			ampOneTable_Editor, ampTwoTable_Editor, ampThreeTable_Editor, presets,
+			ampOneTable_Editor, ampTwoTable_Editor, ampThreeTable_Editor, presets, synthSwitcherView,
 			modulationTable, modulationTableEditor, modulationRatioTable, modulationRatioEditor,
 			multiparameterModulationTable, multiparameterModulationTableEditor,
 			groupsOffest, matrixMod, modulator1, modulator2, modulator3, modulator4

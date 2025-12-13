@@ -383,8 +383,21 @@ NuPG_GUI_Definitions {
 		var dimensions = Rect(
 			left: Window.screenBounds.left + 320,  //position from left of the screen
 			top: Window.screenBounds.top + 300,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 140 //height of the view
+			width: 250,  //width of the view
+			height: 120 //height of the view
+		);
+
+		^dimensions;
+	}
+
+	//synth switcher window dimensions
+	*synthSwitcherViewDimensions {
+
+		var dimensions = Rect(
+			left: Window.screenBounds.left + 320,  //position from left of the screen
+			top: Window.screenBounds.top + 425,  //position from top of the screen
+			width: 250,  //width of the view
+			height: 45 //height of the view
 		);
 
 		^dimensions;
