@@ -538,6 +538,65 @@ NuPG_GUI_Definitions {
 		^table;
 	}
 
+	// Table view with grid background for visual reference
+	*tableViewWithGrid {
+		var container, background, table;
+
+		// Container using StackLayout to layer views
+		container = View().layout_(StackLayout().mode_(\stackAll));
+
+		// Background with grid lines
+		background = UserView().drawFunc_({ |v|
+			var bounds = v.bounds;
+			var w = bounds.width;
+			var h = bounds.height;
+
+			// White background
+			Pen.fillColor = Color.white;
+			Pen.fillRect(Rect(0, 0, w, h));
+
+			// Horizontal center line (zero crossing) - darker
+			Pen.strokeColor = Color.gray(0.65);
+			Pen.width = 1;
+			Pen.line(Point(0, h * 0.5), Point(w, h * 0.5));
+			Pen.stroke;
+
+			// Horizontal quarter lines - lighter
+			Pen.strokeColor = Color.gray(0.85);
+			Pen.width = 1;
+			[0.25, 0.75].do { |y|
+				Pen.line(Point(0, h * y), Point(w, h * y));
+			};
+			Pen.stroke;
+
+			// Vertical quarter divisions
+			Pen.strokeColor = Color.gray(0.88);
+			[0.25, 0.5, 0.75].do { |x|
+				Pen.line(Point(w * x, 0), Point(w * x, h));
+			};
+			Pen.stroke;
+		});
+
+		// MultiSlider with transparent background
+		table = MultiSliderView()
+		.startIndex_(false)
+		.valueThumbSize_(1)
+		.drawLines_(true)
+		.drawRects_(false)
+		.editable_(true)
+		.background_(Color.clear)
+		.strokeColor_(this.black)
+		.elasticMode_(1)
+		.setProperty(\showIndex, true);
+
+		// Add background first, then table on top
+		container.layout.add(background);
+		container.layout.add(table);
+
+		// Return association: container for layout, table for data binding
+		^(container: container, table: table);
+	}
+
 	//slider view definition
 	*sliderView {|width, height|
 
