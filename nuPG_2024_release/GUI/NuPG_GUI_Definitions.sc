@@ -14,12 +14,13 @@ NuPG_GUI_Definitions {
 			columns: (
 				col0: 0,      // Main tables column
 				col1: 305,    // Control/presets column
-				col2: 630,    // Group 1 tables (was 615)
-				col3: 935,    // Group 2 tables (was 920)
-				col4: 1220,   // Group 3 tables / sieve / modMatrix
+				col2: 615,    // Group 1 tables
+				col3: 920,    // Group 2 tables
+				col4: 1225,   // Group 3 tables
+				colSieve: 1220,   // Sieve / modMatrix (slightly offset)
 				col5: 1305,   // Masking control / fourier
 				col6: 1425,   // Individual modulators
-				col7: 1545    // Modulators column
+				col7: 1530    // Modulators column
 			),
 
 			// Row Y positions
@@ -92,13 +93,15 @@ NuPG_GUI_Definitions {
 				envelopeMultTwo: [\col3, \row5, \tableSmall],
 				formantTwo: [\col3, \row6, \tableSmall],
 
-				// Column 4: Group 3 tables / sieve / modMatrix
+				// Column 4: Group 3 tables
 				ampThree: [\col4, \row0, \tableSmall],
 				panThree: [\col4, \row2, \tableSmall],
 				envelopeMultThree: [\col4, \row5, \tableSmall],
 				formantThree: [\col4, \row6, \tableSmall],
-				sieve: [\col4, \rowTableEditor, \sieve],
-				modMatrix: [\col4, \rowModMatrix, \modMatrix],
+
+				// Sieve column (between group 3 and masking control)
+				sieve: [\colSieve, \rowTableEditor, \sieve],
+				modMatrix: [\colSieve, \rowModMatrix, \modMatrix],
 
 				// Column 5: Masking control / fourier
 				maskingControl: [\col5, \rowMaskingCtrl, \maskingControl],
