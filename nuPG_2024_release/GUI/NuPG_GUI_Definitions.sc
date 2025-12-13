@@ -28,7 +28,7 @@ NuPG_GUI_Definitions {
 				row0: 0,      // Top row
 				row1: 115,    // Second row (extensions)
 				rowScrubber: 135,  // Scrubber position
-				rowPresets: 255,  // Presets (just under extensions)
+				rowPresets: 280,  // Presets (just under extensions)
 				rowTableEditor: 265,  // Table editor and sieve
 				row2: 285,    // Third row (tables)
 				rowSynthSwitcher: 355,  // Synth switcher (under presets)
@@ -51,7 +51,7 @@ NuPG_GUI_Definitions {
 				controlExtraWide: (width: 910, height: 30),
 				presets: (width: 300, height: 95),
 				synthSwitcher: (width: 250, height: 45),
-				extensions: (width: 300, height: 135),
+				extensions: (width: 300, height: 160),
 				main: (width: 300, height: 430),
 				modulator: (width: 320, height: 130),
 				scrubber: (width: 1000, height: 30),
