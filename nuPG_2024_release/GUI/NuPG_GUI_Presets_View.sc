@@ -136,7 +136,7 @@ NuPG_GUI_Presets_View {
 					"No preset file selected to update".warn;
 				};
 		};
-			presetMenu[i] = guiDefinitions.nuPGMenu(defState: 1, width: 100);
+			presetMenu[i] = guiDefinitions.nuPGMenu(defState: 1, width: 210);
 			presetMenu[i].items = [];
 			presetMenu[i].items = fileNames;
 			// Menu just selects - use L button to load
