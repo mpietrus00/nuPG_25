@@ -538,10 +538,41 @@ NuPG_GUI_Definitions {
 		^table;
 	}
 
-	// Table view with off-white background
+	// Table view with off-white background and grid overlay
 	*tableViewWithGrid {
-		var table;
+		var container, table, gridOverlay;
 		var bgColor = Color.new255(250, 250, 245);
+
+		// Container using StackLayout to layer views
+		container = View().layout_(StackLayout().mode_(\stackAll));
+
+		// Grid overlay - transparent background, draws lines on top
+		gridOverlay = UserView()
+		.background_(Color.clear)
+		.acceptsMouse_(false)  // Let mouse events pass through to table
+		.drawFunc_({ |v|
+			var w = v.bounds.width;
+			var h = v.bounds.height;
+
+			// Horizontal center line (zero crossing)
+			Pen.strokeColor = Color.gray(0.7);
+			Pen.width = 1;
+			Pen.line(Point(0, h * 0.5), Point(w, h * 0.5));
+			Pen.stroke;
+
+			// Horizontal quarter lines
+			Pen.strokeColor = Color.gray(0.82);
+			[0.25, 0.75].do { |y|
+				Pen.line(Point(0, h * y), Point(w, h * y));
+			};
+			Pen.stroke;
+
+			// Vertical quarter divisions
+			[0.25, 0.5, 0.75].do { |x|
+				Pen.line(Point(w * x, 0), Point(w * x, h));
+			};
+			Pen.stroke;
+		});
 
 		// MultiSlider with off-white background
 		table = MultiSliderView()
@@ -555,8 +586,11 @@ NuPG_GUI_Definitions {
 		.elasticMode_(1)
 		.setProperty(\showIndex, true);
 
-		// Return table as both container and table (no wrapper needed)
-		^(container: table, table: table);
+		// Add grid first (on top), then table (behind)
+		container.layout.add(gridOverlay);
+		container.layout.add(table);
+
+		^(container: container, table: table);
 	}
 
 	//slider view definition
