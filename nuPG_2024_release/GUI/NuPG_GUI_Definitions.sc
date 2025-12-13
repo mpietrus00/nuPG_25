@@ -47,7 +47,7 @@ NuPG_GUI_Definitions {
 				control: (width: 300, height: 30),
 				controlWide: (width: 605, height: 30),
 				controlExtraWide: (width: 910, height: 30),
-				presets: (width: 250, height: 120),
+				presets: (width: 300, height: 120),
 				synthSwitcher: (width: 250, height: 45),
 				extensions: (width: 300, height: 135),
 				main: (width: 300, height: 430),
