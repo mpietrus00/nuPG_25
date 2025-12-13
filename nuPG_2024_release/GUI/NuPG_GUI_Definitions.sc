@@ -540,63 +540,26 @@ NuPG_GUI_Definitions {
 
 	// Table view with grid background for visual reference
 	*tableViewWithGrid {
-		var container, background, table;
+		var container, table;
+		var bgColor = Color.new255(250, 250, 245);
 
-		// Container using StackLayout to layer views
-		container = View()
-		.background_(Color.new255(252, 252, 248))
-		.layout_(StackLayout().mode_(\stackAll));
+		// Simple container
+		container = View().background_(bgColor);
 
-		// Background with grid lines
-		background = UserView()
-		.background_(Color.new255(252, 252, 248))
-		.drawFunc_({ |v|
-			var bounds = v.bounds;
-			var w = bounds.width;
-			var h = bounds.height;
-
-			// Nearly white background with slight warmth
-			Pen.fillColor = Color.new255(252, 252, 248);
-			Pen.fillRect(Rect(0, 0, w, h));
-
-			// Horizontal center line (zero crossing) - darker
-			Pen.strokeColor = Color.gray(0.75);
-			Pen.width = 1;
-			Pen.line(Point(0, h * 0.5), Point(w, h * 0.5));
-			Pen.stroke;
-
-			// Horizontal quarter lines - lighter
-			Pen.strokeColor = Color.gray(0.88);
-			Pen.width = 1;
-			[0.25, 0.75].do { |y|
-				Pen.line(Point(0, h * y), Point(w, h * y));
-			};
-			Pen.stroke;
-
-			// Vertical quarter divisions
-			Pen.strokeColor = Color.gray(0.90);
-			[0.25, 0.5, 0.75].do { |x|
-				Pen.line(Point(w * x, 0), Point(w * x, h));
-			};
-			Pen.stroke;
-		});
-
-		// MultiSlider with transparent background
+		// MultiSlider with off-white background
 		table = MultiSliderView()
 		.startIndex_(false)
 		.valueThumbSize_(1)
 		.drawLines_(true)
 		.drawRects_(false)
 		.editable_(true)
-		.background_(Color.clear)
+		.background_(bgColor)
 		.strokeColor_(this.black)
 		.elasticMode_(1)
 		.setProperty(\showIndex, true);
 
-		// Add table first, then background
-		// In StackLayout, first added appears on top
-		container.layout.add(table);
-		container.layout.add(background);
+		// Add table as child of the container
+		container.layout_(VLayout(table).margins_(0).spacing_(0));
 
 		// Return association: container for layout, table for data binding
 		^(container: container, table: table);
