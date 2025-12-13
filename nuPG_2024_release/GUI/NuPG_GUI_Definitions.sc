@@ -38,7 +38,7 @@ NuPG_GUI_Definitions {
 				rowModMatrix: 565,    // Mod matrix and fourier
 				row6: 745,    // Seventh row
 				rowModulatorOne: 845, // Individual modulators
-				rowControl: 490,  // Control with synth switcher (under main)
+				rowControl: 450,  // Control with synth switcher (under main)
 				row7: 975     // Bottom row
 			),
 
