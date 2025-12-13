@@ -589,9 +589,10 @@ NuPG_GUI_Definitions {
 		.elasticMode_(1)
 		.setProperty(\showIndex, true);
 
-		// Add background first, then table on top
-		container.layout.add(background);
+		// Add table first, then background
+		// In StackLayout, first added appears on top
 		container.layout.add(table);
+		container.layout.add(background);
 
 		// Return association: container for layout, table for data binding
 		^(container: container, table: table);
