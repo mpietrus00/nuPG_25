@@ -507,21 +507,12 @@ NuPG_Synthesis_OscOS {
 				pulsaret_Two = OscOS.ar(pulsaret_buffer, grainPhase_Two, 1, 0, 1);
 				pulsaret_Three = OscOS.ar(pulsaret_buffer, grainPhase_Three, 1, 0, 1);
 
-				// Envelope: use BufRd for one-shot phase-based reading
-				// OscOS is designed for looping oscillation, not one-shot envelopes
-				// windowPhase is 0-1 (clipped), multiply by buffer frames for sample position
-				// loop: 0 = one-shot, interpolation: 4 = cubic for smooth envelope
-				envelope_One = BufRd.ar(1, envelope_buffer,
-					windowPhase_One * BufFrames.ir(envelope_buffer),
-					loop: 0, interpolation: 4);
-
-				envelope_Two = BufRd.ar(1, envelope_buffer,
-					windowPhase_Two * BufFrames.ir(envelope_buffer),
-					loop: 0, interpolation: 4);
-
-				envelope_Three = BufRd.ar(1, envelope_buffer,
-					windowPhase_Three * BufFrames.ir(envelope_buffer),
-					loop: 0, interpolation: 4);
+				// Envelope: use OscOS for anti-aliased one-shot reading
+				// windowPhase is clipped 0-1 (one-shot), so it reads through buffer once
+				// OscOS.ar(buffer, phase, numSubTables=1, subTablePos=0, oversample=1)
+				envelope_One = OscOS.ar(envelope_buffer, windowPhase_One, 1, 0, 1);
+				envelope_Two = OscOS.ar(envelope_buffer, windowPhase_Two, 1, 0, 1);
+				envelope_Three = OscOS.ar(envelope_buffer, windowPhase_Three, 1, 0, 1);
 
 				// ============================================================
 				// OUTPUT MIX
