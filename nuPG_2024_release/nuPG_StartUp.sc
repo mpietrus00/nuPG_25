@@ -836,13 +836,11 @@ NuPG_StartUp {
 				4.collect { |k| 13.collect { |l| data.data_matrix[i][k][l].connect(matrixMod.matrix[i][k][l]) } };
 			};
 
-			// Extensions view (includes synth switcher)
+			// Extensions view
 			extensions = NuPG_GUI_Extensions_View.new;
 			extensions.draw(guiDefinitions.extensionsViewDimensions, viewsList: [modulators, fourier, masking, sieves, groupsOffest, matrixMod], n: instances);
-			// Setup the synth switcher in extensions view
-			extensions.setupSwitcher(data, pulsaret_buffers, envelope_buffers, frequency_buffers, channels);
 
-			// Control view
+			// Control view (includes synth switcher)
 			control = NuPG_GUI_Control_View.new;
 			control.draw(guiDefinitions.controlViewDimensions, viewsList: [
 				pulsaretTable, envelopeTable, main, maskingTable, fundamentalTable,
@@ -858,6 +856,8 @@ NuPG_StartUp {
 				multiparameterModulationTable, multiparameterModulationTableEditor,
 				groupsOffest, matrixMod, modulator1, modulator2, modulator3, modulator4
 			], n: instances);
+			// Setup the synth switcher in control view
+			control.setupSwitcher(data, pulsaret_buffers, envelope_buffers, frequency_buffers, channels);
 
 		}).doWhenBooted({
 	instances.collect{|i|
