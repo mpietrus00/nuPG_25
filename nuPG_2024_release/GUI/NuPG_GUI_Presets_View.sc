@@ -244,24 +244,22 @@ NuPG_GUI_Presets_View {
 			viewLayout[i].addSpanning(savePreset[i], row: 0, column: 0);
 			viewLayout[i].addSpanning(loadPreset[i], row: 0, column: 1);
 			viewLayout[i].addSpanning(updatePreset[i], row: 0, column: 2);
-			viewLayout[i].addSpanning(presetMenu[i], row: 0, column: 3, columnSpan: 4);
+			viewLayout[i].addSpanning(presetMenu[i], row: 0, column: 3, columnSpan: 5);
 
-			// Row 1: _size, numberbox, _cur, numberbox
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("_size", 15, 35), row: 1, column: 0);
+			// Row 1: _size, numberbox, _cur, numberbox, _prev, _nxt, +, -
+			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("_size", 15, 30), row: 1, column: 0);
 			viewLayout[i].addSpanning(presetSize[i], row: 1, column: 1);
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("_cur", 15, 30), row: 1, column: 2);
+			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("_cur", 15, 25), row: 1, column: 2);
 			viewLayout[i].addSpanning(currentPreset[i], row: 1, column: 3);
-			viewLayout[i].addSpanning(addPreset[i], row: 1, column: 5);
-			viewLayout[i].addSpanning(removePreset[i], row: 1, column: 6);
+			viewLayout[i].addSpanning(previousPreset[i], row: 1, column: 4);
+			viewLayout[i].addSpanning(nextPreset[i], row: 1, column: 5);
+			viewLayout[i].addSpanning(addPreset[i], row: 1, column: 6);
+			viewLayout[i].addSpanning(removePreset[i], row: 1, column: 7);
 
-			// Row 2: _prev and _nxt buttons
-			viewLayout[i].addSpanning(previousPreset[i], row: 2, column: 0, columnSpan: 2);
-			viewLayout[i].addSpanning(nextPreset[i], row: 2, column: 2, columnSpan: 2);
-
-			// Row 3: interpolation (numberbox, slider, numberbox)
-			viewLayout[i].addSpanning(interpolationFromPreset[i], row: 3, column: 0);
-			viewLayout[i].addSpanning(presetInterpolationSlider[i], row: 3, column: 1, columnSpan: 5);
-			viewLayout[i].addSpanning(interpolationToPreset[i], row: 3, column: 6);
+			// Row 2: interpolation (numberbox, slider, numberbox)
+			viewLayout[i].addSpanning(interpolationFromPreset[i], row: 2, column: 0);
+			viewLayout[i].addSpanning(presetInterpolationSlider[i], row: 2, column: 1, columnSpan: 6);
+			viewLayout[i].addSpanning(interpolationToPreset[i], row: 2, column: 7);
 
 				};
 
