@@ -29,7 +29,7 @@ NuPG_GUI_Definitions {
 				row1: 115,    // Second row (extensions)
 				rowScrubber: 135,  // Scrubber position
 				rowTableEditor: 265,  // Table editor and sieve
-				rowPresets: 230,  // Presets (under extensions)
+				rowPresets: 330,  // Presets (under extensions)
 				row2: 285,    // Third row (tables)
 				row3: 410,    // Fourth row
 				rowMaskingCtrl: 435,  // Masking control
