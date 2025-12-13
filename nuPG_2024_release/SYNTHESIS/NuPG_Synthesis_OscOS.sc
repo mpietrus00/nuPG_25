@@ -278,18 +278,13 @@ NuPG_Synthesis_OscOS {
 				// Get slope for sub-sample offset calculation
 				stepSlope = rampToSlope.(stepPhase);
 
-				// Calculate sub-sample offset for precise grain timing
+				// Calculate sub-sample offset for precise grain timing (using original trigger)
 				subSampleOffset = getSubSampleOffset.(stepPhase, stepSlope, stepTrigger);
 
-				// Accumulator counts samples since trigger, with sub-sample correction
-				accumulator = accumulatorSubSample.(stepTrigger, subSampleOffset);
-
-				// Apply probability and burst masking to trigger
+				// Apply probability and burst masking to trigger BEFORE accumulator
+				// This ensures grains only start on unmasked triggers
 				stepTrigger = stepTrigger * CoinGate.ar(probability * probability_loop, stepTrigger);
 				stepTrigger = stepTrigger * Demand.ar(stepTrigger, 1, Dseq([Dser([1], burst), Dser([0], rest)], inf));
-
-				//send trigger for language processing
-				sendTrigger = SendTrig.ar(stepTrigger, 0);
 
 				//sieve masking
 				sieveMask = Demand.ar(stepTrigger, 0, Dseries());
@@ -297,6 +292,13 @@ NuPG_Synthesis_OscOS {
 				stepTrigger = stepTrigger * Select.kr(sieveMaskOn, [K2A.ar(1), sieveMask]);
 				channelMask = Demand.ar(stepTrigger, 0, Dseq([Dser([-1], chanMask),
 					Dser([1], chanMask), Dser([0], centerMask)], inf));
+
+				// Accumulator counts samples since MASKED trigger, with sub-sample correction
+				// Grains only start when trigger passes through all masks
+				accumulator = accumulatorSubSample.(stepTrigger, subSampleOffset);
+
+				//send trigger for language processing (after all masking)
+				sendTrigger = SendTrig.ar(stepTrigger, 0);
 
 				// ============================================================
 				// FORMANT FREQUENCY CALCULATION
