@@ -551,18 +551,18 @@ NuPG_GUI_Definitions {
 			var w = bounds.width;
 			var h = bounds.height;
 
-			// White background
-			Pen.fillColor = Color.white;
+			// Off-white background
+			Pen.fillColor = Color.gray(0.97);
 			Pen.fillRect(Rect(0, 0, w, h));
 
 			// Horizontal center line (zero crossing) - darker
-			Pen.strokeColor = Color.gray(0.65);
+			Pen.strokeColor = Color.gray(0.75);
 			Pen.width = 1;
 			Pen.line(Point(0, h * 0.5), Point(w, h * 0.5));
 			Pen.stroke;
 
 			// Horizontal quarter lines - lighter
-			Pen.strokeColor = Color.gray(0.85);
+			Pen.strokeColor = Color.gray(0.88);
 			Pen.width = 1;
 			[0.25, 0.75].do { |y|
 				Pen.line(Point(0, h * y), Point(w, h * y));
@@ -570,7 +570,7 @@ NuPG_GUI_Definitions {
 			Pen.stroke;
 
 			// Vertical quarter divisions
-			Pen.strokeColor = Color.gray(0.88);
+			Pen.strokeColor = Color.gray(0.90);
 			[0.25, 0.5, 0.75].do { |x|
 				Pen.line(Point(w * x, 0), Point(w * x, h));
 			};
