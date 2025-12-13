@@ -7,7 +7,7 @@ NuPG_GUI_Control_View {
 	var <>localActivators;
 	var <>instanceMenu;
 	var <>stack;
-	var <>classicButton, <>oversamplingButton;
+	var <>synthModeButton;
 	var <>switcher;
 	var <>numInstances;
 
@@ -44,32 +44,25 @@ NuPG_GUI_Control_View {
 				item.stack.index = instanceMenu.value;
 		} };
 
-		// Synth switcher buttons (replacing group collapse buttons)
-		classicButton = guiDefinitions.nuPGButton(
+		// Synth mode toggle button (classic/oversampling)
+		synthModeButton = guiDefinitions.nuPGButton(
 			[["_classic", guiDefinitions.white, guiDefinitions.darkGreen],
-			 ["_classic"]],
-			18, 70
-		);
-		classicButton.value = 0;
-		classicButton.action_{|btn|
-			this.switchToClassic;
-		};
-
-		oversamplingButton = guiDefinitions.nuPGButton(
-			[["_oversampling"],
 			 ["_oversampling", guiDefinitions.white, guiDefinitions.darkGreen]],
 			18, 90
 		);
-		oversamplingButton.value = 0;
-		oversamplingButton.action_{|btn|
-			this.switchToOversampling;
+		synthModeButton.value = 0;
+		synthModeButton.action_{|btn|
+			if (btn.value == 0) {
+				this.switchToClassic;
+			} {
+				this.switchToOversampling;
+			};
 		};
 
 		//insert into the view -> global
 		layout.addSpanning(instanceMenu, row: 0, column: 0);
 		layout.addSpanning(guiDefinitions.nuPGStaticText("_synth", 15, 40), row: 0, column: 1);
-		layout.addSpanning(classicButton, row: 0, column: 2);
-		layout.addSpanning(oversamplingButton, row: 0, column: 3);
+		layout.addSpanning(synthModeButton, row: 0, column: 2);
 
 		^window.front;
 
@@ -107,11 +100,9 @@ NuPG_GUI_Control_View {
 	updateButtonStates {
 		if (switcher.notNil) {
 			if (switcher.mode == \standard) {
-				classicButton.value = 0;
-				oversamplingButton.value = 0;
+				synthModeButton.value = 0;
 			} {
-				classicButton.value = 1;
-				oversamplingButton.value = 1;
+				synthModeButton.value = 1;
 			};
 		};
 	}
