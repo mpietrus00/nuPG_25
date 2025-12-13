@@ -543,10 +543,14 @@ NuPG_GUI_Definitions {
 		var container, background, table;
 
 		// Container using StackLayout to layer views
-		container = View().layout_(StackLayout().mode_(\stackAll));
+		container = View()
+		.background_(Color.new255(252, 252, 248))
+		.layout_(StackLayout().mode_(\stackAll));
 
 		// Background with grid lines
-		background = UserView().drawFunc_({ |v|
+		background = UserView()
+		.background_(Color.new255(252, 252, 248))
+		.drawFunc_({ |v|
 			var bounds = v.bounds;
 			var w = bounds.width;
 			var h = bounds.height;
