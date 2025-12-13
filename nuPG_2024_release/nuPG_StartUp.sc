@@ -25,7 +25,6 @@ NuPG_StartUp {
 	<>panOneTable_Editor, <>panTwoTable_Editor, <>panThreeTable_Editor,
 	<>ampOneTable_Editor, <>ampTwoTable_Editor, <>ampThreeTable_Editor;
 	var <>presets;
-	var <>synthSwitcher;
 	var <>modulationTable, <>modulationTableEditor, <>modulationRatioTable, <>modulationRatioEditor,
 	<>multiparameterModulationTable, <>multiparameterModulationTableEditor;
 	var <>groupsOffest;
@@ -776,13 +775,6 @@ NuPG_StartUp {
 				};
 			};
 
-			// Synth switcher view initialization
-			synthSwitcher = NuPG_GUI_SynthSwitcher.new;
-			synthSwitcher.draw("_synth", guiDefinitions.synthSwitcherViewDimensions,
-				synthSwitcher: nil, n: instances);
-			// Setup the switcher with all required references
-			synthSwitcher.setupSwitcher(data, pulsaret_buffers, envelope_buffers, frequency_buffers, channels);
-
 			// Fourier view initialization
 			fourier = NuPG_GUI_Fourier_View.new;
 			fourier.draw("_fourier", guiDefinitions.fourierViewDimensions, n: instances);
@@ -844,9 +836,11 @@ NuPG_StartUp {
 				4.collect { |k| 13.collect { |l| data.data_matrix[i][k][l].connect(matrixMod.matrix[i][k][l]) } };
 			};
 
-			// Extensions view
+			// Extensions view (includes synth switcher)
 			extensions = NuPG_GUI_Extensions_View.new;
 			extensions.draw(guiDefinitions.extensionsViewDimensions, viewsList: [modulators, fourier, masking, sieves, groupsOffest, matrixMod], n: instances);
+			// Setup the synth switcher in extensions view
+			extensions.setupSwitcher(data, pulsaret_buffers, envelope_buffers, frequency_buffers, channels);
 
 			// Control view
 			control = NuPG_GUI_Control_View.new;
@@ -859,7 +853,7 @@ NuPG_StartUp {
 				probabilityTableEditor, fundamentalTableEditor, formantOneTableEditor, formantTwoTableEditor, formantThreeTableEditor,
 				envelopeMult_One_Editor, envelopeMult_Two_Editor, envelopeMult_Three_Editor,
 				panOneTable_Editor, panTwoTable_Editor, panThreeTable_Editor,
-				ampOneTable_Editor, ampTwoTable_Editor, ampThreeTable_Editor, presets, synthSwitcher,
+				ampOneTable_Editor, ampTwoTable_Editor, ampThreeTable_Editor, presets,
 				modulationTable, modulationTableEditor, modulationRatioTable, modulationRatioEditor,
 				multiparameterModulationTable, multiparameterModulationTableEditor,
 				groupsOffest, matrixMod, modulator1, modulator2, modulator3, modulator4
