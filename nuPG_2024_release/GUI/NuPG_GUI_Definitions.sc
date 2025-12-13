@@ -26,11 +26,13 @@ NuPG_GUI_Definitions {
 			// Row Y positions
 			rows: (
 				row0: 0,      // Top row
-				row1: 115,    // Second row
+				row1: 115,    // Second row (extensions)
 				rowScrubber: 135,  // Scrubber position
+				rowPresets: 255,  // Presets (just under extensions)
 				rowTableEditor: 265,  // Table editor and sieve
 				row2: 285,    // Third row (tables)
-				row3: 410,    // Fourth row (synth switcher area)
+				rowSynthSwitcher: 355,  // Synth switcher (under presets)
+				row3: 410,    // Fourth row
 				rowMaskingCtrl: 435,  // Masking control
 				row4: 455,    // Fifth row (control)
 				row5: 515,    // Sixth row
@@ -74,8 +76,8 @@ NuPG_GUI_Definitions {
 				// Column 1: Control/presets
 				record: [\col1, \row0, \record],
 				extensions: [\col1, \row1, \extensions],
-				presets: [\col1, \row2, \presets],
-				synthSwitcher: [\col1, \row3, \synthSwitcher],
+				presets: [\col1, \rowPresets, \presets],
+				synthSwitcher: [\col1, \rowSynthSwitcher, \synthSwitcher],
 				control: [\col1, \row4, \control],
 				main: [\col1, \row5, \main],
 				tableEditor: [\col1, \rowTableEditor, \tableEditor],
