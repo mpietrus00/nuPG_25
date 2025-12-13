@@ -28,17 +28,17 @@ NuPG_GUI_Definitions {
 				row0: 0,      // Top row
 				row1: 115,    // Second row (extensions)
 				rowScrubber: 135,  // Scrubber position
-				rowControl: 230,  // Control with synth switcher (under extensions)
 				rowTableEditor: 265,  // Table editor and sieve
-				rowPresets: 265,  // Presets (under control)
+				rowPresets: 230,  // Presets (under extensions)
 				row2: 285,    // Third row (tables)
 				row3: 410,    // Fourth row
 				rowMaskingCtrl: 435,  // Masking control
 				row4: 455,    // Fifth row
-				row5: 515,    // Sixth row
+				row5: 515,    // Sixth row (main)
 				rowModMatrix: 565,    // Mod matrix and fourier
 				row6: 745,    // Seventh row
 				rowModulatorOne: 845, // Individual modulators
+				rowControl: 950,  // Control with synth switcher (under main)
 				row7: 975     // Bottom row
 			),
 

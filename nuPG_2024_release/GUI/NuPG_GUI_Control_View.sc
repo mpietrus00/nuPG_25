@@ -27,7 +27,7 @@ NuPG_GUI_Control_View {
 		//control window contains two separate views -> global and -> local
 		//global is the same across all instances
 		//local is instance specific, using stackView for multiple views
-		window = Window("_control", dimensions, resizable: false);
+		window = Window("nuPG", dimensions, resizable: false);
 		window.userCanClose_(0);
 		//window.alwaysOnTop_(true);
 		window.view.background_(guiDefinitions.bAndKGreen);
