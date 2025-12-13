@@ -497,30 +497,24 @@ NuPG_Synthesis_OscOS {
 				grainPhase_Three = (grainPhase_Three * ffreq_Three_modulated).wrap(0, 1);
 
 				// ============================================================
-				// OSCOS PULSARET AND ENVELOPE
+				// PULSARET AND ENVELOPE
 				// ============================================================
 
-				// Pulsaret: grain waveform using properly tied phase
-				pulsaret_One = OscOS.ar(
-					pulsaret_buffer,
-					grainPhase_One,
-					oversample,
-					0  // position in buffer
-				);
+				// Pulsaret: grain waveform using phase-based buffer reading
+				// grainPhase wraps 0-1 multiple times per grain (controlled by overlap)
+				// Use BufRd since OscOS expects frequency, not phase
+				// interpolation: 4 = cubic for smooth waveform
+				pulsaret_One = BufRd.ar(1, pulsaret_buffer,
+					grainPhase_One * BufFrames.ir(pulsaret_buffer),
+					loop: 1, interpolation: 4);
 
-				pulsaret_Two = OscOS.ar(
-					pulsaret_buffer,
-					grainPhase_Two,
-					oversample,
-					0
-				);
+				pulsaret_Two = BufRd.ar(1, pulsaret_buffer,
+					grainPhase_Two * BufFrames.ir(pulsaret_buffer),
+					loop: 1, interpolation: 4);
 
-				pulsaret_Three = OscOS.ar(
-					pulsaret_buffer,
-					grainPhase_Three,
-					oversample,
-					0
-				);
+				pulsaret_Three = BufRd.ar(1, pulsaret_buffer,
+					grainPhase_Three * BufFrames.ir(pulsaret_buffer),
+					loop: 1, interpolation: 4);
 
 				// Envelope: window using one-shot phase
 				// Use BufRd for phase-based reading (OscOS expects frequency, not phase)
