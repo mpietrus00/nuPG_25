@@ -551,8 +551,8 @@ NuPG_GUI_Definitions {
 			var w = bounds.width;
 			var h = bounds.height;
 
-			// Off-white background
-			Pen.fillColor = Color.gray(0.97);
+			// Nearly white background with slight warmth
+			Pen.fillColor = Color.new255(252, 252, 248);
 			Pen.fillRect(Rect(0, 0, w, h));
 
 			// Horizontal center line (zero crossing) - darker
