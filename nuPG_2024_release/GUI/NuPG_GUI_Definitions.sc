@@ -1,5 +1,177 @@
 NuPG_GUI_Definitions {
 
+	// Layout configuration - defines all window positions and sizes
+	// Edit this dictionary to change the GUI layout
+	classvar <>layoutConfig;
+
+	*initClass {
+		layoutConfig = (
+			// Screen margins and spacing
+			margin: 15,
+			spacing: 5,
+
+			// Column X positions
+			columns: (
+				col0: 0,      // Main tables column
+				col1: 305,    // Control/presets column
+				col2: 630,    // Group 1 tables (was 615)
+				col3: 935,    // Group 2 tables (was 920)
+				col4: 1220,   // Group 3 tables / sieve / modMatrix
+				col5: 1305,   // Masking control / fourier
+				col6: 1425,   // Individual modulators
+				col7: 1545    // Modulators column
+			),
+
+			// Row Y positions
+			rows: (
+				row0: 0,      // Top row
+				row1: 115,    // Second row
+				rowScrubber: 135,  // Scrubber position
+				rowTableEditor: 265,  // Table editor and sieve
+				row2: 285,    // Third row (tables)
+				row3: 410,    // Fourth row (synth switcher area)
+				rowMaskingCtrl: 435,  // Masking control
+				row4: 455,    // Fifth row (control)
+				row5: 515,    // Sixth row
+				rowModMatrix: 565,    // Mod matrix and fourier
+				row6: 745,    // Seventh row
+				rowModulatorOne: 845, // Individual modulators
+				row7: 975     // Bottom row
+			),
+
+			// Standard sizes
+			sizes: (
+				tableSmall: (width: 300, height: 200),
+				tableLarge: (width: 600, height: 400),
+				control: (width: 300, height: 30),
+				controlWide: (width: 605, height: 30),
+				controlExtraWide: (width: 910, height: 30),
+				presets: (width: 250, height: 120),
+				synthSwitcher: (width: 250, height: 45),
+				extensions: (width: 300, height: 135),
+				main: (width: 300, height: 430),
+				modulator: (width: 320, height: 130),
+				scrubber: (width: 1000, height: 30),
+				record: (width: 300, height: 30),
+				maskingControl: (width: 200, height: 100),
+				tableEditor: (width: 910, height: 650),
+				fourier: (width: 200, height: 150),
+				sieve: (width: 300, height: 325),
+				modMatrix: (width: 190, height: 340),
+				modulatorSmall: (width: 140, height: 75)
+			),
+
+			// Window definitions: [column, row, sizeKey] or [column, row, width, height]
+			windows: (
+				// Column 0: Main tables
+				envelope: [\col0, \row0, \tableSmall],
+				pulsaret: [\col0, \row2, \tableSmall],
+				masking: [\col0, \row5, \tableSmall],
+				fundamental: [\col0, \row6, \tableSmall],
+				trainControl: [\col0, \row7, \controlWide],
+
+				// Column 1: Control/presets
+				record: [\col1, \row0, \record],
+				extensions: [\col1, \row1, \extensions],
+				presets: [\col1, \row2, \presets],
+				synthSwitcher: [\col1, \row3, \synthSwitcher],
+				control: [\col1, \row4, \control],
+				main: [\col1, \row5, \main],
+				tableEditor: [\col1, \rowTableEditor, \tableEditor],
+
+				// Column 2: Group 1 tables
+				ampOne: [\col2, \row0, \tableSmall],
+				panOne: [\col2, \row2, \tableSmall],
+				envelopeMultOne: [\col2, \row5, \tableSmall],
+				formantOne: [\col2, \row6, \tableSmall],
+				groupsControl: [\col2, \row7, \controlExtraWide],
+
+				// Column 3: Group 2 tables
+				ampTwo: [\col3, \row0, \tableSmall],
+				panTwo: [\col3, \row2, \tableSmall],
+				envelopeMultTwo: [\col3, \row5, \tableSmall],
+				formantTwo: [\col3, \row6, \tableSmall],
+
+				// Column 4: Group 3 tables / sieve / modMatrix
+				ampThree: [\col4, \row0, \tableSmall],
+				panThree: [\col4, \row2, \tableSmall],
+				envelopeMultThree: [\col4, \row5, \tableSmall],
+				formantThree: [\col4, \row6, \tableSmall],
+				sieve: [\col4, \rowTableEditor, \sieve],
+				modMatrix: [\col4, \rowModMatrix, \modMatrix],
+
+				// Column 5: Masking control / fourier
+				maskingControl: [\col5, \rowMaskingCtrl, \maskingControl],
+				fourier: [\col5, \rowModMatrix, \fourier],
+
+				// Column 6: Individual modulators
+				modulatorOne: [\col6, \rowModulatorOne, \modulatorSmall],
+
+				// Column 7: Modulators
+				modulators: [\col7, \row1, \modulator],
+				groupsOffset: [\col7, \row2, \modulator],
+				modulationAmount: [\col7, \row2, \tableSmall],
+				modulationRatio: [\col7, \row5, \tableSmall],
+				multiParameterModulation: [\col7, \row6, \tableSmall],
+
+				// Special: Scrubber (spans across)
+				scrubber: [\col0, \rowScrubber, \scrubber]
+			)
+		);
+	}
+
+	// Get dimensions for a window from the layout config
+	*getWindowDimensions { |windowName|
+		var screen = Window.screenBounds;
+		var cfg = layoutConfig;
+		var winDef = cfg[\windows][windowName];
+		var col, row, size, width, height;
+
+		if (winDef.isNil) {
+			("Unknown window:" + windowName).warn;
+			^Rect(100, 100, 300, 200);
+		};
+
+		col = cfg[\columns][winDef[0]] ? 0;
+		row = cfg[\rows][winDef[1]] ? 0;
+
+		// Size can be a symbol (lookup in sizes) or explicit width/height
+		if (winDef[2].isKindOf(Symbol)) {
+			size = cfg[\sizes][winDef[2]];
+			width = size[\width];
+			height = size[\height];
+		} {
+			width = winDef[2];
+			height = winDef[3];
+		};
+
+		^Rect(
+			screen.left + cfg[\margin] + col,
+			screen.top + cfg[\margin] + row,
+			width,
+			height
+		);
+	}
+
+	// Update a window position in the config
+	*setWindowPosition { |windowName, column, row|
+		var winDef = layoutConfig[\windows][windowName];
+		if (winDef.notNil) {
+			winDef[0] = column;
+			winDef[1] = row;
+		};
+	}
+
+	// Update column X position
+	*setColumnX { |columnName, x|
+		layoutConfig[\columns][columnName] = x;
+	}
+
+	// Update row Y position
+	*setRowY { |rowName, y|
+		layoutConfig[\rows][rowName] = y;
+	}
+
 	//colors scheme
 	//ported from original PG
 	*bAndKGreen { ^Color.new255(205, 250, 205) } 	// default gui colors; similar to old B&K hardware.
@@ -55,481 +227,188 @@ NuPG_GUI_Definitions {
 
 	//pulsaret window dimensions
 	*pulsaretViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 15,  //position from left of the screen
-			top: Window.screenBounds.top + 300,  //position from bottom of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\pulsaret);
 	}
+
 	//envelope window dimensions
 	*envelopeViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 15,  //position from left of the screen
-			top: Window.screenBounds.top + 15,  //position from bottom of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\envelope);
 	}
 
-	//envelope window dimensions
+	//frequency window dimensions (editor)
 	*frequencyViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 5,  //position from left of the screen
-			top: Window.screenBounds.top + 5,  //position from bottom of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		// Frequency editor uses same position as envelope for now
+		^this.getWindowDimensions(\envelope);
 	}
 
-	//main window dimensionss
+	//main window dimensions
 	*mainViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 320,  //position from left of the screen
-			top: Window.screenBounds.top + 530,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 430 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\main);
 	}
 
-    //modulators window dimensionss
+	//modulators window dimensions
 	*modulatorsViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1320,  //position from left of the screen
-			top: Window.screenBounds.top + 130,  //position from top of the screen
-			width: 320,  //widt of the view
-			height: 130 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\modulators);
 	}
 
-	//groups offset window dimensionss
+	//groups offset window dimensions
 	*groupsOffsetViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1320,  //position from left of the screen
-			top: Window.screenBounds.top + 290,  //position from top of the screen
-			width: 320,  //widt of the view
-			height: 130 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\groupsOffset);
 	}
 
-	//masking window dimensionss
+	//masking window dimensions
 	*maskingViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 15,  //position from left of the screen
-			top: Window.screenBounds.top + 530,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\masking);
 	}
 
 	//fundamental frequency window dimensions
 	*fundamentalViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 15,  //position from left of the screen
-			top: Window.screenBounds.top + 760,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\fundamental);
 	}
 
 	//formant frequency one window dimensions
 	*formantOneViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 625,  //position from left of the screen
-			top: Window.screenBounds.top + 760,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\formantOne);
 	}
 
 	//formant frequency two window dimensions
 	*formantTwoViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 930,  //position from left of the screen
-			top: Window.screenBounds.top + 760,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\formantTwo);
 	}
 
 	//formant frequency three window dimensions
 	*formantThreeViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1235,  //position from left of the screen
-			top: Window.screenBounds.top + 760,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\formantThree);
 	}
 
-	//envelope one window dimensions
+	//envelope mult one window dimensions
 	*envelopeOneViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 625,  //position from left of the screen
-			top: Window.screenBounds.top + 530,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\envelopeMultOne);
 	}
 
-	//envelope two window dimensions
+	//envelope mult two window dimensions
 	*envelopeTwoViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 930,  //position from left of the screen
-			top: Window.screenBounds.top + 530,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\envelopeMultTwo);
 	}
 
-	//envelope three window dimensions
+	//envelope mult three window dimensions
 	*envelopeThreeViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1235,  //position from left of the screen
-			top: Window.screenBounds.top + 530,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\envelopeMultThree);
 	}
 
 	//pan one window dimensions
 	*panOneViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 625,  //position from left of the screen
-			top: Window.screenBounds.top + 300,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\panOne);
 	}
 
 	//pan two window dimensions
 	*panTwoViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 930,  //position from left of the screen
-			top: Window.screenBounds.top + 300,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\panTwo);
 	}
 
 	//pan three window dimensions
 	*panThreeViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1235,  //position from left of the screen
-			top: Window.screenBounds.top + 300,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\panThree);
 	}
 
 	//amp one window dimensions
 	*ampOneViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 625,  //position from left of the screen
-			top: Window.screenBounds.top + 15,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\ampOne);
 	}
 
 	//amp two window dimensions
 	*ampTwoViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 930,  //position from left of the screen
-			top: Window.screenBounds.top + 15,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\ampTwo);
 	}
 
 	//amp three window dimensions
 	*ampThreeViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1235,  //position from left of the screen
-			top: Window.screenBounds.top + 15,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\ampThree);
 	}
 
-	//modulatiomAmount window dimensions
+	//modulation amount window dimensions
 	*modulationAmountViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1335,  //position from left of the screen
-			top: Window.screenBounds.top + 300,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\modulationAmount);
 	}
 
-	//modulatiom ratio window dimensions
+	//modulation ratio window dimensions
 	*modulationRatioViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1335,  //position from left of the screen
-			top: Window.screenBounds.top + 530,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\modulationRatio);
 	}
 
-	//multiparameter modulatiom window dimensions
+	//multiparameter modulation window dimensions
 	*multiParameterModulationViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1335,  //position from left of the screen
-			top: Window.screenBounds.top + 760,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 200 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\multiParameterModulation);
 	}
 
 	//scrubber window dimensions
 	*scrubberViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 15,  //position from left of the screen
-			top: Window.screenBounds.top + 150,  //position from top of the screen
-			width: 1000,  //widt of the view
-			height: 30 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\scrubber);
 	}
 
 	//control window dimensions
 	*controlViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 320,  //position from left of the screen
-			top: Window.screenBounds.top + 470,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 30 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\control);
 	}
 
 	//presets window dimensions
 	*presetsViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 320,  //position from left of the screen
-			top: Window.screenBounds.top + 300,  //position from top of the screen
-			width: 250,  //width of the view
-			height: 120 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\presets);
 	}
 
 	//synth switcher window dimensions
 	*synthSwitcherViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 320,  //position from left of the screen
-			top: Window.screenBounds.top + 425,  //position from top of the screen
-			width: 250,  //width of the view
-			height: 45 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\synthSwitcher);
 	}
 
 	//extensions window dimensions
 	*extensionsViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 320,  //position from left of the screen
-			top: Window.screenBounds.top + 130,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 135 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\extensions);
 	}
 
 	//groups control window dimensions
 	*groupsControlViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 625,  //position from left of the screen
-			top: Window.screenBounds.top + 990,  //position from top of the screen
-			width: 910,  //widt of the view
-			height: 30 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\groupsControl);
 	}
 
 	//train control window dimensions
 	*trainControlViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 15,  //position from left of the screen
-			top: Window.screenBounds.top + 990,  //position from top of the screen
-			width: 605,  //widt of the view
-			height: 30 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\trainControl);
 	}
 
 	//record window dimensions
 	*recordViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 320,  //position from left of the screen
-			top: Window.screenBounds.top + 15,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 30 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\record);
 	}
 
-	//record window dimensions
+	//masking control window dimensions
 	*maskingControlDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1320,  //position from left of the screen
-			top: Window.screenBounds.top + 450,  //position from top of the screen
-			width: 200,  //widt of the view
-			height: 100 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\maskingControl);
 	}
 
 	//large editor window dimensions
 	*tableEditorViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 320,  //position from left of the screen
-			top: Window.screenBounds.top + 280,  //position from top of the screen
-			width: 910,  //widt of the view
-			height: 650 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\tableEditor);
 	}
 
+	//fourier window dimensions
 	*fourierViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1320,  //position from left of the screen
-			top: Window.screenBounds.top + 580,  //position from top of the screen
-			width: 200,  //widt of the view
-			height: 150 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\fourier);
 	}
 
-	//sieve window dimensionss
+	//sieve window dimensions
 	*sieveViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1235,  //position from left of the screen
-			top: Window.screenBounds.top + 280,  //position from top of the screen
-			width: 300,  //widt of the view
-			height: 325 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\sieve);
 	}
 
-	//matrix mod
+	//matrix mod window dimensions
 	*modMatrixViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1235,  //position from left of the screen
-			top: Window.screenBounds.top + 580,  //position from top of the screen
-			width: 190,  //widt of the view
-			height: 340 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\modMatrix);
 	}
 
-	//matrix mod
+	//modulator one window dimensions
 	*modulatorOneViewDimensions {
-
-		var dimensions = Rect(
-			left: Window.screenBounds.left + 1440,  //position from left of the screen
-			top: Window.screenBounds.top + 860,  //position from top of the screen
-			width: 140,  //widt of the view
-			height: 75 //height of the view
-		);
-
-		^dimensions;
+		^this.getWindowDimensions(\modulatorOne);
 	}
 
 	//table view definition
