@@ -500,26 +500,17 @@ NuPG_Synthesis_OscOS {
 				// PULSARET AND ENVELOPE
 				// ============================================================
 
-				// Pulsaret: grain waveform using phase-based buffer reading
-				// grainPhase wraps 0-1 multiple times per grain (controlled by overlap)
-				// Use BufRd since OscOS expects frequency, not phase
-				// interpolation: 4 = cubic for smooth waveform
-				pulsaret_One = BufRd.ar(1, pulsaret_buffer,
-					grainPhase_One * BufFrames.ir(pulsaret_buffer),
-					loop: 1, interpolation: 4);
+				// Pulsaret: use OscOS for anti-aliased wavetable oscillation
+				// OscOS.ar(buffer, phase, numSubTables, subTablePos, oversample, mul)
+				// numSubTables=1 (single 2048-sample wavetable), subTablePos=0, oversample=1
+				pulsaret_One = OscOS.ar(pulsaret_buffer, grainPhase_One, 1, 0, 1);
+				pulsaret_Two = OscOS.ar(pulsaret_buffer, grainPhase_Two, 1, 0, 1);
+				pulsaret_Three = OscOS.ar(pulsaret_buffer, grainPhase_Three, 1, 0, 1);
 
-				pulsaret_Two = BufRd.ar(1, pulsaret_buffer,
-					grainPhase_Two * BufFrames.ir(pulsaret_buffer),
-					loop: 1, interpolation: 4);
-
-				pulsaret_Three = BufRd.ar(1, pulsaret_buffer,
-					grainPhase_Three * BufFrames.ir(pulsaret_buffer),
-					loop: 1, interpolation: 4);
-
-				// Envelope: window using one-shot phase
-				// Use BufRd for phase-based reading (OscOS expects frequency, not phase)
-				// windowPhase is 0-1, multiply by buffer frames for sample position
-				// interpolation: 4 = cubic for smooth envelope
+				// Envelope: use BufRd for one-shot phase-based reading
+				// OscOS is designed for looping oscillation, not one-shot envelopes
+				// windowPhase is 0-1 (clipped), multiply by buffer frames for sample position
+				// loop: 0 = one-shot, interpolation: 4 = cubic for smooth envelope
 				envelope_One = BufRd.ar(1, envelope_buffer,
 					windowPhase_One * BufFrames.ir(envelope_buffer),
 					loop: 0, interpolation: 4);
