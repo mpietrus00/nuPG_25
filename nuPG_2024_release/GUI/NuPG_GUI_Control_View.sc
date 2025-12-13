@@ -46,8 +46,8 @@ NuPG_GUI_Control_View {
 
 		// Synth switcher buttons (replacing group collapse buttons)
 		classicButton = guiDefinitions.nuPGButton(
-			[["Classic", guiDefinitions.white, guiDefinitions.darkGreen],
-			 ["Classic"]],
+			[["_classic", guiDefinitions.white, guiDefinitions.darkGreen],
+			 ["_classic"]],
 			18, 70
 		);
 		classicButton.value = 0;
@@ -56,8 +56,8 @@ NuPG_GUI_Control_View {
 		};
 
 		oversamplingButton = guiDefinitions.nuPGButton(
-			[["Oversampling"],
-			 ["Oversampling", guiDefinitions.white, guiDefinitions.darkGreen]],
+			[["_oversampling"],
+			 ["_oversampling", guiDefinitions.white, guiDefinitions.darkGreen]],
 			18, 90
 		);
 		oversamplingButton.value = 0;
