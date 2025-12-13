@@ -538,13 +538,10 @@ NuPG_GUI_Definitions {
 		^table;
 	}
 
-	// Table view with grid background for visual reference
+	// Table view with off-white background
 	*tableViewWithGrid {
-		var container, table;
+		var table;
 		var bgColor = Color.new255(250, 250, 245);
-
-		// Simple container
-		container = View().background_(bgColor);
 
 		// MultiSlider with off-white background
 		table = MultiSliderView()
@@ -558,11 +555,8 @@ NuPG_GUI_Definitions {
 		.elasticMode_(1)
 		.setProperty(\showIndex, true);
 
-		// Add table as child of the container
-		container.layout_(VLayout(table).margins_(0).spacing_(0));
-
-		// Return association: container for layout, table for data binding
-		^(container: container, table: table);
+		// Return table as both container and table (no wrapper needed)
+		^(container: table, table: table);
 	}
 
 	//slider view definition
