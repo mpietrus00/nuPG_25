@@ -960,7 +960,8 @@ NuPG_Application {
 				overlapMorphRate: data.data_overlapMorph[i][0],
 				overlapMorphDepth: data.data_overlapMorph[i][1],
 				overlapMorphMin: data.data_overlapMorph[i][3],
-				overlapMorphMax: data.data_overlapMorph[i][4]
+				overlapMorphMax: data.data_overlapMorph[i][4],
+				overlapMorphSpread: data.data_overlapMorph[i][5]
 			]);
 		};
 	}
