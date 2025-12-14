@@ -142,8 +142,11 @@ NuPG_Synthesis_OscOS {
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
 				// Oversampling factor for OscOS (2, 4, or 8)
 				oversample = 4,
-				// Testing overlap morph params one by one
-				overlapMorphDepth = 0;
+				// Overlap morph (without shape/spread)
+				overlapMorphRate = 0.1,
+				overlapMorphDepth = 0,
+				overlapMorphMin = 1,
+				overlapMorphMax = 10;
 
 				// Sub-sample accurate trigger generation variables
 				var stepPhase, stepTrigger, stepSlope;
@@ -376,6 +379,18 @@ NuPG_Synthesis_OscOS {
 				overlap_One = envMul_One * envMul_One_loop;
 				overlap_Two = envMul_Two * envMul_Two_loop;
 				overlap_Three = envMul_Three * envMul_Three_loop;
+
+				// Overlap morphing modulation (simple sine, all groups same phase)
+				// overlapMorphDepth controls mix between dilation and LFO
+				overlap_One = overlap_One + (overlapMorphDepth * (
+					SinOsc.kr(overlapMorphRate).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_One
+				));
+				overlap_Two = overlap_Two + (overlapMorphDepth * (
+					SinOsc.kr(overlapMorphRate).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
+				));
+				overlap_Three = overlap_Three + (overlapMorphDepth * (
+					SinOsc.kr(overlapMorphRate).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three
+				));
 
 				// Calculate grain slopes (phase increment per sample)
 				grainSlope_One = ffreq_One * SampleDur.ir;
