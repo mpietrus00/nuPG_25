@@ -196,8 +196,8 @@
 + Ndef {
 
 	// Set controls from an array of [paramName, cv] pairs
-	// Compatible with Conductor's setControls pattern
-	setControlsFromCVs { |pairs|
+	// Replaces Conductor's setControls - connects CVs to Ndef parameters
+	setControls { |pairs|
 		pairs.pairsDo { |paramName, cv|
 			if (cv.isKindOf(NumericControlValue)) {
 				// Set initial value
@@ -214,5 +214,10 @@
 				this.set(paramName, cv);
 			};
 		};
+	}
+
+	// Alias for backward compatibility
+	setControlsFromCVs { |pairs|
+		this.setControls(pairs);
 	}
 }
