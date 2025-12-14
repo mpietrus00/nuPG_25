@@ -54,7 +54,7 @@ NuPG_GUI_Definitions {
 				extensions: (width: 300, height: 110),
 				main: (width: 300, height: 430),
 				modulator: (width: 320, height: 340),
-				offset: (width: 320, height: 170),
+				offset: (width: 320, height: 150),
 				scrubber: (width: 1000, height: 30),
 				record: (width: 300, height: 30),
 				maskingControl: (width: 200, height: 100),
