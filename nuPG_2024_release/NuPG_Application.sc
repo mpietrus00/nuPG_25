@@ -718,8 +718,7 @@ NuPG_Application {
 
 			4.collect{|k| 13.collect{|l| data.data_matrix[i][k][l].connect(matrixMod.matrix[i][k][l]) } };
 
-			// Overlap morph CV connections - TEMPORARILY DISABLED FOR DEBUGGING
-			/*
+			// Overlap morph CV connections (rate, depth, min, max only)
 			// Rate [0]: slider + numberbox
 			data.data_overlapMorph[i][0].connect(modulators.overlapMorphRate[i]);
 			data.data_overlapMorph[i][0].connect(modulators.overlapMorphRateNum[i]);
@@ -730,14 +729,7 @@ NuPG_Application {
 			data.data_overlapMorph[i][3].connect(modulators.overlapMorphMin[i]);
 			// Max [4]: numberbox
 			data.data_overlapMorph[i][4].connect(modulators.overlapMorphMax[i]);
-			// Spread [5]: slider + numberbox
-			data.data_overlapMorph[i][5].connect(modulators.overlapMorphSpread[i]);
-			data.data_overlapMorph[i][5].connect(modulators.overlapMorphSpreadNum[i]);
-			// Shape menu [2]: action to update CV
-			modulators.overlapMorphShape[i].action_({|m|
-				data.data_overlapMorph[i][2].value = m.value;
-			});
-			*/
+			// Spread and Shape disabled - cause crashes
 		};
 	}
 
@@ -959,10 +951,10 @@ NuPG_Application {
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
 				ampThreeMod_four_active: data.data_matrix[i][3][12],
 				// Overlap morph (without shape/spread)
-				overlapMorphRate: 0.1,
-				overlapMorphDepth: 0,
-				overlapMorphMin: 1,
-				overlapMorphMax: 10
+				overlapMorphRate: data.data_overlapMorph[i][0],
+				overlapMorphDepth: data.data_overlapMorph[i][1],
+				overlapMorphMin: data.data_overlapMorph[i][3],
+				overlapMorphMax: data.data_overlapMorph[i][4]
 			]);
 		};
 	}
