@@ -958,8 +958,8 @@ NuPG_Application {
 				ampThreeMod_two_active: data.data_matrix[i][1][12],
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
 				ampThreeMod_four_active: data.data_matrix[i][3][12],
-				// Test single parameter
-				testUnused: 0.5
+				// Testing overlap morph params one by one
+				overlapMorphDepth: 0
 			]);
 		};
 	}
