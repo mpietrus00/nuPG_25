@@ -378,34 +378,12 @@ NuPG_Synthesis_OscOS {
 				envMul_Three_loop = Select.kr(group_3_onOff, [1, envMul_Three_loop]);
 
 				// ============================================================
-				// OVERLAP MORPHING MODULATION
-				// Generates LFO-controlled overlap variation
+				// OVERLAP MORPHING MODULATION - DISABLED FOR DEBUGGING
 				// ============================================================
-				overlapMod = Select.kr(overlapMorphShape, [
-					SinOsc.kr(overlapMorphRate),                    // 0: sine
-					LFTri.kr(overlapMorphRate),                     // 1: triangle
-					LFSaw.kr(overlapMorphRate),                     // 2: saw
-					LFNoise1.kr(overlapMorphRate),                  // 3: random (smooth)
-					LFNoise1.kr(overlapMorphRate) * LFNoise2.kr(overlapMorphRate * 0.3)  // 4: chaos
-				]);
-				// Scale modulation from -1..1 to min..max range
-				overlapMod = overlapMod.linlin(-1, 1, overlapMorphMin, overlapMorphMax);
-				// Generate per-group signals with phase spread
-				overlapModSig_One = overlapMod;
-				overlapModSig_Two = Select.kr(overlapMorphShape, [
-					SinOsc.kr(overlapMorphRate, overlapMorphSpread * 2pi / 3),
-					LFTri.kr(overlapMorphRate, overlapMorphSpread * 2 / 3),
-					LFSaw.kr(overlapMorphRate, overlapMorphSpread * 2 / 3),
-					LFNoise1.kr(overlapMorphRate * (1 + (overlapMorphSpread * 0.5))),
-					LFNoise1.kr(overlapMorphRate * (1 + (overlapMorphSpread * 0.3))) * LFNoise2.kr(overlapMorphRate * 0.4)
-				]).linlin(-1, 1, overlapMorphMin, overlapMorphMax);
-				overlapModSig_Three = Select.kr(overlapMorphShape, [
-					SinOsc.kr(overlapMorphRate, overlapMorphSpread * 4pi / 3),
-					LFTri.kr(overlapMorphRate, overlapMorphSpread * 4 / 3),
-					LFSaw.kr(overlapMorphRate, overlapMorphSpread * 4 / 3),
-					LFNoise1.kr(overlapMorphRate * (1 + overlapMorphSpread)),
-					LFNoise1.kr(overlapMorphRate * (1 + (overlapMorphSpread * 0.6))) * LFNoise2.kr(overlapMorphRate * 0.5)
-				]).linlin(-1, 1, overlapMorphMin, overlapMorphMax);
+				overlapMod = 0;
+				overlapModSig_One = 0;
+				overlapModSig_Two = 0;
+				overlapModSig_Three = 0;
 
 				// Derive overlap from envMul (dilation control)
 				// envMul controls how many pulsaret cycles play per grain
@@ -413,11 +391,6 @@ NuPG_Synthesis_OscOS {
 				overlap_One = envMul_One * envMul_One_loop;
 				overlap_Two = envMul_Two * envMul_Two_loop;
 				overlap_Three = envMul_Three * envMul_Three_loop;
-
-				// Apply overlap morphing modulation (crossfade based on depth)
-				overlap_One = overlap_One + (overlapMorphDepth * (overlapModSig_One - overlap_One));
-				overlap_Two = overlap_Two + (overlapMorphDepth * (overlapModSig_Two - overlap_Two));
-				overlap_Three = overlap_Three + (overlapMorphDepth * (overlapModSig_Three - overlap_Three));
 
 				// Calculate grain slopes (phase increment per sample)
 				grainSlope_One = ffreq_One * SampleDur.ir;
