@@ -939,17 +939,8 @@ NuPG_Application {
 				ampThreeMod_four_active: data.data_matrix[i][3][12]
 			]);
 
-			// Overlap morphing modulation (separate block with nil check)
-			if (data.data_overlapMorph.notNil and: { data.data_overlapMorph[i].notNil }) {
-				synthesisOscOS.trainInstances[i].setControls([
-					overlapMorphRate: data.data_overlapMorph[i][0],
-					overlapMorphDepth: data.data_overlapMorph[i][1],
-					overlapMorphShape: data.data_overlapMorph[i][2],
-					overlapMorphMin: data.data_overlapMorph[i][3],
-					overlapMorphMax: data.data_overlapMorph[i][4],
-					overlapMorphSpread: data.data_overlapMorph[i][5]
-				]);
-			};
+			// Overlap morphing modulation - temporarily disabled for debugging
+			// TODO: Re-enable once crash is fixed
 		};
 	}
 }

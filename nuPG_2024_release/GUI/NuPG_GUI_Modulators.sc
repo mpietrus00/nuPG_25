@@ -120,30 +120,8 @@ NuPG_GUI_Modulators {
 			overlapMorphMin[i] = guiDefinitions.nuPGNumberBox(18, 35);
 			overlapMorphMax[i] = guiDefinitions.nuPGNumberBox(18, 35);
 
-			// Connect to data CVs if dataModel and overlapMorph data exist
-			if (data.notNil and: { data.data_overlapMorph.notNil } and: { data.data_overlapMorph[i].notNil }) {
-				// Rate [0]: connect slider and numberbox
-				data.data_overlapMorph[i][0].connect(overlapMorphRate[i]);
-				data.data_overlapMorph[i][0].connect(overlapMorphRateNum[i]);
-				// Depth [1]
-				data.data_overlapMorph[i][1].connect(overlapMorphDepth[i]);
-				data.data_overlapMorph[i][1].connect(overlapMorphDepthNum[i]);
-				// Shape [2]: menu needs special handling
-				overlapMorphShape[i].value = data.data_overlapMorph[i][2].value.asInteger;
-				overlapMorphShape[i].action = { |menu|
-					data.data_overlapMorph[i][2].value = menu.value;
-				};
-				data.data_overlapMorph[i][2].addDependant({ |cv, what, val|
-					if (what == \value) { defer { overlapMorphShape[i].value = val.asInteger } };
-				});
-				// Min [3]
-				data.data_overlapMorph[i][3].connect(overlapMorphMin[i]);
-				// Max [4]
-				data.data_overlapMorph[i][4].connect(overlapMorphMax[i]);
-				// Spread [5]
-				data.data_overlapMorph[i][5].connect(overlapMorphSpread[i]);
-				data.data_overlapMorph[i][5].connect(overlapMorphSpreadNum[i]);
-			};
+			// CV connections temporarily disabled for debugging
+			// TODO: Re-enable once crash is fixed
 		};
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
