@@ -382,15 +382,15 @@ NuPG_Synthesis_OscOS {
 
 				// Overlap morphing modulation
 				// overlapMorphDepth controls mix between dilation and LFO
-				// All groups same phase (spread disabled - causes crashes)
+				// overlapPhaseOffset controls phase spread between groups (0=sync, 1=120° spread)
 				overlap_One = overlap_One + (overlapMorphDepth * (
 					SinOsc.kr(overlapMorphRate).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_One
 				));
 				overlap_Two = overlap_Two + (overlapMorphDepth * (
-					SinOsc.kr(overlapMorphRate).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
+					SinOsc.kr(overlapMorphRate, 2pi/3 * overlapPhaseOffset).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
 				));
 				overlap_Three = overlap_Three + (overlapMorphDepth * (
-					SinOsc.kr(overlapMorphRate).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three
+					SinOsc.kr(overlapMorphRate, 4pi/3 * overlapPhaseOffset).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three
 				));
 
 				// Calculate grain slopes (phase increment per sample)
