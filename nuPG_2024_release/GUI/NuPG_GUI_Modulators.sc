@@ -19,10 +19,12 @@ NuPG_GUI_Modulators {
 	var <>overlapMorphSpread;
 	var <>overlapMorphSpreadNum;
 
-	draw {|name, dimensions, synthesis, n = 1|
+	draw {|name, dimensions, synthesis, dataModel, n = 1|
 		var view, viewLayout, labels;
 		//get GUI defs
 		var guiDefinitions = NuPG_GUI_Definitions;
+
+		data = dataModel;
 
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,8 +53,6 @@ NuPG_GUI_Modulators {
 		};
 		//load gridLayouts into corresponding views
 		n.collect{|i| view[i].layout_(viewLayout[i])};
-		/////////////////////////////////////////////////////////////////////////////////////////////////////
-		data = n.collect{};
 		/////////////////////////////////////////////////////////////////////////////////////////////////////
 		//define objects
 		//generate empty placeholders for objects of size = n
@@ -105,20 +105,45 @@ NuPG_GUI_Modulators {
 				numberDisplay[i][l].action_{|num|};
 			};
 
-			// Overlap morph controls (no actions yet - just widgets)
-			// Rate slider + numberbox (same style as above)
+			// Overlap morph controls - connected to data CVs
+			// Rate slider + numberbox [CV index 0]
 			overlapMorphRate[i] = guiDefinitions.sliderView(width: 270, height: 20);
 			overlapMorphRateNum[i] = guiDefinitions.numberView(width: 25, height: 20);
-			// Depth slider + numberbox
+			// Depth slider + numberbox [CV index 1]
 			overlapMorphDepth[i] = guiDefinitions.sliderView(width: 270, height: 20);
 			overlapMorphDepthNum[i] = guiDefinitions.numberView(width: 25, height: 20);
-			// Spread slider + numberbox
+			// Spread slider + numberbox [CV index 5]
 			overlapMorphSpread[i] = guiDefinitions.sliderView(width: 270, height: 20);
 			overlapMorphSpreadNum[i] = guiDefinitions.numberView(width: 25, height: 20);
-			// Shape menu, min/max numberboxes
+			// Shape menu [CV index 2], min/max numberboxes [CV indices 3, 4]
 			overlapMorphShape[i] = guiDefinitions.nuPGMenu(["sine", "tri", "saw", "random", "chaos"], 0, 60);
 			overlapMorphMin[i] = guiDefinitions.nuPGNumberBox(18, 35);
 			overlapMorphMax[i] = guiDefinitions.nuPGNumberBox(18, 35);
+
+			// Connect to data CVs if dataModel is provided
+			if (data.notNil) {
+				// Rate [0]: connect slider and numberbox
+				data.data_overlapMorph[i][0].connect(overlapMorphRate[i]);
+				data.data_overlapMorph[i][0].connect(overlapMorphRateNum[i]);
+				// Depth [1]
+				data.data_overlapMorph[i][1].connect(overlapMorphDepth[i]);
+				data.data_overlapMorph[i][1].connect(overlapMorphDepthNum[i]);
+				// Shape [2]: menu needs special handling
+				overlapMorphShape[i].value = data.data_overlapMorph[i][2].value.asInteger;
+				overlapMorphShape[i].action = { |menu|
+					data.data_overlapMorph[i][2].value = menu.value;
+				};
+				data.data_overlapMorph[i][2].addDependant({ |cv, what, val|
+					if (what == \value) { defer { overlapMorphShape[i].value = val.asInteger } };
+				});
+				// Min [3]
+				data.data_overlapMorph[i][3].connect(overlapMorphMin[i]);
+				// Max [4]
+				data.data_overlapMorph[i][4].connect(overlapMorphMax[i]);
+				// Spread [5]
+				data.data_overlapMorph[i][5].connect(overlapMorphSpread[i]);
+				data.data_overlapMorph[i][5].connect(overlapMorphSpreadNum[i]);
+			};
 		};
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////

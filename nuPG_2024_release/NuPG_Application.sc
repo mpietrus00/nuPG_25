@@ -402,7 +402,7 @@ NuPG_Application {
 
 	initModulators {
 		modulators = NuPG_GUI_Modulators.new;
-		modulators.draw("_modulators", guiDefinitions.modulatorsViewDimensions, synthesis, n: numInstances);
+		modulators.draw("_modulators", guiDefinitions.modulatorsViewDimensions, synthesis, data, n: numInstances);
 		modulators.tables = [multiparameterModulationTable, modulationRatioTable, modulationTable];
 
 		groupsOffset = NuPG_GUI_GroupsOffset.new;
