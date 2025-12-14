@@ -101,8 +101,7 @@ NuPG_Synthesis_OscOS {
 				chanMask = 0, centerMask = 1,
 				sieveMaskOn = 0, sieveSequence = #[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 				sieveMod = 16,
-				//formants
-				formantModel = 0,
+				//formants (formantModel removed - unused)
 				formant_frequency_One  = 150, formant_frequency_Two = 20, formant_frequency_Three = 90,
 				formant_frequency_One_loop = 1, formant_frequency_Two_loop = 1, formant_frequency_Three_loop =1,
 				formantOneMod_one_active = 0, formantOneMod_two_active = 0, formantOneMod_three_active = 0, formantOneMod_four_active = 0,
