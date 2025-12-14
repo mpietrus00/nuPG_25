@@ -936,15 +936,20 @@ NuPG_Application {
 				ampThreeMod_one_active: data.data_matrix[i][0][12],
 				ampThreeMod_two_active: data.data_matrix[i][1][12],
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
-				ampThreeMod_four_active: data.data_matrix[i][3][12],
-				// Overlap morphing modulation
-				overlapMorphRate: data.data_overlapMorph[i][0],
-				overlapMorphDepth: data.data_overlapMorph[i][1],
-				overlapMorphShape: data.data_overlapMorph[i][2],
-				overlapMorphMin: data.data_overlapMorph[i][3],
-				overlapMorphMax: data.data_overlapMorph[i][4],
-				overlapMorphSpread: data.data_overlapMorph[i][5]
+				ampThreeMod_four_active: data.data_matrix[i][3][12]
 			]);
+
+			// Overlap morphing modulation (separate block with nil check)
+			if (data.data_overlapMorph.notNil and: { data.data_overlapMorph[i].notNil }) {
+				synthesisOscOS.trainInstances[i].setControls([
+					overlapMorphRate: data.data_overlapMorph[i][0],
+					overlapMorphDepth: data.data_overlapMorph[i][1],
+					overlapMorphShape: data.data_overlapMorph[i][2],
+					overlapMorphMin: data.data_overlapMorph[i][3],
+					overlapMorphMax: data.data_overlapMorph[i][4],
+					overlapMorphSpread: data.data_overlapMorph[i][5]
+				]);
+			};
 		};
 	}
 }

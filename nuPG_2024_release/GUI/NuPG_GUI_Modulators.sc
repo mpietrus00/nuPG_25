@@ -120,8 +120,8 @@ NuPG_GUI_Modulators {
 			overlapMorphMin[i] = guiDefinitions.nuPGNumberBox(18, 35);
 			overlapMorphMax[i] = guiDefinitions.nuPGNumberBox(18, 35);
 
-			// Connect to data CVs if dataModel is provided
-			if (data.notNil) {
+			// Connect to data CVs if dataModel and overlapMorph data exist
+			if (data.notNil and: { data.data_overlapMorph.notNil } and: { data.data_overlapMorph[i].notNil }) {
 				// Rate [0]: connect slider and numberbox
 				data.data_overlapMorph[i][0].connect(overlapMorphRate[i]);
 				data.data_overlapMorph[i][0].connect(overlapMorphRateNum[i]);
