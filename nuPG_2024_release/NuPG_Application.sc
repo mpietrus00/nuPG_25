@@ -718,7 +718,8 @@ NuPG_Application {
 
 			4.collect{|k| 13.collect{|l| data.data_matrix[i][k][l].connect(matrixMod.matrix[i][k][l]) } };
 
-			// Overlap morph CV connections
+			// Overlap morph CV connections - TEMPORARILY DISABLED FOR DEBUGGING
+			/*
 			// Rate [0]: slider + numberbox
 			data.data_overlapMorph[i][0].connect(modulators.overlapMorphRate[i]);
 			data.data_overlapMorph[i][0].connect(modulators.overlapMorphRateNum[i]);
@@ -736,6 +737,7 @@ NuPG_Application {
 			modulators.overlapMorphShape[i].action_({|m|
 				data.data_overlapMorph[i][2].value = m.value;
 			});
+			*/
 		};
 	}
 
@@ -956,13 +958,13 @@ NuPG_Application {
 				ampThreeMod_two_active: data.data_matrix[i][1][12],
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
 				ampThreeMod_four_active: data.data_matrix[i][3][12],
-				// Overlap morph modulation
-				overlapMorphRate: data.data_overlapMorph[i][0],
-				overlapMorphDepth: data.data_overlapMorph[i][1],
-				overlapMorphShape: data.data_overlapMorph[i][2],
-				overlapMorphMin: data.data_overlapMorph[i][3],
-				overlapMorphMax: data.data_overlapMorph[i][4],
-				overlapMorphSpread: data.data_overlapMorph[i][5]
+				// Overlap morph modulation - TEMPORARILY DISABLED FOR DEBUGGING
+				overlapMorphRate: 0.1,
+				overlapMorphDepth: 0,
+				overlapMorphShape: 0,
+				overlapMorphMin: 1,
+				overlapMorphMax: 10,
+				overlapMorphSpread: 0
 			]);
 		};
 	}
