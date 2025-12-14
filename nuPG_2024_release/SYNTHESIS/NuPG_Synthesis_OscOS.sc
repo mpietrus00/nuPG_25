@@ -141,14 +141,7 @@ NuPG_Synthesis_OscOS {
 
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
 				// Oversampling factor for OscOS (2, 4, or 8)
-				oversample = 4,
-				// Overlap morphing modulation parameters
-				overlapMorphRate = 0.1,      // LFO rate in Hz
-				overlapMorphDepth = 0,       // Modulation depth 0-1
-				overlapMorphShape = 0,       // 0=sine, 1=tri, 2=saw, 3=random, 4=chaos
-				overlapMorphMin = 1,         // Minimum overlap value
-				overlapMorphMax = 10,        // Maximum overlap value
-				overlapMorphSpread = 0;      // Phase spread between groups
+				oversample = 4;
 
 				// Sub-sample accurate trigger generation variables
 				var stepPhase, stepTrigger, stepSlope;
@@ -199,8 +192,6 @@ NuPG_Synthesis_OscOS {
 				// Group offset triggers and accumulators
 				var stepTrigger_One, stepTrigger_Two, stepTrigger_Three;
 				var accumulator_One, accumulator_Two, accumulator_Three;
-				// Overlap morphing modulation
-				var overlapMod, overlapModSig_One, overlapModSig_Two, overlapModSig_Three;
 
 				// ============================================================
 				// HELPER FUNCTIONS for sub-sample accurate triggering
@@ -376,14 +367,6 @@ NuPG_Synthesis_OscOS {
 				envMul_One_loop = Select.kr(group_1_onOff, [1, envMul_One_loop]);
 				envMul_Two_loop = Select.kr(group_2_onOff, [1, envMul_Two_loop]);
 				envMul_Three_loop = Select.kr(group_3_onOff, [1, envMul_Three_loop]);
-
-				// ============================================================
-				// OVERLAP MORPHING MODULATION - DISABLED FOR DEBUGGING
-				// ============================================================
-				overlapMod = 0;
-				overlapModSig_One = 0;
-				overlapModSig_Two = 0;
-				overlapModSig_Three = 0;
 
 				// Derive overlap from envMul (dilation control)
 				// envMul controls how many pulsaret cycles play per grain
