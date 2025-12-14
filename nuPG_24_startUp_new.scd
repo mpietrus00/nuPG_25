@@ -19,8 +19,11 @@ For custom paths, set before booting:
 ~numChannels = 1;
 ~numInstances = 1;
 
-// Create and boot the application
-~app = NuPG_Application(~numChannels, ~numInstances).boot;
+// Get the directory containing this startup script
+~basePath = thisProcess.nowExecutingPath.dirname;
+
+// Create and boot the application (pass basePath for proper path resolution)
+~app = NuPG_Application(~numChannels, ~numInstances).boot(~basePath);
 )
 
 /*

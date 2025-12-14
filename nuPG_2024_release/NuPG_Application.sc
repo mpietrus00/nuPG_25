@@ -48,16 +48,16 @@ NuPG_Application {
 	init { |nChannels, nInstances|
 		numChannels = nChannels;
 		numInstances = nInstances;
-		this.initPaths;
 		this.initServerOptions;
 		^this
 	}
 
-	initPaths {
-		var here = thisProcess.nowExecutingPath.dirname;
-		tablesPath = here +/+ "TABLES/";
-		filesPath = here +/+ "FILES/";
-		presetsPath = here +/+ "PRESETS/";
+	initPaths { |basePath|
+		// basePath should be the directory containing nuPG_2024_release
+		var releasePath = basePath +/+ "nuPG_2024_release";
+		tablesPath = releasePath +/+ "TABLES/";
+		filesPath = releasePath +/+ "FILES/";
+		presetsPath = releasePath +/+ "PRESETS/";
 	}
 
 	initServerOptions {
@@ -67,7 +67,17 @@ NuPG_Application {
 		Server.default.options.numWireBufs = 256;
 	}
 
-	boot {
+	boot { |basePath|
+		// Set paths from basePath (should be thisProcess.nowExecutingPath.dirname from startup script)
+		if (basePath.notNil) {
+			this.initPaths(basePath);
+		} {
+			if (tablesPath.isNil) {
+				"ERROR: Paths not set. Call boot(basePath) or set tablesPath, filesPath, presetsPath manually.".error;
+				^this
+			};
+		};
+
 		Server.default.waitForBoot({
 			this.initBuffers;
 			this.initData;
