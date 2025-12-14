@@ -3,6 +3,7 @@ NuPG_GUI_Table_View {
 	var <>window;
 	var <>stack;
 	var <>table;
+	var <>tableContainer;  // Container view with grid background
 	var <>data;
 	var <>setBuffer;
 	var <>minMaxValues;
@@ -66,13 +67,18 @@ NuPG_GUI_Table_View {
 		//define objects
 		//generate empty placeholders for objects of size = n
 		table = n.collect{};
+		tableContainer = n.collect{};  // Container with grid background
 		buttons = n.collect{ 4.collect{} }; //there are 4 functions = number of buttons required
 		tablesMenu = n.collect{};
 		minMaxLabel = n.collect{ 2.collect{} }; //there are 2 labels min & max
 		minMaxValues = n.collect{ 2.collect{} }; //there are 2 values min & max
 
 		n.collect{|i|
-			table[i] = guiDefinitions.tableView;
+			var tableWithGrid;
+			// Use tableViewWithGrid for visual reference lines
+			tableWithGrid = guiDefinitions.tableViewWithGrid;
+			table[i] = tableWithGrid[\table];
+			tableContainer[i] = tableWithGrid[\container];
 			table[i].size = 2048;
 			table[i].action_{|ms|
 				data[i].value = ms.value.linlin(0, 1, -1, 1);
@@ -264,7 +270,8 @@ NuPG_GUI_Table_View {
 				//place objects on view
 				//table view editors
 				n.collect{|i|
-					viewLayout[i].addSpanning(item: table[i], row: 0, column: 0, rowSpan: 7, columnSpan: 8);
+					// Use tableContainer (with grid background) for layout
+					viewLayout[i].addSpanning(item: tableContainer[i], row: 0, column: 0, rowSpan: 7, columnSpan: 8);
 					//buttons
 					4.collect{|l|
 						viewLayout[i].add(item: buttons[i][l], row: 8, column: 0 + l);

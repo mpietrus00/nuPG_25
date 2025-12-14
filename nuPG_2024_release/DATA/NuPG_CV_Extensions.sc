@@ -96,6 +96,7 @@
 	prConnectToMultiSlider { |multiSlider|
 		var minVal = this.spec.minval;
 		var maxVal = this.spec.maxval;
+		var existingAction = multiSlider.action;  // Preserve existing action
 
 		// Set initial values (normalize array to 0-1)
 		if (this.value.isArray) {
@@ -113,9 +114,11 @@
 			};
 		});
 
-		// MultiSlider -> CV
+		// MultiSlider -> CV (chain with existing action)
 		multiSlider.action = { |ms|
 			this.value = ms.value.linlin(0, 1, minVal, maxVal);
+			// Call existing action if it was set (for buffer updates, etc.)
+			existingAction.value(ms);
 		};
 	}
 

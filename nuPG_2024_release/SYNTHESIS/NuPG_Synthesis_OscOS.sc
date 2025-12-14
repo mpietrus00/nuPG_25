@@ -1,6 +1,7 @@
 // NuPG_Synthesis_OscOS.sc
 // Non-aliasing variant using OscOS from OversamplingOscillators quark
 // Provides band-limited wavetable oscillation for cleaner high-frequency content
+// Enhanced with sub-sample accurate triggering and explicit overlap control
 
 // Pseudo-UGen for OscOS-based pulsar generation
 NuPG_OscOS {
@@ -63,6 +64,7 @@ NuPG_BLIT {
 
 
 // Main synthesis class with OscOS variant
+// Enhanced with sub-sample accurate triggering from reference implementation
 NuPG_Synthesis_OscOS {
 
 	var <>trainInstances;
@@ -141,20 +143,34 @@ NuPG_Synthesis_OscOS {
 				// Oversampling factor for OscOS (2, 4, or 8)
 				oversample = 4;
 
-
-				var trigger, sendTrigger;
+				// Sub-sample accurate trigger generation variables
+				var stepPhase, stepTrigger, stepSlope;
+				var subSampleOffset, accumulator;
+				var triggerFreq;
+				// Formant/grain variables
 				var ffreq_One, ffreq_Two, ffreq_Three;
-				var envM_One, envM_Two, envM_Three;
-				var trigFreqFlux, grainFreqFlux, ampFlux;
-				var grainDur_One, grainDur_Two, grainDur_Three;
-				var channelMask;
-				var sieveMask;
-				var phase_One, phase_Two, phase_Three;
+				var grainSlope_One, grainSlope_Two, grainSlope_Three;
+				// Overlap derived from envMul (dilation control)
+				var overlap_One, overlap_Two, overlap_Three;
+				var maxOverlap_One, maxOverlap_Two, maxOverlap_Three;
+				var windowSlope_One, windowSlope_Two, windowSlope_Three;
+				var windowPhase_One, windowPhase_Two, windowPhase_Three;
+				var grainPhase_One, grainPhase_Two, grainPhase_Three;
+				// Envelope and pulsaret
 				var pulsaret_One, pulsaret_Two, pulsaret_Three;
 				var envelope_One, envelope_Two, envelope_Three;
 				var pulsar_1, pulsar_2, pulsar_3;
+				// FM
 				var freqEnvPlayBuf_One, freqEnvPlayBuf_Two, freqEnvPlayBuf_Three;
+				var ffreq_One_modulated, ffreq_Two_modulated, ffreq_Three_modulated;
+				// Legacy variables
+				var envM_One, envM_Two, envM_Three;
+				var grainDur_One, grainDur_Two, grainDur_Three;
+				var trigFreqFlux, grainFreqFlux, ampFlux;
+				var channelMask;
+				var sieveMask;
 				var mix;
+				var sendTrigger;
 				//mod
 				var mod_one, mod_two, mod_three, mod_four;
 				//fund
@@ -174,11 +190,45 @@ NuPG_Synthesis_OscOS {
 				var ampTwoMod_one, ampTwoMod_two, ampTwoMod_three, ampTwoMod_four;
 				var ampThreeMod_one, ampThreeMod_two, ampThreeMod_three, ampThreeMod_four;
 
-				/*definition*/
+				// ============================================================
+				// HELPER FUNCTIONS for sub-sample accurate triggering
+				// From reference implementation
+				// ============================================================
+
+				// Convert phase ramp to trigger at wrap-around point
+				var rampToTrig = { |phaseIn|
+					var history = Delay1.ar(phaseIn);
+					var delta = (phaseIn - history);
+					var sum = (phaseIn + history);
+					var trig = (delta / max(0.0001, sum)).abs > 0.5;
+					Trig1.ar(trig, SampleDur.ir);
+				};
+
+				// Get the slope (rate of change) of the phase
+				var rampToSlope = { |phaseIn|
+					var history = Delay1.ar(phaseIn);
+					var delta = (phaseIn - history);
+					delta.wrap(-0.5, 0.5);
+				};
+
+				// Sample counter with sub-sample offset for precise timing
+				var accumulatorSubSample = { |trig, subSampleOff|
+					var accum = Duty.ar(SampleDur.ir, trig, Dseries(0, 1));
+					accum + subSampleOff;
+				};
+
+				// Calculate sub-sample offset for trigger precision
+				var getSubSampleOffset = { |phaseIn, slope, trig|
+					var sampleCount = phaseIn - (slope < 0) / max(0.0001, slope);
+					Latch.ar(sampleCount, trig);
+				};
+
+				// ============================================================
+				// FLUX AND MODULATION SETUP
+				// ============================================================
 
 				//flux
 				allFluxAmt = allFluxAmt * allFluxAmt_loop;
-
 				trigFreqFlux = allFluxAmt;
 				grainFreqFlux = allFluxAmt;
 				ampFlux = allFluxAmt;
@@ -201,34 +251,58 @@ NuPG_Synthesis_OscOS {
 					type: modulator_type_four,
 					modulation_frequency: modulation_frequency_four);
 
+				// ============================================================
+				// SUB-SAMPLE ACCURATE TRIGGER GENERATION
+				// Replaces Impulse.ar with Phasor-based phase that wraps
+				// ============================================================
+
 				//trigger frequency modulators
 				fundamentalMod_one = Select.ar(fundamentalMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
 				fundamentalMod_two = Select.ar(fundamentalMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
 				fundamentalMod_three = Select.ar(fundamentalMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
 				fundamentalMod_four = Select.ar(fundamentalMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 
-				trigger = (fundamental_frequency * fundamental_frequency_loop) +
-				(fundamentalMod_one + fundamentalMod_two + fundamentalMod_three + fundamentalMod_four);
+				// Calculate trigger frequency with modulation and flux
+				triggerFreq = (fundamental_frequency * fundamental_frequency_loop) +
+					(fundamentalMod_one + fundamentalMod_two + fundamentalMod_three + fundamentalMod_four);
+				triggerFreq = triggerFreq * LFDNoise3.kr(fluxRate * ExpRand(0.8, 1.2), trigFreqFlux, 1);
+				triggerFreq = triggerFreq.clip(0.1, 4000);
 
-				trigger = Impulse.ar(trigger *
-					LFDNoise3.kr(fluxRate * ExpRand(0.8, 1.2), trigFreqFlux, 1), phase);
+				// Generate phase ramp from fundamental frequency
+				// Subtracting SampleDur.ir ensures proper wrap detection
+				stepPhase = (Phasor.ar(DC.ar(0), triggerFreq * SampleDur.ir, 0, 1, phase) - SampleDur.ir).wrap(0, 1);
 
-				trigger = trigger.clip(0, 4000);
-				//probability mask
-				trigger = trigger * CoinGate.ar(probability * probability_loop, trigger);
-				//burst masking
-				trigger = trigger * Demand.ar(trigger, 1, Dseq([Dser([1], burst), Dser([0], rest)], inf));
+				// Derive trigger from phase wrap-around (sub-sample accurate)
+				stepTrigger = rampToTrig.(stepPhase);
 
-				//send trigger for language processing
-				sendTrigger = SendTrig.ar(trigger, 0);
-				trigger = Delay1.ar(trigger);
+				// Get slope for sub-sample offset calculation
+				stepSlope = rampToSlope.(stepPhase);
+
+				// Calculate sub-sample offset for precise grain timing (using original trigger)
+				subSampleOffset = getSubSampleOffset.(stepPhase, stepSlope, stepTrigger);
+
+				// Apply probability and burst masking to trigger BEFORE accumulator
+				// This ensures grains only start on unmasked triggers
+				stepTrigger = stepTrigger * CoinGate.ar(probability * probability_loop, stepTrigger);
+				stepTrigger = stepTrigger * Demand.ar(stepTrigger, 1, Dseq([Dser([1], burst), Dser([0], rest)], inf));
 
 				//sieve masking
-				sieveMask = Demand.ar(trigger, 0, Dseries());
+				sieveMask = Demand.ar(stepTrigger, 0, Dseries());
 				sieveMask = Select.ar(sieveMask.mod(sieveMod), K2A.ar(sieveSequence));
-				trigger = trigger * Select.kr(sieveMaskOn, [K2A.ar(1), sieveMask]);
-				channelMask = Demand.ar(trigger, 0, Dseq([Dser([-1], chanMask),
+				stepTrigger = stepTrigger * Select.kr(sieveMaskOn, [K2A.ar(1), sieveMask]);
+				channelMask = Demand.ar(stepTrigger, 0, Dseq([Dser([-1], chanMask),
 					Dser([1], chanMask), Dser([0], centerMask)], inf));
+
+				// Accumulator counts samples since MASKED trigger, with sub-sample correction
+				// Grains only start when trigger passes through all masks
+				accumulator = accumulatorSubSample.(stepTrigger, subSampleOffset);
+
+				//send trigger for language processing (after all masking)
+				sendTrigger = SendTrig.ar(stepTrigger, 0);
+
+				// ============================================================
+				// FORMANT FREQUENCY CALCULATION
+				// ============================================================
 
 				//formant 1 modulators
 				formantOneMod_one = Select.ar(formantOneMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
@@ -260,25 +334,70 @@ NuPG_Synthesis_OscOS {
 				ffreq_Three = (fundamental_frequency * formant_frequency_Three * formant_frequency_Three_loop) +
 							(formantThreeMod_one + formantThreeMod_two + formantThreeMod_three + formantThreeMod_four);
 
-				//envelope multiplication 1
-				envMul_One_loop = Select.kr(group_1_onOff, [1, envMul_One_loop]);
-				envM_One = ffreq_One * (envMul_One * envMul_One_loop) * (2048/Server.default.sampleRate);
-				//envelope multiplication 2
-				envMul_Two_loop = Select.kr(group_2_onOff, [1, envMul_Two_loop]);
-				envM_Two = ffreq_Two * (envMul_Two * envMul_Two_loop) * (2048/Server.default.sampleRate);
-				//envelope multiplication 3
-				envMul_Three_loop = Select.kr(group_3_onOff, [1, envMul_Three_loop]);
-				envM_Three = ffreq_Three * (envMul_Three * envMul_Three_loop) * (2048/Server.default.sampleRate);
-
-				//grain duration
-				grainDur_One = 2048 / Server.default.sampleRate / envM_One;
-				grainDur_Two = 2048 / Server.default.sampleRate / envM_Two;
-				grainDur_Three = 2048 / Server.default.sampleRate / envM_Three;
-
-				//formant flux
+				// Apply formant flux
 				ffreq_One = ffreq_One * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
 				ffreq_Two = ffreq_Two * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
 				ffreq_Three = ffreq_Three * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
+
+				// ============================================================
+				// OVERLAP AND PHASE CALCULATIONS
+				// Overlap is derived from envMul (dilation) - controlled by GUI
+				// ============================================================
+
+				// First calculate envMul values (including loop from group tables)
+				// These come from the dilation GUI sliders
+				envMul_One_loop = Select.kr(group_1_onOff, [1, envMul_One_loop]);
+				envMul_Two_loop = Select.kr(group_2_onOff, [1, envMul_Two_loop]);
+				envMul_Three_loop = Select.kr(group_3_onOff, [1, envMul_Three_loop]);
+
+				// Derive overlap from envMul (dilation control)
+				// envMul controls how many pulsaret cycles play per grain
+				// Higher envMul = more cycles = higher overlap potential
+				overlap_One = envMul_One * envMul_One_loop;
+				overlap_Two = envMul_Two * envMul_Two_loop;
+				overlap_Three = envMul_Three * envMul_Three_loop;
+
+				// Calculate grain slopes (phase increment per sample)
+				grainSlope_One = ffreq_One * SampleDur.ir;
+				grainSlope_Two = ffreq_Two * SampleDur.ir;
+				grainSlope_Three = ffreq_Three * SampleDur.ir;
+
+				// Calculate max overlap: limited by ratio of grain freq to trigger freq
+				// maxOverlap = min(userOverlap, grainSlope / stepSlope)
+				maxOverlap_One = min(overlap_One, grainSlope_One / max(0.0001, stepSlope));
+				maxOverlap_Two = min(overlap_Two, grainSlope_Two / max(0.0001, stepSlope));
+				maxOverlap_Three = min(overlap_Three, grainSlope_Three / max(0.0001, stepSlope));
+
+				// Window (envelope) slope: how fast envelope progresses
+				// Latch values at trigger for consistent grain duration
+				windowSlope_One = Latch.ar(grainSlope_One, stepTrigger) / max(0.001, Latch.ar(maxOverlap_One, stepTrigger));
+				windowSlope_Two = Latch.ar(grainSlope_Two, stepTrigger) / max(0.001, Latch.ar(maxOverlap_Two, stepTrigger));
+				windowSlope_Three = Latch.ar(grainSlope_Three, stepTrigger) / max(0.001, Latch.ar(maxOverlap_Three, stepTrigger));
+
+				// Window phase: envelope position (0->1 over grain duration)
+				// clip(0,1) makes it one-shot (stays at end after grain completes)
+				windowPhase_One = (windowSlope_One * accumulator).clip(0, 1);
+				windowPhase_Two = (windowSlope_Two * accumulator).clip(0, 1);
+				windowPhase_Three = (windowSlope_Three * accumulator).clip(0, 1);
+
+				// Grain phase: pulsaret oscillation tied to envelope duration
+				// wrap(0,1) allows multiple cycles during grain
+				grainPhase_One = (windowPhase_One * Latch.ar(maxOverlap_One, stepTrigger)).wrap(0, 1);
+				grainPhase_Two = (windowPhase_Two * Latch.ar(maxOverlap_Two, stepTrigger)).wrap(0, 1);
+				grainPhase_Three = (windowPhase_Three * Latch.ar(maxOverlap_Three, stepTrigger)).wrap(0, 1);
+
+				// Legacy grain duration calculation (for compatibility)
+				envM_One = ffreq_One * overlap_One * (2048/Server.default.sampleRate);
+				envM_Two = ffreq_Two * overlap_Two * (2048/Server.default.sampleRate);
+				envM_Three = ffreq_Three * overlap_Three * (2048/Server.default.sampleRate);
+
+				grainDur_One = 2048 / Server.default.sampleRate / max(0.0001, envM_One);
+				grainDur_Two = 2048 / Server.default.sampleRate / max(0.0001, envM_Two);
+				grainDur_Three = 2048 / Server.default.sampleRate / max(0.0001, envM_Three);
+
+				// ============================================================
+				// AMPLITUDE CALCULATION
+				// ============================================================
 
 				//amplitude 1
 				amplitude_One_loop = Select.kr(group_1_onOff, [1, amplitude_One_loop]);
@@ -310,6 +429,10 @@ NuPG_Synthesis_OscOS {
 				(ampThreeMod_one * ampThreeMod_two * ampThreeMod_three * ampThreeMod_four) * (1 - mute);
 				amplitude_Three = amplitude_Three.clip(0, 1);
 
+				// ============================================================
+				// PANNING CALCULATION
+				// ============================================================
+
 				//pan 1
 				panOneMod_one = Select.ar(panOneMod_one_active, [K2A.ar(0), ((modulation_index_one * 0.1) * mod_one)]);
 				panOneMod_two = Select.ar(panOneMod_two_active, [K2A.ar(0), ((modulation_index_two * 0.1) * mod_two)]);
@@ -340,85 +463,64 @@ NuPG_Synthesis_OscOS {
 				pan_Three = pan_Three.fold(-1, 1);
 				pan_Three = pan_Three + channelMask;
 
-				// FM envelope from frequency buffer
+				// ============================================================
+				// FM ENVELOPE (frequency modulation from buffer)
+				// ============================================================
+
 				freqEnvPlayBuf_One = PlayBuf.ar(1, frequency_buffer,
-					(ffreq_One * 2048/Server.default.sampleRate), trigger, 0, loop: 0);
+					(ffreq_One * 2048/Server.default.sampleRate), stepTrigger, 0, loop: 0);
 				freqEnvPlayBuf_Two = PlayBuf.ar(1, frequency_buffer,
-					(ffreq_Two * 2048/Server.default.sampleRate), trigger, 0, loop: 0);
+					(ffreq_Two * 2048/Server.default.sampleRate), stepTrigger, 0, loop: 0);
 				freqEnvPlayBuf_Three = PlayBuf.ar(1, frequency_buffer,
-					(ffreq_Three * 2048/Server.default.sampleRate), trigger, 0, loop: 0);
+					(ffreq_Three * 2048/Server.default.sampleRate), stepTrigger, 0, loop: 0);
 
-				// Phase accumulators for OscOS (reset on trigger)
-				phase_One = Phasor.ar(
-					DelayN.ar(trigger, 1, offset_1),
-					ffreq_One * SampleDur.ir,
-					0, 1
-				);
-				phase_Two = Phasor.ar(
-					DelayN.ar(trigger, 1, offset_2),
-					ffreq_Two * SampleDur.ir,
-					0, 1
-				);
-				phase_Three = Phasor.ar(
-					DelayN.ar(trigger, 1, offset_3),
-					ffreq_Three * SampleDur.ir,
-					0, 1
-				);
+				// Calculate FM-modulated grain phase scaling
+				ffreq_One_modulated = 1 + (freqEnvPlayBuf_One * fmAmt) +
+					Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_One * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), stepTrigger),
+						Latch.ar(LFSaw.ar(ffreq_One - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, stepTrigger)
+					]);
 
-				// OscOS: Oversampled wavetable oscillator
-				// Uses buffer with anti-aliased interpolation
-				pulsaret_One = OscOS.ar(
-					pulsaret_buffer,
-					ffreq_One * (1 + (freqEnvPlayBuf_One * fmAmt)) *
-					(1 + Select.kr(modulationMode, [
-						Latch.ar(LFSaw.ar(ffreq_One * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_1)),
-						Latch.ar(LFSaw.ar(ffreq_One - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_1))
-					])),
-					0,
-					oversample
-				);
+				ffreq_Two_modulated = 1 + (freqEnvPlayBuf_Two * fmAmt) +
+					Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_Two * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), stepTrigger),
+						Latch.ar(LFSaw.ar(ffreq_Two - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, stepTrigger)
+					]);
 
-				pulsaret_Two = OscOS.ar(
-					pulsaret_buffer,
-					ffreq_Two * (1 + (freqEnvPlayBuf_Two * fmAmt)) *
-					(1 + Select.kr(modulationMode, [
-						Latch.ar(LFSaw.ar(ffreq_Two * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_2)),
-						Latch.ar(LFSaw.ar(ffreq_Two - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_2))
-					])),
-					0,
-					oversample
-				);
+				ffreq_Three_modulated = 1 + (freqEnvPlayBuf_Three * fmAmt) +
+					Select.kr(modulationMode, [
+						Latch.ar(LFSaw.ar(ffreq_Three * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), stepTrigger),
+						Latch.ar(LFSaw.ar(ffreq_Three - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, stepTrigger)
+					]);
 
-				pulsaret_Three = OscOS.ar(
-					pulsaret_buffer,
-					ffreq_Three * (1 + (freqEnvPlayBuf_Three * fmAmt)) *
-					(1 + Select.kr(modulationMode, [
-						Latch.ar(LFSaw.ar(ffreq_Three * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd), DelayN.ar(trigger, 1, offset_3)),
-						Latch.ar(LFSaw.ar(ffreq_Three - fmAmt * fmRatio, 0, fmAmt/modMul, fmAmt/modAdd) - fmAmt, DelayN.ar(trigger, 1, offset_3))
-					])),
-					0,
-					oversample
-				);
+				// Apply FM modulation to grain phase
+				grainPhase_One = (grainPhase_One * ffreq_One_modulated).wrap(0, 1);
+				grainPhase_Two = (grainPhase_Two * ffreq_Two_modulated).wrap(0, 1);
+				grainPhase_Three = (grainPhase_Three * ffreq_Three_modulated).wrap(0, 1);
 
-				// Triggered envelope using EnvGen
-				// Note: OscOS is free-running so envelope buffer isn't supported in OscOS mode
-				// Use EnvGen with triggered sine envelope for proper gating
-				envelope_One = EnvGen.ar(
-					Env([0, 1, 0], [grainDur_One * 0.5, grainDur_One * 0.5], \sine),
-					DelayN.ar(trigger, 1, offset_1)
-				);
+				// ============================================================
+				// PULSARET AND ENVELOPE
+				// ============================================================
 
-				envelope_Two = EnvGen.ar(
-					Env([0, 1, 0], [grainDur_Two * 0.5, grainDur_Two * 0.5], \sine),
-					DelayN.ar(trigger, 1, offset_2)
-				);
+				// Pulsaret: use OscOS for anti-aliased wavetable oscillation
+				// OscOS.ar(buffer, phase, numSubTables, subTablePos, oversample, mul)
+				// numSubTables=1 (single 2048-sample wavetable), subTablePos=0, oversample=1
+				pulsaret_One = OscOS.ar(pulsaret_buffer, grainPhase_One, 1, 0, 1);
+				pulsaret_Two = OscOS.ar(pulsaret_buffer, grainPhase_Two, 1, 0, 1);
+				pulsaret_Three = OscOS.ar(pulsaret_buffer, grainPhase_Three, 1, 0, 1);
 
-				envelope_Three = EnvGen.ar(
-					Env([0, 1, 0], [grainDur_Three * 0.5, grainDur_Three * 0.5], \sine),
-					DelayN.ar(trigger, 1, offset_3)
-				);
+				// Envelope: use OscOS for anti-aliased one-shot reading
+				// windowPhase is clipped 0-1 (one-shot), so it reads through buffer once
+				// OscOS.ar(buffer, phase, numSubTables=1, subTablePos=0, oversample=1)
+				envelope_One = OscOS.ar(envelope_buffer, windowPhase_One, 1, 0, 1);
+				envelope_Two = OscOS.ar(envelope_buffer, windowPhase_Two, 1, 0, 1);
+				envelope_Three = OscOS.ar(envelope_buffer, windowPhase_Three, 1, 0, 1);
 
-				// Pulsar outputs - OscOS needs gain boost compared to GrainBuf
+				// ============================================================
+				// OUTPUT MIX
+				// ============================================================
+
+				// Pulsar outputs
 				pulsar_1 = pulsaret_One * envelope_One * 4;
 				pulsar_1 = Pan2.ar(pulsar_1, pan_One);
 				pulsar_1 = pulsar_1 * amplitude_One * amplitude_local_One;

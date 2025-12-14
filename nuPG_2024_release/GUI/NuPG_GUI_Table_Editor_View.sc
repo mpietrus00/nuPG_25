@@ -3,6 +3,7 @@ NuPG_GUI_Table_Editor_View {
 	var <>window;
 	var <>stack;
 	var <>table;
+	var <>tableContainer;  // Container view with grid background
 	var <>data;
 	var <>setBuffer;
 	var <>minMaxValues;
@@ -63,14 +64,19 @@ NuPG_GUI_Table_Editor_View {
 		//define objects
 		//generate empty placeholders for objects of size = n
 		table = n.collect{};
-		buttons = n.collect{ 4.collect{} }; //there are 4 functions = number of buttons required
+		tableContainer = n.collect{};  // Container with grid background
+		buttons = n.collect{ 15.collect{} }; //15 buttons: S,L,RS,R,I,SM,QT,PW,RND,SIN,+N,←,→,↑,↓
 		tablesMenu = n.collect{};
 		minMaxLabel = n.collect{ 2.collect{} }; //there are 2 labels min & max
 		minMaxValues = n.collect{ 2.collect{} }; //there are 2 values min & max
 		shiftValue = n.collect{};
 		n.collect{|i|
+			var tableWithGrid;
 			//window.onClose_({ parentView.buttons[i][0].value_(0) });
-			table[i] = guiDefinitions.tableView;
+			// Use tableViewWithGrid for visual reference lines
+			tableWithGrid = guiDefinitions.tableViewWithGrid;
+			table[i] = tableWithGrid[\table];
+			tableContainer[i] = tableWithGrid[\container];
 			table[i].size = 2048;
 			table[i].action_{|ms|
 				data[i].value = ms.value.linlin(0, 1, -1, 1);
@@ -136,24 +142,28 @@ NuPG_GUI_Table_Editor_View {
 			shiftValue[i].clipHi = 2048.0;
 			shiftValue[i].value = 150;
 
-			buttons[i] = 11.collect{|l|
+			buttons[i] = 15.collect{|l|
 				var string = [
-					[["S"]],
-					[["L"]],
-					[["RS"]],
-					[["R"]],
-					[["I"]],
-					[["NM"]],
-					[["RM"]],
-					[["←"]],
-					[["→"]],
-						[["↑"]],
-						[["↓"]]
-					];
+					[["S"]],      // 0 - Save
+					[["L"]],      // 1 - Load
+					[["RS"]],     // 2 - Resize
+					[["R"]],      // 3 - Reverse
+					[["I"]],      // 4 - Invert
+					[["SM"]],     // 5 - Smooth
+					[["QT"]],     // 6 - Quantize
+					[["PW"]],     // 7 - Power
+					[["RND"]],    // 8 - Random
+					[["SIN"]],    // 9 - Sine waveshape
+					[["+N"]],     // 10 - Add noise
+					[["←"]],      // 11 - Shift left
+					[["→"]],      // 12 - Shift right
+					[["↑"]],      // 13 - Shift up
+					[["↓"]]       // 14 - Shift down
+				];
 				var action = [
+					// 0 - Save (placeholder)
 					{},
-					//save action
-					//opens by default the TABLES directory of the app
+					// 1 - Load - opens file dialog
 					{Dialog.openPanel({ arg path;
 						var size, file, temp, array;
 						file = SoundFile.new;
@@ -161,115 +171,113 @@ NuPG_GUI_Table_Editor_View {
 						temp = FloatArray.newClear(4096);
 						file.readData(temp);
 						array = temp.asArray.resamp1(2048).copy;
-						//array = array.linlin(-1.0, 1.0, -1.0, 1.0);
 						data[i].value_(array);
 						if(buffer == 0, {}, {setBuffer[i].sendCollection(array)});
 					},{"cancelled".postln}
 					)},
-					{ var resizeData = data[i].value.linlin(data[i].value.minItem, data[i].value.maxItem, -1, 1);
+					// 2 - Resize - fit to -1 to 1 range
+					{
+						var resizeData = data[i].value.linlin(data[i].value.minItem, data[i].value.maxItem, -1, 1);
 						data[i].value = resizeData;
 						if(buffer == 0, {}, {setBuffer[i].sendCollection(resizeData)});
-
 					},
-					//reverse
+					// 3 - Reverse (horizontal flip)
 					{
-						var array;
-
-						array = data[i].value.deepCopy;
-						array = array.reverse;
+						var array = data[i].value.deepCopy.reverse;
 						data[i].value = array;
 						if(buffer == 0, {}, {setBuffer[i].sendCollection(array)});
 					},
-					//invert
+					// 4 - Invert (vertical flip)
 					{
-						var array;
-
-						array = data[i].value.deepCopy;
-						array = array.invert;
+						var array = data[i].value.deepCopy.neg;
 						data[i].value = array;
 						if(buffer == 0, {}, {setBuffer[i].sendCollection(array)});
 					},
-					//multiply
+					// 5 - Smooth (moving average filter)
 					{
-						var array;
-
-
-						array = data[i].value.deepCopy.flat;
-						array = (array * 1) % 1;
-						array = array.linlin(0, 1, -1, 1);
-
-						data[i].value = array.deepCopy;
-						if(buffer == 0, {}, {setBuffer[i].sendCollection(array.deepCopy)});
+						var array = data[i].value.deepCopy.flat;
+						var smoothed = Array.newClear(array.size);
+						var windowSize = 8;
+						array.size.do{|j|
+							var sum = 0, count = 0;
+							windowSize.do{|k|
+								var idx = (j - (windowSize/2).asInteger + k).wrap(0, array.size - 1);
+								sum = sum + array[idx];
+								count = count + 1;
+							};
+							smoothed[j] = sum / count;
+						};
+						data[i].value = smoothed;
+						if(buffer == 0, {}, {setBuffer[i].sendCollection(smoothed)});
 					},
-					// ring modulation
+					// 6 - Quantize (reduce to 8 discrete levels)
 					{
-
-						var array, boundaryType = 'wrap';
-						var newArr;
-						var imprintArr = Signal.welchWindow(2048).as(Array);
-
-						array = data[i].value.deepCopy.flat;
-
-						if (array.size != imprintArr.size, {
-							'error: array sizes do not match'.postln;
-						},
-						{
-							newArr = array.flat; // flattening array
-							for (0, array.size-1, {
-								arg i;
-								var x;
-								x = boundaryType ++ '(' ++ (newArr[i] * imprintArr[i]).asString  ++ ', 0, 1)';
-								newArr[i] = x.interpret;
-							});
-						});
-
-						data[i].value = newArr;
-						if(buffer == 0, {}, {setBuffer[i].sendCollection(newArr)});
+						var array = data[i].value.deepCopy.flat;
+						var levels = 8;
+						var quantized = array.collect{|val|
+							((val + 1) / 2 * levels).round / levels * 2 - 1
+						};
+						data[i].value = quantized;
+						if(buffer == 0, {}, {setBuffer[i].sendCollection(quantized)});
 					},
-					//shift left
+					// 7 - Power (apply squared curve, preserving sign)
 					{
-						var array;
-
-						array = data[i].value.deepCopy.flat;
-						array = array.rotate(-15);
-
+						var array = data[i].value.deepCopy.flat;
+						var powered = array.collect{|val|
+							val.sign * (val.abs.squared)
+						};
+						data[i].value = powered;
+						if(buffer == 0, {}, {setBuffer[i].sendCollection(powered)});
+					},
+					// 8 - Random (generate new random waveform)
+					{
+						var array = Array.fill(2048, { 1.0.rand2 });
 						data[i].value = array;
 						if(buffer == 0, {}, {setBuffer[i].sendCollection(array)});
 					},
-					//shift right
+					// 9 - Sine waveshaping (apply sin function)
 					{
-						var array;
-
-						array = data[i].value.deepCopy.flat;
-						array = array.rotate(15);
-
+						var array = data[i].value.deepCopy.flat;
+						var shaped = array.collect{|val| sin(val * pi) };
+						data[i].value = shaped;
+						if(buffer == 0, {}, {setBuffer[i].sendCollection(shaped)});
+					},
+					// 10 - Add noise (add small random values)
+					{
+						var array = data[i].value.deepCopy.flat;
+						var noisy = array.collect{|val| (val + (0.1.rand2)).clip(-1, 1) };
+						data[i].value = noisy;
+						if(buffer == 0, {}, {setBuffer[i].sendCollection(noisy)});
+					},
+					// 11 - Shift left
+					{
+						var array = data[i].value.deepCopy.flat.rotate(-15);
 						data[i].value = array;
 						if(buffer == 0, {}, {setBuffer[i].sendCollection(array)});
 					},
-
-					//shift up
+					// 12 - Shift right
 					{
-						var array;
-
-						array = data[i].value.deepCopy.flat;
+						var array = data[i].value.deepCopy.flat.rotate(15);
+						data[i].value = array;
+						if(buffer == 0, {}, {setBuffer[i].sendCollection(array)});
+					},
+					// 13 - Shift up
+					{
+						var array = data[i].value.deepCopy.flat;
 						array = array.collect{|item| item + 0.1}.wrap(-1, 1);
-
 						data[i].value = array;
 						if(buffer == 0, {}, {setBuffer[i].sendCollection(array)});
 					},
-					//shift down
+					// 14 - Shift down
 					{
-						var array;
-
-						array = data[i].value.deepCopy.flat;
+						var array = data[i].value.deepCopy.flat;
 						array = array.collect{|item| item - 0.1}.wrap(-1, 1);
-
 						data[i].value = array;
 						if(buffer == 0, {}, {setBuffer[i].sendCollection(array)});
-					},
+					}
 				];
 
-				guiDefinitions.nuPGButton(string[l], 20, 20).action_(action[l]);
+				guiDefinitions.nuPGButton(string[l], 20, 25).action_(action[l]);
 
 			};
 
@@ -320,30 +328,31 @@ NuPG_GUI_Table_Editor_View {
 		//place objects on view
 		//table view editors
 		n.collect{|i|
-			viewLayout[i].addSpanning(item: table[i], row: 0, column: 0, rowSpan: 7, columnSpan: 16);
-			//buttons
+			// Use tableContainer (with grid background) for layout
+			viewLayout[i].addSpanning(item: tableContainer[i], row: 0, column: 0, rowSpan: 7, columnSpan: 18);
+
+			// Row 8: All buttons
+			// S, L, RS, R, I (columns 0-4)
 			5.collect{|l|
-				viewLayout[i].add(item: buttons[i][l], row: 8, column: 0 + l);
+				viewLayout[i].add(item: buttons[i][l], row: 8, column: l);
+			};
+			// SM, QT, PW, RND, SIN, +N (columns 5-10)
+			6.collect{|l|
+				viewLayout[i].add(item: buttons[i][l + 5], row: 8, column: l + 5);
+			};
+			// ←, →, ↑, ↓ (columns 11-14)
+			4.collect{|l|
+				viewLayout[i].add(item: buttons[i][l + 11], row: 8, column: l + 11);
 			};
 
-			//shift
-			//viewLayout[i].add(item: guiDefinitions.nuPGStaticText("_shift", 20, 30), row: 8, column: 5);
-			viewLayout[i].add(item: buttons[i][5], row: 8, column: 6);
-			viewLayout[i].add(item: buttons[i][6], row: 8, column: 7);
-			viewLayout[i].add(item: buttons[i][7], row: 8, column: 8);
-			viewLayout[i].add(item: buttons[i][8], row: 8, column: 9);
-			viewLayout[i].add(item: buttons[i][9], row: 8, column: 10);
-			viewLayout[i].add(item: buttons[i][10], row: 8, column: 11);
-
-
-			//tables menu
-			viewLayout[i].add(item: tablesMenu[i], row: 8, column: 13);
+			// Tables menu (column 16)
+			viewLayout[i].add(item: tablesMenu[i], row: 8, column: 16);
 
 			//minimum - maximum
 			2.collect{|l|
 				var shift = [0, 5];
-				viewLayout[i].add(item: minMaxLabel[i][l], row: 0 + shift[l], column: 16);
-				viewLayout[i].add(item: minMaxValues[i][l], row: 1 + shift[l], column: 16);
+				viewLayout[i].add(item: minMaxLabel[i][l], row: 0 + shift[l], column: 18);
+				viewLayout[i].add(item: minMaxValues[i][l], row: 1 + shift[l], column: 18);
 			};
 
 		};

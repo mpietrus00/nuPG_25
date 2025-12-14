@@ -7,7 +7,7 @@ NuPG_GUI_Presets_View {
 	var <>defaultPresetPath;
 	var <>presetInterpolationSlider, <>interpolationFromPreset, <>presetName;
 	var <>currentPreset, <>interpolationToPreset, <>presetMenu, <>savePreset;
-	var <>presetSize, <>addPreset, <>removePreset, <>nextPreset, <>previousPreset, <>updatePreset;
+	var <>presetSize, <>addPreset, <>removePreset, <>nextPreset, <>previousPreset, <>updatePreset, <>loadPreset;
 
 	draw {|name, dimensions, viewsList, n = 1, dataObj|
 		// All var declarations must come first in SuperCollider
@@ -65,6 +65,7 @@ NuPG_GUI_Presets_View {
 		nextPreset = n.collect{};
 		previousPreset = n.collect{};
 		updatePreset = n.collect{};
+		loadPreset = n.collect{};
 		presetInterpolationSlider = n.collect{};
 		interpolationFromPreset = n.collect{};
 		currentPreset = n.collect{};
@@ -81,7 +82,8 @@ NuPG_GUI_Presets_View {
 			presetName[i].stringColor_(guiDefinitions.pink());
 			presetName[i].action_{};
 
-			savePreset[i] = guiDefinitions.nuPGButton([["SAVE"]], 15, 35);
+			// S button - Save new preset set with auto-generated name
+			savePreset[i] = guiDefinitions.nuPGButton([["S"]], 15, 20);
 			savePreset[i].action_{
 				var presetFilename, timestamp, presetNum, success;
 				// Always generate automatic name: preset_XX_YYYYMMDD_HHMMSS
@@ -97,8 +99,29 @@ NuPG_GUI_Presets_View {
 					presetMenu[i].items = fileNames;
 				};
 		};
-			// UPDATE button - overwrites currently selected preset file
-			updatePreset[i] = guiDefinitions.nuPGButton([["UPDATE"]], 15, 45);
+			// L button - Load currently selected preset set from menu
+			loadPreset[i] = guiDefinitions.nuPGButton([["L"]], 15, 20);
+			loadPreset[i].action_{
+				var menuItem, presetMgr;
+				if (presetMenu[i].items.size > 0) {
+					menuItem = fileNames[presetMenu[i].value];
+					if (menuItem.notNil) {
+						presetMgr = data.conductor[(\con_ ++ i).asSymbol];
+						presetMgr.load(defaultPresetPath ++ menuItem);
+						pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
+						envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
+						// Update preset size and reset to first preset (index 0)
+						presetSize[i].value = presetMgr.preset.presets.size;
+						currentPreset[i].value = 0;
+						presetMgr.preset.presetCV.value = 0;
+						("Loaded preset set:" + menuItem).postln;
+					};
+				} {
+					"No preset file selected to load".warn;
+				};
+		};
+			// U button - Update/overwrite currently selected preset file
+			updatePreset[i] = guiDefinitions.nuPGButton([["U"]], 15, 20);
 			updatePreset[i].action_{
 				var selectedFile, success;
 				if (presetMenu[i].items.size > 0) {
@@ -106,27 +129,18 @@ NuPG_GUI_Presets_View {
 					if (selectedFile.notNil) {
 						success = data.conductor[(\con_ ++ i).asSymbol].save(defaultPresetPath ++ selectedFile);
 						if (success) {
-							("Updated preset:" + selectedFile).postln;
+							("Updated preset set:" + selectedFile).postln;
 						};
 					};
 				} {
 					"No preset file selected to update".warn;
 				};
 		};
-			presetMenu[i] = guiDefinitions.nuPGMenu(defState: 1, width: 70);
+			presetMenu[i] = guiDefinitions.nuPGMenu(defState: 1, width: 195);
 			presetMenu[i].items = [];
 			presetMenu[i].items = fileNames;
-			presetMenu[i].action_({|item|
-				var menuItem = fileNames[presetMenu[i].value];
-				var presetMgr = data.conductor[(\con_ ++ i).asSymbol];
-				presetMgr.load(defaultPresetPath ++ menuItem);
-				pulsaretBuffers[i].sendCollection(data.data_pulsaret[i].value);
-				envelopeBuffers[i].sendCollection(data.data_envelope[i].value);
-				// Update preset size and reset to first preset (index 0)
-				presetSize[i].value = presetMgr.preset.presets.size;
-				currentPreset[i].value = 0;
-				presetMgr.preset.presetCV.value = 0;
-		});
+			// Menu just selects - use L button to load
+			presetMenu[i].action_({});
 			presetSize[i] = guiDefinitions.nuPGNumberBox(15, 30);
 
 			addPreset[i] = guiDefinitions.nuPGButton([["+"]], 15, 20);
@@ -157,7 +171,7 @@ NuPG_GUI_Presets_View {
 					"No presets to remove".postln;
 				};
 		};
-			previousPreset[i] = guiDefinitions.nuPGButton([["<"]], 15, 20);
+			previousPreset[i] = guiDefinitions.nuPGButton([["_prev"]], 15, 40);
 			previousPreset[i].action_{
 				var presetMgr = data.conductor[(\con_ ++ i).asSymbol].preset;
 				var currentIdx = presetMgr.presetCV.value.asInteger;
@@ -172,7 +186,7 @@ NuPG_GUI_Presets_View {
 					"Already at first preset".postln;
 				};
 		};
-			nextPreset[i] = guiDefinitions.nuPGButton([[">"]], 15, 20);
+			nextPreset[i] = guiDefinitions.nuPGButton([["_nxt"]], 15, 40);
 			nextPreset[i].action_{
 				var presetMgr = data.conductor[(\con_ ++ i).asSymbol].preset;
 				var currentIdx = presetMgr.presetCV.value.asInteger;
@@ -226,33 +240,26 @@ NuPG_GUI_Presets_View {
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 				//place objects on view
 				n.collect{|i|
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("Presets:", 15, 60), row: 0, column: 0, columnSpan: 2);
-			viewLayout[i].addSpanning(savePreset[i], row: 0, column: 2);
-			viewLayout[i].addSpanning(presetMenu[i], row: 0, column: 3, columnSpan: 2);
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("Bank Size:", 15, 60), row: 0, column: 5, columnSpan: 2);
-			viewLayout[i].addSpanning(presetSize[i], row: 0, column: 7);
+			// Row 0: S L U buttons and preset menu
+			viewLayout[i].addSpanning(savePreset[i], row: 0, column: 0);
+			viewLayout[i].addSpanning(loadPreset[i], row: 0, column: 1);
+			viewLayout[i].addSpanning(updatePreset[i], row: 0, column: 2);
+			viewLayout[i].addSpanning(presetMenu[i], row: 0, column: 3, columnSpan: 5);
 
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("add preset", 15, 60), row: 1, column: 0, columnSpan: 2);
-			viewLayout[i].addSpanning(addPreset[i], row: 1, column: 2);
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("remove preset", 15, 70), row: 1, column: 5, columnSpan: 2);
+			// Row 1: _size, numberbox, _cur, numberbox, _prev, _nxt, +, -
+			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("_size", 15, 30), row: 1, column: 0);
+			viewLayout[i].addSpanning(presetSize[i], row: 1, column: 1);
+			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("_cur", 15, 25), row: 1, column: 2);
+			viewLayout[i].addSpanning(currentPreset[i], row: 1, column: 3);
+			viewLayout[i].addSpanning(previousPreset[i], row: 1, column: 4);
+			viewLayout[i].addSpanning(nextPreset[i], row: 1, column: 5);
+			viewLayout[i].addSpanning(addPreset[i], row: 1, column: 6);
 			viewLayout[i].addSpanning(removePreset[i], row: 1, column: 7);
 
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("update preset set", 15, 90), row: 2, column: 0, columnSpan: 2);
-			viewLayout[i].addSpanning(updatePreset[i], row: 2, column: 2);
-
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("previous preset", 15, 80), row: 3, column: 0,  columnSpan: 2);
-			viewLayout[i].addSpanning(previousPreset[i], row: 3, column: 2);
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("next preset", 15, 60), row: 3, column: 5,  columnSpan: 2);
-			viewLayout[i].addSpanning(nextPreset[i], row: 3, column: 7);
-
-			viewLayout[i].addSpanning(guiDefinitions.nuPGStaticText("current preset", 15, 70), row: 4, column: 0,  columnSpan: 2);
-			viewLayout[i].addSpanning(currentPreset[i], row: 4, column: 3);
-
-			viewLayout[i].addSpanning(interpolationFromPreset[i], row: 5, column: 0);
-			viewLayout[i].addSpanning(presetInterpolationSlider[i], row: 5, column: 1, columnSpan: 6);
-			viewLayout[i].addSpanning(interpolationToPreset[i], row: 5, column: 7, columnSpan: 0);
-
-
+			// Row 2: interpolation (numberbox, slider, numberbox)
+			viewLayout[i].addSpanning(interpolationFromPreset[i], row: 2, column: 0);
+			viewLayout[i].addSpanning(presetInterpolationSlider[i], row: 2, column: 1, columnSpan: 6);
+			viewLayout[i].addSpanning(interpolationToPreset[i], row: 2, column: 7);
 
 				};
 

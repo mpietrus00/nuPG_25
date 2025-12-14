@@ -9,8 +9,7 @@ NuPG_GUI_Extensions_View {
 
 		//get GUI defs
 		var guiDefinitions = NuPG_GUI_Definitions;
-		//var sliderRecordPlayer = NuPG_Slider_Recorder_Palyer;
-		//sliderRecordPlayer.data = data.data_progressSlider;
+
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//window
 		//control window contains two separate views -> global and -> local

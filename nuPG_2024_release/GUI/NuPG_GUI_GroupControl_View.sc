@@ -48,14 +48,14 @@ NuPG_GUI_GroupControl_View {
 				localActivators[i][l].font_(guiDefinitions.nuPGFont(size: 9));
 				localActivators[i][l].action_{|butt|
 				var st = butt.value; st.postln;
-				switch(st,
-						0, {synthesis.trainInstances[i].set(("group_" ++ (l+1) ++ "_onOff").asSymbol, 0);
-							("group_" ++ (l+1) ++ "_onOff").postln;
-						},
-						1, {synthesis.trainInstances[i].set(("group_" ++ (l+1) ++ "_onOff").asSymbol, 1);
-							("group_" ++ (l+1) ++ "_onOff").postln;
-						}
-				)
+				// Use setGroupState if synthesis is a switcher, otherwise direct set
+				if (synthesis.respondsTo(\setGroupState)) {
+					synthesis.setGroupState(i, l+1, st);
+					("group_" ++ (l+1) ++ "_onOff =" + st).postln;
+				} {
+					synthesis.trainInstances[i].set(("group_" ++ (l+1) ++ "_onOff").asSymbol, st);
+					("group_" ++ (l+1) ++ "_onOff").postln;
+				};
 			};
 			};
 

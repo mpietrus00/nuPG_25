@@ -7,24 +7,27 @@ NuPG_GUI_Control_View {
 	var <>localActivators;
 	var <>instanceMenu;
 	var <>stack;
+	var <>synthModeButton;
+	var <>switcher;
+	var <>numInstances;
 
 	draw {|dimensions, viewsList, n = 1|
 		var layout, stackView, stackViewGrid;
-		var collapseButton;
 		var loopButton;
 		var trainLabel, menuItems;
 		var groups;
 
 		//get GUI defs
 		var guiDefinitions = NuPG_GUI_Definitions;
-		//var sliderRecordPlayer = NuPG_Slider_Recorder_Palyer;
-		//sliderRecordPlayer.data = data.data_progressSlider;
+
+		numInstances = n;
+
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//window
 		//control window contains two separate views -> global and -> local
 		//global is the same across all instances
 		//local is instance specific, using stackView for multiple views
-		window = Window("nuPG 2022", dimensions, resizable: false);
+		window = Window("nuPG", dimensions, resizable: false);
 		window.userCanClose_(0);
 		//window.alwaysOnTop_(true);
 		window.view.background_(guiDefinitions.bAndKGreen);
@@ -33,7 +36,6 @@ NuPG_GUI_Control_View {
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//global objects definition
-		//trainLabel = guiDefinitions.nuPGStaticText("", 15, 80);
 		//instances menu
 		menuItems = n.collect{|i| "train_" ++ (i + 1).asString };
 		instanceMenu = guiDefinitions.nuPGMenu(menuItems, 0, 70);
@@ -42,29 +44,67 @@ NuPG_GUI_Control_View {
 				item.stack.index = instanceMenu.value;
 		} };
 
-		collapseButton = 3.collect{|l|
-			var collapseIndices = [[5, 8, 11, 14], [6, 9, 12, 15], [7, 10, 13, 16]];
-
-			guiDefinitions.nuPGButton([
-				["_group_" ++ (1+l).asString, Color.black, Color.new255(250, 100, 90)],
-				["_group_" ++ (1+l).asString, Color.black, Color.white]], 18, 50)
-			.font_(guiDefinitions.nuPGFont(size: 9))
-			.action_{|butt|
-						var st = butt.value; st.postln;
-						switch(st,
-						0, { 4.collect{|k| viewsList[collapseIndices[l][k]].visible(1)}},
-						1, { 4.collect{|k| viewsList[collapseIndices[l][k]].visible(0)}}
-						)
-					};
+		// Synth mode toggle button (classic/oversampling)
+		synthModeButton = guiDefinitions.nuPGButton(
+			[["_classic", guiDefinitions.white, guiDefinitions.darkGreen],
+			 ["_oversampling", guiDefinitions.white, guiDefinitions.darkGreen]],
+			18, 90
+		);
+		synthModeButton.value = 0;
+		synthModeButton.action_{|btn|
+			if (btn.value == 0) {
+				this.switchToClassic;
+			} {
+				this.switchToOversampling;
+			};
 		};
 
 		//insert into the view -> global
-		//layout.addSpanning(trainLabel, row: 0, column: 0);
 		layout.addSpanning(instanceMenu, row: 0, column: 0);
-		3.collect{|i| layout.addSpanning(collapseButton[i], row: 0, column: 1 + i) };
+		layout.addSpanning(guiDefinitions.nuPGStaticText("_synth", 15, 40), row: 0, column: 1);
+		layout.addSpanning(synthModeButton, row: 0, column: 2);
 
 		^window.front;
 
+	}
+
+	// Setup the switcher with references (call after draw)
+	setupSwitcher {|data, pulsaretBufs, envelopeBufs, freqBufs, numChan = 2|
+		switcher = NuPG_SynthesisSwitcher.new;
+		switcher.setup(numInstances, numChan, data, pulsaretBufs, envelopeBufs, freqBufs);
+		"Synthesis switcher initialized".postln;
+	}
+
+	switchToClassic {
+		if (switcher.notNil) {
+			switcher.useStandard;
+			this.updateButtonStates;
+		} {
+			"Switcher not setup - use setupSwitcher method first".warn;
+		};
+	}
+
+	switchToOversampling {
+		if (switcher.notNil) {
+			if (switcher.oscOSAvailable) {
+				switcher.useOscOS;
+				this.updateButtonStates;
+			} {
+				"OscOS not available - install OversamplingOscillators quark".warn;
+			};
+		} {
+			"Switcher not setup - use setupSwitcher method first".warn;
+		};
+	}
+
+	updateButtonStates {
+		if (switcher.notNil) {
+			if (switcher.mode == \standard) {
+				synthModeButton.value = 0;
+			} {
+				synthModeButton.value = 1;
+			};
+		};
 	}
 
 }

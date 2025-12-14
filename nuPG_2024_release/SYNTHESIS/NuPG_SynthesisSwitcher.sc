@@ -14,6 +14,7 @@ NuPG_SynthesisSwitcher {
 	var <>data;
 	var <>buffers;            // Dictionary of buffer references
 	var <>loopTask;           // NuPG_LoopTask reference for seamless switching
+	var <>groupStates;        // Track group_X_onOff states for transfer during switch
 
 	*new {
 		if (instance.isNil) {
@@ -29,6 +30,7 @@ NuPG_SynthesisSwitcher {
 	init {
 		activeMode = \standard;
 		buffers = IdentityDictionary.new;
+		groupStates = nil;  // Will be initialized in setup
 	}
 
 	// Initialize both synthesis engines
@@ -37,6 +39,9 @@ NuPG_SynthesisSwitcher {
 		numInstances = numInst;
 		numChannels = numChan;
 		data = dataObj;
+
+		// Initialize group states (3 groups per instance, all off by default)
+		groupStates = numInst.collect { 3.collect { 0 } };
 
 		// Store buffer references
 		buffers[\pulsaret] = pulsaretBufs;
@@ -164,6 +169,16 @@ NuPG_SynthesisSwitcher {
 		// Map data controls to new synth
 		if (data.notNil) {
 			this.prMapControls;
+		};
+
+		// Transfer group toggle states to new synth
+		numInstances.do { |i|
+			3.do { |g|
+				newSynth.trainInstances[i].set(
+					("group_" ++ (g+1) ++ "_onOff").asSymbol,
+					groupStates[i][g]
+				);
+			};
 		};
 
 		// Play new synths if old ones were playing
@@ -308,6 +323,24 @@ NuPG_SynthesisSwitcher {
 			"Oversample factor must be 1-8".warn;
 		};
 		^this;
+	}
+
+	// Set group on/off state - stores state and syncs to active synth
+	// instance: train instance index (0-based)
+	// group: group number (1-3)
+	// value: 0 (off) or 1 (on)
+	setGroupState { |instance, group, value|
+		// Initialize groupStates if needed
+		if (groupStates.isNil) {
+			groupStates = numInstances.collect { 3.collect { 0 } };
+		};
+		// Store the state (group is 1-based, array is 0-based)
+		groupStates[instance][group - 1] = value;
+		// Apply to active synth
+		activeSynth.trainInstances[instance].set(
+			("group_" ++ group ++ "_onOff").asSymbol,
+			value
+		);
 	}
 
 	// Print status
