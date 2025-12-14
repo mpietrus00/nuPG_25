@@ -957,8 +957,13 @@ NuPG_Application {
 				ampThreeMod_one_active: data.data_matrix[i][0][12],
 				ampThreeMod_two_active: data.data_matrix[i][1][12],
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
-				ampThreeMod_four_active: data.data_matrix[i][3][12]
-				// Overlap morph removed from synth - needs investigation
+				ampThreeMod_four_active: data.data_matrix[i][3][12],
+				// Overlap morph - static defaults for now
+				overlapMorphRate: 0.1,
+				overlapMorphDepth: 0,
+				overlapMorphMin: 1,
+				overlapMorphMax: 10,
+				overlapMorphSpread: 0
 			]);
 		};
 	}
