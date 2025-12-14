@@ -729,7 +729,10 @@ NuPG_Application {
 			data.data_overlapMorph[i][3].connect(modulators.overlapMorphMin[i]);
 			// Max [4]: numberbox
 			data.data_overlapMorph[i][4].connect(modulators.overlapMorphMax[i]);
-			// Spread and Shape disabled - cause crashes
+			// Spread [5]: slider + numberbox
+			data.data_overlapMorph[i][5].connect(modulators.overlapMorphSpread[i]);
+			data.data_overlapMorph[i][5].connect(modulators.overlapMorphSpreadNum[i]);
+			// Shape disabled - causes crashes
 		};
 	}
 
@@ -950,11 +953,12 @@ NuPG_Application {
 				ampThreeMod_two_active: data.data_matrix[i][1][12],
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
 				ampThreeMod_four_active: data.data_matrix[i][3][12],
-				// Overlap morph (without shape/spread)
+				// Overlap morph (without shape)
 				overlapMorphRate: data.data_overlapMorph[i][0],
 				overlapMorphDepth: data.data_overlapMorph[i][1],
 				overlapMorphMin: data.data_overlapMorph[i][3],
-				overlapMorphMax: data.data_overlapMorph[i][4]
+				overlapMorphMax: data.data_overlapMorph[i][4],
+				overlapMorphSpread: data.data_overlapMorph[i][5]
 			]);
 		};
 	}
