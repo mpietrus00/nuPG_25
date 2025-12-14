@@ -81,7 +81,7 @@ NuPG_Synthesis_OscOS {
 				allFluxAmt = 0.0, allFluxAmt_loop = 1, fluxRate = 40,
 				fmRatio = 5, fmRatio_loop = 1, fmAmt = 5, fmAmt_loop = 1,
 				modMul = 3, modAdd = 3,
-				fmIndex = 0, modulationMode = 0,
+				modulationMode = 0,  // fmIndex removed - unused
 				//fundamental modulation on/off
 				fundamentalMod_one_active = 0, fundamentalMod_two_active = 0, fundamentalMod_three_active = 0, fundamentalMod_four_active = 0,
 				//modulation
@@ -141,12 +141,13 @@ NuPG_Synthesis_OscOS {
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
 				// Oversampling factor for OscOS (2, 4, or 8)
 				oversample = 4,
-				// Overlap morph - testing if param alone crashes
+				// Overlap morph (fmIndex + formantModel removed to make room)
 				overlapMorphRate = 0.1,
 				overlapMorphDepth = 0,
 				overlapMorphMin = 1,
 				overlapMorphMax = 10,
-				overlapPhaseOffset = 0;
+				overlapPhaseOffset = 0,
+				overlapMorphShape = 0;
 
 				// Sub-sample accurate trigger generation variables
 				var stepPhase, stepTrigger, stepSlope;
@@ -383,14 +384,33 @@ NuPG_Synthesis_OscOS {
 				// Overlap morphing modulation
 				// overlapMorphDepth controls mix between dilation and LFO
 				// overlapPhaseOffset controls phase spread between groups (0=sync, 1=120° spread)
+				// overlapMorphShape: 0=sine, 1=tri, 2=saw, 3=random, 4=chaos
 				overlap_One = overlap_One + (overlapMorphDepth * (
-					SinOsc.kr(overlapMorphRate).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_One
+					Select.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate),
+						LFTri.kr(overlapMorphRate),
+						LFSaw.kr(overlapMorphRate),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_One
 				));
 				overlap_Two = overlap_Two + (overlapMorphDepth * (
-					SinOsc.kr(overlapMorphRate, 2pi/3 * overlapPhaseOffset).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
+					Select.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate, 2pi/3 * overlapPhaseOffset),
+						LFTri.kr(overlapMorphRate, 2/3 * overlapPhaseOffset),
+						LFSaw.kr(overlapMorphRate, 2/3 * overlapPhaseOffset),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
 				));
 				overlap_Three = overlap_Three + (overlapMorphDepth * (
-					SinOsc.kr(overlapMorphRate, 4pi/3 * overlapPhaseOffset).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three
+					Select.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate, 4pi/3 * overlapPhaseOffset),
+						LFTri.kr(overlapMorphRate, 4/3 * overlapPhaseOffset),
+						LFSaw.kr(overlapMorphRate, 4/3 * overlapPhaseOffset),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three
 				));
 
 				// Calculate grain slopes (phase increment per sample)

@@ -729,9 +729,13 @@ NuPG_Application {
 			data.data_overlapMorph[i][3].connect(modulators.overlapMorphMin[i]);
 			// Max [4]: numberbox
 			data.data_overlapMorph[i][4].connect(modulators.overlapMorphMax[i]);
-			// Spread [5]: slider + numberbox (now working after removing unused formantModel)
+			// Spread [5]: slider + numberbox
 			data.data_overlapMorph[i][5].connect(modulators.overlapMorphSpread[i]);
 			data.data_overlapMorph[i][5].connect(modulators.overlapMorphSpreadNum[i]);
+			// Shape [2]: menu action to update CV
+			modulators.overlapMorphShape[i].action_({|m|
+				data.data_overlapMorph[i][2].value = m.value;
+			});
 		};
 	}
 
@@ -952,9 +956,10 @@ NuPG_Application {
 				ampThreeMod_two_active: data.data_matrix[i][1][12],
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
 				ampThreeMod_four_active: data.data_matrix[i][3][12],
-				// Overlap morph (formantModel removed to make room for 5th param)
+				// Overlap morph (formantModel + fmIndex removed to make room)
 				overlapMorphRate: data.data_overlapMorph[i][0],
 				overlapMorphDepth: data.data_overlapMorph[i][1],
+				overlapMorphShape: data.data_overlapMorph[i][2],
 				overlapMorphMin: data.data_overlapMorph[i][3],
 				overlapMorphMax: data.data_overlapMorph[i][4],
 				overlapPhaseOffset: data.data_overlapMorph[i][5]
