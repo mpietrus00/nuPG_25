@@ -44,9 +44,9 @@ NuPG_GUI_Modulators {
 		viewLayout = n.collect{|i|
 			GridLayout.new()
 			.hSpacing_(3)
-			.vSpacing_(3)
+			.vSpacing_(2)
 			.spacing_(1)
-			.margins_([5, 5, 5, 5]);
+			.margins_([5, 3, 5, 3]);
 
 		};
 		//load gridLayouts into corresponding views
