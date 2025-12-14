@@ -10,11 +10,14 @@ NuPG_GUI_Modulators {
 	var <>data;
 	// Overlap morph controls
 	var <>overlapMorphRate;
+	var <>overlapMorphRateNum;
 	var <>overlapMorphDepth;
+	var <>overlapMorphDepthNum;
 	var <>overlapMorphShape;
 	var <>overlapMorphMin;
 	var <>overlapMorphMax;
 	var <>overlapMorphSpread;
+	var <>overlapMorphSpreadNum;
 
 	draw {|name, dimensions, synthesis, n = 1|
 		var view, viewLayout, labels;
@@ -60,11 +63,14 @@ NuPG_GUI_Modulators {
 		numberDisplay = n.collect{ 3.collect{} };
 		// Overlap morph control arrays
 		overlapMorphRate = n.collect{};
+		overlapMorphRateNum = n.collect{};
 		overlapMorphDepth = n.collect{};
+		overlapMorphDepthNum = n.collect{};
 		overlapMorphShape = n.collect{};
 		overlapMorphMin = n.collect{};
 		overlapMorphMax = n.collect{};
 		overlapMorphSpread = n.collect{};
+		overlapMorphSpreadNum = n.collect{};
 
 		n.collect{|i|
 
@@ -100,12 +106,19 @@ NuPG_GUI_Modulators {
 			};
 
 			// Overlap morph controls (no actions yet - just widgets)
-			overlapMorphRate[i] = guiDefinitions.nuPGSlider(18, 100);
-			overlapMorphDepth[i] = guiDefinitions.nuPGSlider(18, 100);
+			// Rate slider + numberbox (same style as above)
+			overlapMorphRate[i] = guiDefinitions.sliderView(width: 270, height: 20);
+			overlapMorphRateNum[i] = guiDefinitions.numberView(width: 25, height: 20);
+			// Depth slider + numberbox
+			overlapMorphDepth[i] = guiDefinitions.sliderView(width: 270, height: 20);
+			overlapMorphDepthNum[i] = guiDefinitions.numberView(width: 25, height: 20);
+			// Spread slider + numberbox
+			overlapMorphSpread[i] = guiDefinitions.sliderView(width: 270, height: 20);
+			overlapMorphSpreadNum[i] = guiDefinitions.numberView(width: 25, height: 20);
+			// Shape menu, min/max numberboxes
 			overlapMorphShape[i] = guiDefinitions.nuPGMenu(["sine", "tri", "saw", "random", "chaos"], 0, 60);
 			overlapMorphMin[i] = guiDefinitions.nuPGNumberBox(18, 35);
 			overlapMorphMax[i] = guiDefinitions.nuPGNumberBox(18, 35);
-			overlapMorphSpread[i] = guiDefinitions.nuPGSlider(18, 60);
 		};
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,25 +142,33 @@ NuPG_GUI_Modulators {
 
 			};
 
-			// Overlap morph layout (rows 7-10)
+			// Overlap morph layout (rows 7-14)
+			// Row 7: Header
 			viewLayout[i].addSpanning(
-				item: guiDefinitions.nuPGStaticText("_overlap morph", 10, 100),
-				row: 7, column: 0, columnSpan: 2
+				item: guiDefinitions.nuPGStaticText("_overlap morph", 11, 150),
+				row: 7, column: 0
 			);
-			// Row 8: Rate and Depth
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("rate", 10, 30), row: 8, column: 0);
-			viewLayout[i].addSpanning(item: overlapMorphRate[i], row: 8, column: 1);
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("depth", 10, 35), row: 8, column: 2);
-			viewLayout[i].addSpanning(item: overlapMorphDepth[i], row: 8, column: 3, columnSpan: 2);
-			// Row 9: Shape, Min, Max
-			viewLayout[i].addSpanning(item: overlapMorphShape[i], row: 9, column: 0, columnSpan: 2);
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("min", 10, 25), row: 9, column: 2);
-			viewLayout[i].addSpanning(item: overlapMorphMin[i], row: 9, column: 3);
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("max", 10, 25), row: 9, column: 4);
-			viewLayout[i].addSpanning(item: overlapMorphMax[i], row: 9, column: 5);
-			// Row 10: Spread
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("spread", 10, 40), row: 10, column: 0);
-			viewLayout[i].addSpanning(item: overlapMorphSpread[i], row: 10, column: 1, columnSpan: 2);
+			// Row 8: _rate label
+			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_rate", 11, 150), row: 8, column: 0);
+			// Row 9: rate slider + numberbox
+			viewLayout[i].addSpanning(item: overlapMorphRate[i], row: 9, column: 0, columnSpan: 4);
+			viewLayout[i].addSpanning(item: overlapMorphRateNum[i], row: 9, column: 5);
+			// Row 10: _depth label
+			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_depth", 11, 150), row: 10, column: 0);
+			// Row 11: depth slider + numberbox
+			viewLayout[i].addSpanning(item: overlapMorphDepth[i], row: 11, column: 0, columnSpan: 4);
+			viewLayout[i].addSpanning(item: overlapMorphDepthNum[i], row: 11, column: 5);
+			// Row 12: _spread label
+			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_spread", 11, 150), row: 12, column: 0);
+			// Row 13: spread slider + numberbox
+			viewLayout[i].addSpanning(item: overlapMorphSpread[i], row: 13, column: 0, columnSpan: 4);
+			viewLayout[i].addSpanning(item: overlapMorphSpreadNum[i], row: 13, column: 5);
+			// Row 14: shape menu, min/max
+			viewLayout[i].addSpanning(item: overlapMorphShape[i], row: 14, column: 0);
+			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_min", 11, 30), row: 14, column: 1);
+			viewLayout[i].addSpanning(item: overlapMorphMin[i], row: 14, column: 2);
+			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_max", 11, 30), row: 14, column: 3);
+			viewLayout[i].addSpanning(item: overlapMorphMax[i], row: 14, column: 4);
 		};
 
 		//load views into stacks
