@@ -147,7 +147,8 @@ NuPG_Synthesis_OscOS {
 				overlapMorphDepth = 0,
 				overlapMorphMin = 1,
 				overlapMorphMax = 10,
-				overlapMorphSpread = 0;
+				overlapMorphSpread = 0,
+				overlapMorphShape = 0;
 
 				// Sub-sample accurate trigger generation variables
 				var stepPhase, stepTrigger, stepSlope;
@@ -381,17 +382,36 @@ NuPG_Synthesis_OscOS {
 				overlap_Two = envMul_Two * envMul_Two_loop;
 				overlap_Three = envMul_Three * envMul_Three_loop;
 
-				// Overlap morphing modulation (simple sine LFO)
+				// Overlap morphing modulation
 				// overlapMorphDepth controls mix between dilation and LFO
 				// overlapMorphSpread controls phase offset between groups (0=sync, 1=120° spread)
+				// overlapMorphShape: 0=sine, 1=tri, 2=saw, 3=random, 4=chaos
 				overlap_One = overlap_One + (overlapMorphDepth * (
-					SinOsc.kr(overlapMorphRate).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_One
+					SelectX.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate),
+						LFTri.kr(overlapMorphRate),
+						LFSaw.kr(overlapMorphRate),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_One
 				));
 				overlap_Two = overlap_Two + (overlapMorphDepth * (
-					SinOsc.kr(overlapMorphRate, 2pi/3 * overlapMorphSpread).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
+					SelectX.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate, 2pi/3 * overlapMorphSpread),
+						LFTri.kr(overlapMorphRate, 2/3 * overlapMorphSpread),
+						LFSaw.kr(overlapMorphRate, 2/3 * overlapMorphSpread),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
 				));
 				overlap_Three = overlap_Three + (overlapMorphDepth * (
-					SinOsc.kr(overlapMorphRate, 4pi/3 * overlapMorphSpread).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three
+					SelectX.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate, 4pi/3 * overlapMorphSpread),
+						LFTri.kr(overlapMorphRate, 4/3 * overlapMorphSpread),
+						LFSaw.kr(overlapMorphRate, 4/3 * overlapMorphSpread),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three
 				));
 
 				// Calculate grain slopes (phase increment per sample)

@@ -959,6 +959,7 @@ NuPG_Application {
 				// Overlap morph modulation
 				overlapMorphRate: data.data_overlapMorph[i][0],
 				overlapMorphDepth: data.data_overlapMorph[i][1],
+				overlapMorphShape: data.data_overlapMorph[i][2],
 				overlapMorphMin: data.data_overlapMorph[i][3],
 				overlapMorphMax: data.data_overlapMorph[i][4],
 				overlapMorphSpread: data.data_overlapMorph[i][5]
