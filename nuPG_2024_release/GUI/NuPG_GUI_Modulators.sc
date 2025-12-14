@@ -19,12 +19,12 @@ NuPG_GUI_Modulators {
 	var <>overlapMorphSpread;
 	var <>overlapMorphSpreadNum;
 
-	draw {|name, dimensions, synthesis, dataModel, n = 1|
+	draw {|name, dimensions, synthesis, dataModel = nil, n = 1|
 		var view, viewLayout, labels;
 		//get GUI defs
 		var guiDefinitions = NuPG_GUI_Definitions;
 
-		data = dataModel;
+		data = dataModel;  // May be nil if not passed
 
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
