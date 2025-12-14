@@ -142,11 +142,12 @@ NuPG_Synthesis_OscOS {
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
 				// Oversampling factor for OscOS (2, 4, or 8)
 				oversample = 4,
-				// Overlap morph (spread causes crashes - disabled)
+				// Overlap morph - testing if param alone crashes
 				overlapMorphRate = 0.1,
 				overlapMorphDepth = 0,
 				overlapMorphMin = 1,
-				overlapMorphMax = 10;
+				overlapMorphMax = 10,
+				overlapPhaseOffset = 0;
 
 				// Sub-sample accurate trigger generation variables
 				var stepPhase, stepTrigger, stepSlope;

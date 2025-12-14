@@ -950,11 +950,12 @@ NuPG_Application {
 				ampThreeMod_two_active: data.data_matrix[i][1][12],
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
 				ampThreeMod_four_active: data.data_matrix[i][3][12],
-				// Overlap morph (spread/shape disabled - cause crashes)
+				// Overlap morph - testing if param alone crashes
 				overlapMorphRate: data.data_overlapMorph[i][0],
 				overlapMorphDepth: data.data_overlapMorph[i][1],
 				overlapMorphMin: data.data_overlapMorph[i][3],
-				overlapMorphMax: data.data_overlapMorph[i][4]
+				overlapMorphMax: data.data_overlapMorph[i][4],
+				overlapPhaseOffset: 0
 			]);
 		};
 	}
