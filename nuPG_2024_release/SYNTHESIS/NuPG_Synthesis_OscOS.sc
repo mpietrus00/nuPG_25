@@ -189,6 +189,9 @@ NuPG_Synthesis_OscOS {
 				var ampOneMod_one, ampOneMod_two, ampOneMod_three, ampOneMod_four;
 				var ampTwoMod_one, ampTwoMod_two, ampTwoMod_three, ampTwoMod_four;
 				var ampThreeMod_one, ampThreeMod_two, ampThreeMod_three, ampThreeMod_four;
+				// Group offset triggers and accumulators
+				var stepTrigger_One, stepTrigger_Two, stepTrigger_Three;
+				var accumulator_One, accumulator_Two, accumulator_Three;
 
 				// ============================================================
 				// HELPER FUNCTIONS for sub-sample accurate triggering
@@ -297,6 +300,21 @@ NuPG_Synthesis_OscOS {
 				// Grains only start when trigger passes through all masks
 				accumulator = accumulatorSubSample.(stepTrigger, subSampleOffset);
 
+				// ============================================================
+				// GROUP OFFSET TRIGGERS AND ACCUMULATORS
+				// Each group can have its own timing offset
+				// ============================================================
+
+				// Apply offset delays to triggers for each group
+				stepTrigger_One = DelayN.ar(stepTrigger, 1, offset_1);
+				stepTrigger_Two = DelayN.ar(stepTrigger, 1, offset_2);
+				stepTrigger_Three = DelayN.ar(stepTrigger, 1, offset_3);
+
+				// Create accumulators for each offset trigger
+				accumulator_One = accumulatorSubSample.(stepTrigger_One, subSampleOffset);
+				accumulator_Two = accumulatorSubSample.(stepTrigger_Two, subSampleOffset);
+				accumulator_Three = accumulatorSubSample.(stepTrigger_Three, subSampleOffset);
+
 				//send trigger for language processing (after all masking)
 				sendTrigger = SendTrig.ar(stepTrigger, 0);
 
@@ -370,21 +388,23 @@ NuPG_Synthesis_OscOS {
 
 				// Window (envelope) slope: how fast envelope progresses
 				// Latch values at trigger for consistent grain duration
-				windowSlope_One = Latch.ar(grainSlope_One, stepTrigger) / max(0.001, Latch.ar(maxOverlap_One, stepTrigger));
-				windowSlope_Two = Latch.ar(grainSlope_Two, stepTrigger) / max(0.001, Latch.ar(maxOverlap_Two, stepTrigger));
-				windowSlope_Three = Latch.ar(grainSlope_Three, stepTrigger) / max(0.001, Latch.ar(maxOverlap_Three, stepTrigger));
+				// Use group-specific triggers for proper offset timing
+				windowSlope_One = Latch.ar(grainSlope_One, stepTrigger_One) / max(0.001, Latch.ar(maxOverlap_One, stepTrigger_One));
+				windowSlope_Two = Latch.ar(grainSlope_Two, stepTrigger_Two) / max(0.001, Latch.ar(maxOverlap_Two, stepTrigger_Two));
+				windowSlope_Three = Latch.ar(grainSlope_Three, stepTrigger_Three) / max(0.001, Latch.ar(maxOverlap_Three, stepTrigger_Three));
 
 				// Window phase: envelope position (0->1 over grain duration)
 				// clip(0,1) makes it one-shot (stays at end after grain completes)
-				windowPhase_One = (windowSlope_One * accumulator).clip(0, 1);
-				windowPhase_Two = (windowSlope_Two * accumulator).clip(0, 1);
-				windowPhase_Three = (windowSlope_Three * accumulator).clip(0, 1);
+				// Use group-specific accumulators for proper offset timing
+				windowPhase_One = (windowSlope_One * accumulator_One).clip(0, 1);
+				windowPhase_Two = (windowSlope_Two * accumulator_Two).clip(0, 1);
+				windowPhase_Three = (windowSlope_Three * accumulator_Three).clip(0, 1);
 
 				// Grain phase: pulsaret oscillation tied to envelope duration
 				// wrap(0,1) allows multiple cycles during grain
-				grainPhase_One = (windowPhase_One * Latch.ar(maxOverlap_One, stepTrigger)).wrap(0, 1);
-				grainPhase_Two = (windowPhase_Two * Latch.ar(maxOverlap_Two, stepTrigger)).wrap(0, 1);
-				grainPhase_Three = (windowPhase_Three * Latch.ar(maxOverlap_Three, stepTrigger)).wrap(0, 1);
+				grainPhase_One = (windowPhase_One * Latch.ar(maxOverlap_One, stepTrigger_One)).wrap(0, 1);
+				grainPhase_Two = (windowPhase_Two * Latch.ar(maxOverlap_Two, stepTrigger_Two)).wrap(0, 1);
+				grainPhase_Three = (windowPhase_Three * Latch.ar(maxOverlap_Three, stepTrigger_Three)).wrap(0, 1);
 
 				// Legacy grain duration calculation (for compatibility)
 				envM_One = ffreq_One * overlap_One * (2048/Server.default.sampleRate);
