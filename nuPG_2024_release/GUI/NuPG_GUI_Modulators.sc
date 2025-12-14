@@ -24,7 +24,8 @@ NuPG_GUI_Modulators {
 		//get GUI defs
 		var guiDefinitions = NuPG_GUI_Definitions;
 
-		data = dataModel;  // May be nil if not passed
+		// Initialize data array to hold CV references (set by connectModulatorsToData)
+		data = n.collect{};
 
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
