@@ -163,12 +163,13 @@ NuPG_GUI_Modulators {
 			// Row 13: spread slider + numberbox
 			viewLayout[i].addSpanning(item: overlapMorphSpread[i], row: 13, column: 0, columnSpan: 4);
 			viewLayout[i].addSpanning(item: overlapMorphSpreadNum[i], row: 13, column: 5);
-			// Row 14: shape menu, min/max
+			// Row 14: shape menu, (space), min/max
 			viewLayout[i].addSpanning(item: overlapMorphShape[i], row: 14, column: 0);
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_min", 11, 30), row: 14, column: 1);
-			viewLayout[i].addSpanning(item: overlapMorphMin[i], row: 14, column: 2);
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_max", 11, 30), row: 14, column: 3);
-			viewLayout[i].addSpanning(item: overlapMorphMax[i], row: 14, column: 4);
+			// column 1 left blank for spacing
+			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_min", 11, 30), row: 14, column: 2);
+			viewLayout[i].addSpanning(item: overlapMorphMin[i], row: 14, column: 3);
+			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_max", 11, 30), row: 14, column: 4);
+			viewLayout[i].addSpanning(item: overlapMorphMax[i], row: 14, column: 5);
 		};
 
 		//load views into stacks
