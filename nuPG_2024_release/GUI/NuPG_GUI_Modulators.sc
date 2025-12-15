@@ -210,7 +210,14 @@ NuPG_GUI_Modulators {
 
 	// Show/hide overlap morph controls based on synth availability
 	// OscOS supports overlap morph, classic (GrainBuf) does not
+	// Also resizes window: 340px for OscOS, 150px for classic
 	setOverlapMorphVisible {|visible|
+		var bounds = window.bounds;
+		var newHeight = if(visible, { 340 }, { 150 });
+
+		// Resize window (keep same position and width)
+		window.bounds = Rect(bounds.left, bounds.top, bounds.width, newHeight);
+
 		numInstances.do{|i|
 			// Hide/show controls
 			overlapMorphRate[i].visible = visible;
