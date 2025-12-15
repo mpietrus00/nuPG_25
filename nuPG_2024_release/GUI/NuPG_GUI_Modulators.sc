@@ -18,6 +18,14 @@ NuPG_GUI_Modulators {
 	var <>overlapMorphMax;
 	var <>overlapMorphSpread;
 	var <>overlapMorphSpreadNum;
+	// Overlap morph labels (for visibility toggling)
+	var <>overlapMorphHeader;
+	var <>overlapMorphRateLabel;
+	var <>overlapMorphDepthLabel;
+	var <>overlapMorphSpreadLabel;
+	var <>overlapMorphMinLabel;
+	var <>overlapMorphMaxLabel;
+	var <>numInstances;
 
 	draw {|name, dimensions, synthesis, dataModel = nil, n = 1|
 		var view, viewLayout, labels;
@@ -72,6 +80,15 @@ NuPG_GUI_Modulators {
 		overlapMorphMax = n.collect{};
 		overlapMorphSpread = n.collect{};
 		overlapMorphSpreadNum = n.collect{};
+		// Overlap morph label arrays
+		overlapMorphHeader = n.collect{};
+		overlapMorphRateLabel = n.collect{};
+		overlapMorphDepthLabel = n.collect{};
+		overlapMorphSpreadLabel = n.collect{};
+		overlapMorphMinLabel = n.collect{};
+		overlapMorphMaxLabel = n.collect{};
+		// Store number of instances
+		numInstances = n;
 
 		n.collect{|i|
 
@@ -147,32 +164,35 @@ NuPG_GUI_Modulators {
 			};
 
 			// Overlap morph layout (rows 7-14)
-			// Row 7: Header
-			viewLayout[i].addSpanning(
-				item: guiDefinitions.nuPGStaticText("_overlap morph", 11, 150),
-				row: 7, column: 0
-			);
+			// Row 7: Header - store reference for visibility toggle
+			overlapMorphHeader[i] = guiDefinitions.nuPGStaticText("_overlap morph", 11, 150);
+			viewLayout[i].addSpanning(item: overlapMorphHeader[i], row: 7, column: 0);
 			// Row 8: _rate label
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_rate", 11, 150), row: 8, column: 0);
+			overlapMorphRateLabel[i] = guiDefinitions.nuPGStaticText("_rate", 11, 150);
+			viewLayout[i].addSpanning(item: overlapMorphRateLabel[i], row: 8, column: 0);
 			// Row 9: rate slider + numberbox
 			viewLayout[i].addSpanning(item: overlapMorphRate[i], row: 9, column: 0, columnSpan: 4);
 			viewLayout[i].addSpanning(item: overlapMorphRateNum[i], row: 9, column: 5);
 			// Row 10: _depth label
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_depth", 11, 150), row: 10, column: 0);
+			overlapMorphDepthLabel[i] = guiDefinitions.nuPGStaticText("_depth", 11, 150);
+			viewLayout[i].addSpanning(item: overlapMorphDepthLabel[i], row: 10, column: 0);
 			// Row 11: depth slider + numberbox
 			viewLayout[i].addSpanning(item: overlapMorphDepth[i], row: 11, column: 0, columnSpan: 4);
 			viewLayout[i].addSpanning(item: overlapMorphDepthNum[i], row: 11, column: 5);
 			// Row 12: _spread label
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_spread", 11, 150), row: 12, column: 0);
+			overlapMorphSpreadLabel[i] = guiDefinitions.nuPGStaticText("_spread", 11, 150);
+			viewLayout[i].addSpanning(item: overlapMorphSpreadLabel[i], row: 12, column: 0);
 			// Row 13: spread slider + numberbox
 			viewLayout[i].addSpanning(item: overlapMorphSpread[i], row: 13, column: 0, columnSpan: 4);
 			viewLayout[i].addSpanning(item: overlapMorphSpreadNum[i], row: 13, column: 5);
 			// Row 14: shape menu, (space), min/max
 			viewLayout[i].addSpanning(item: overlapMorphShape[i], row: 14, column: 0);
 			// column 1 left blank for spacing
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_min", 11, 30), row: 14, column: 2);
+			overlapMorphMinLabel[i] = guiDefinitions.nuPGStaticText("_min", 11, 30);
+			viewLayout[i].addSpanning(item: overlapMorphMinLabel[i], row: 14, column: 2);
 			viewLayout[i].addSpanning(item: overlapMorphMin[i], row: 14, column: 3);
-			viewLayout[i].addSpanning(item: guiDefinitions.nuPGStaticText("_max", 11, 30), row: 14, column: 4);
+			overlapMorphMaxLabel[i] = guiDefinitions.nuPGStaticText("_max", 11, 30);
+			viewLayout[i].addSpanning(item: overlapMorphMaxLabel[i], row: 14, column: 4);
 			viewLayout[i].addSpanning(item: overlapMorphMax[i], row: 14, column: 5);
 		};
 
@@ -186,5 +206,29 @@ NuPG_GUI_Modulators {
 
 	visible {|boolean|
 		^window.visible = boolean
+	}
+
+	// Show/hide overlap morph controls based on synth availability
+	// OscOS supports overlap morph, classic (GrainBuf) does not
+	setOverlapMorphVisible {|visible|
+		numInstances.do{|i|
+			// Hide/show controls
+			overlapMorphRate[i].visible = visible;
+			overlapMorphRateNum[i].visible = visible;
+			overlapMorphDepth[i].visible = visible;
+			overlapMorphDepthNum[i].visible = visible;
+			overlapMorphSpread[i].visible = visible;
+			overlapMorphSpreadNum[i].visible = visible;
+			overlapMorphShape[i].visible = visible;
+			overlapMorphMin[i].visible = visible;
+			overlapMorphMax[i].visible = visible;
+			// Hide/show labels
+			overlapMorphHeader[i].visible = visible;
+			overlapMorphRateLabel[i].visible = visible;
+			overlapMorphDepthLabel[i].visible = visible;
+			overlapMorphSpreadLabel[i].visible = visible;
+			overlapMorphMinLabel[i].visible = visible;
+			overlapMorphMaxLabel[i].visible = visible;
+		};
 	}
 }

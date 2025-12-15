@@ -404,6 +404,10 @@ NuPG_Application {
 		modulators = NuPG_GUI_Modulators.new;
 		modulators.draw("_modulators", guiDefinitions.modulatorsViewDimensions, synthesis, n: numInstances);
 		modulators.tables = [multiparameterModulationTable, modulationRatioTable, modulationTable];
+		// Connect modulators to synthSwitcher for overlap morph visibility toggle
+		synthSwitcher.modulatorsGUI = modulators;
+		// Start with overlap morph hidden (default is standard/classic synth)
+		modulators.setOverlapMorphVisible(false);
 
 		groupsOffset = NuPG_GUI_GroupsOffset.new;
 		groupsOffset.draw("_groupsOffset", guiDefinitions.groupsOffsetViewDimensions, n: numInstances);
