@@ -18,7 +18,9 @@ Installation:
 
 Required Quarks:
   Quarks.install("Connection");
-  Quarks.install("OversamplingOscillators");  // Optional: for OscOS synthesis
+
+Optional (for OscOS synthesis):
+  Download OversamplingOscillators from: https://github.com/spluta/OversamplingOscillators
 
 After booting, access components via ~app:
   ~app.data          - Data model

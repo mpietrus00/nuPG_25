@@ -136,8 +136,8 @@ NuPG_SynthesisSwitcher {
 		} {
 			// Check if OscOS UGen is available
 			if (this.oscOSAvailable.not) {
-				"OscOS UGen not found. Install OversamplingOscillators quark:".warn;
-				"  Quarks.install(\"OversamplingOscillators\")".postln;
+				"OscOS UGen not found. Install OversamplingOscillators:".warn;
+				"  Download from: https://github.com/spluta/OversamplingOscillators".postln;
 				^this;
 			};
 			newSynth = oscOSSynth;
@@ -399,8 +399,8 @@ NuPG_SynthesisSwitcher {
 		"~switcher.oscOSAvailable; // Check if OscOS UGen is installed".postln;
 		"".postln;
 		"// Install OscOS (if needed):".postln;
-		"Quarks.install(\"OversamplingOscillators\");".postln;
-		"// Then recompile class library".postln;
+		"// Download from: https://github.com/spluta/OversamplingOscillators".postln;
+		"// Place in Extensions folder and recompile".postln;
 		"=============================================".postln;
 	}
 }
