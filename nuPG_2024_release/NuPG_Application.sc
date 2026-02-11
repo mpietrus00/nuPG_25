@@ -45,6 +45,12 @@ NuPG_Application {
 		^super.new.init(numChannels, numInstances)
 	}
 
+	// Class method to get the installation directory
+	// Uses the location of this class file to find resources
+	*installPath {
+		^PathName(this.filenameSymbol.asString).pathOnly;
+	}
+
 	init { |nChannels, nInstances|
 		numChannels = nChannels;
 		numInstances = nInstances;
@@ -53,11 +59,29 @@ NuPG_Application {
 	}
 
 	initPaths { |basePath|
-		// basePath should be the directory containing nuPG_2024_release
-		var releasePath = basePath +/+ "nuPG_2024_release";
+		// basePath should be the nuPG_2024_release directory (or parent containing it)
+		var releasePath;
+
+		if (basePath.isNil) {
+			// Auto-detect from class file location
+			releasePath = this.class.installPath;
+		} {
+			// Check if basePath is the release folder or its parent
+			if (PathName(basePath).folderName == "nuPG_2024_release") {
+				releasePath = basePath;
+			} {
+				releasePath = basePath +/+ "nuPG_2024_release";
+			};
+		};
+
 		tablesPath = releasePath +/+ "TABLES/";
 		filesPath = releasePath +/+ "FILES/";
 		presetsPath = releasePath +/+ "PRESETS/";
+
+		("nuPG paths initialized:").postln;
+		("  Tables: " ++ tablesPath).postln;
+		("  Files: " ++ filesPath).postln;
+		("  Presets: " ++ presetsPath).postln;
 	}
 
 	initServerOptions {
@@ -68,14 +92,14 @@ NuPG_Application {
 	}
 
 	boot { |basePath|
-		// Set paths from basePath (should be thisProcess.nowExecutingPath.dirname from startup script)
-		if (basePath.notNil) {
-			this.initPaths(basePath);
-		} {
-			if (tablesPath.isNil) {
-				"ERROR: Paths not set. Call boot(basePath) or set tablesPath, filesPath, presetsPath manually.".error;
-				^this
-			};
+		// Auto-detect paths if not provided
+		this.initPaths(basePath);
+
+		// Verify paths exist
+		if (File.exists(tablesPath).not) {
+			("ERROR: Tables path not found: " ++ tablesPath).error;
+			"Make sure nuPG is properly installed.".postln;
+			^this
 		};
 
 		Server.default.waitForBoot({
