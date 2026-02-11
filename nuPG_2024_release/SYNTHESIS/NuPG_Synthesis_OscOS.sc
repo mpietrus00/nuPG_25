@@ -81,7 +81,7 @@ NuPG_Synthesis_OscOS {
 				allFluxAmt = 0.0, allFluxAmt_loop = 1, fluxRate = 40,
 				fmRatio = 5, fmRatio_loop = 1, fmAmt = 5, fmAmt_loop = 1,
 				modMul = 3, modAdd = 3,
-				fmIndex = 0, modulationMode = 0,
+				modulationMode = 0,  // fmIndex removed - unused
 				//fundamental modulation on/off
 				fundamentalMod_one_active = 0, fundamentalMod_two_active = 0, fundamentalMod_three_active = 0, fundamentalMod_four_active = 0,
 				//modulation
@@ -101,8 +101,7 @@ NuPG_Synthesis_OscOS {
 				chanMask = 0, centerMask = 1,
 				sieveMaskOn = 0, sieveSequence = #[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 				sieveMod = 16,
-				//formants
-				formantModel = 0,
+				//formants (formantModel removed - unused)
 				formant_frequency_One  = 150, formant_frequency_Two = 20, formant_frequency_Three = 90,
 				formant_frequency_One_loop = 1, formant_frequency_Two_loop = 1, formant_frequency_Three_loop =1,
 				formantOneMod_one_active = 0, formantOneMod_two_active = 0, formantOneMod_three_active = 0, formantOneMod_four_active = 0,
@@ -141,7 +140,14 @@ NuPG_Synthesis_OscOS {
 
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
 				// Oversampling factor for OscOS (2, 4, or 8)
-				oversample = 4;
+				oversample = 4,
+				// Overlap morph (fmIndex + formantModel removed to make room)
+				overlapMorphRate = 0.1,
+				overlapMorphDepth = 0,
+				overlapMorphMin = 1,
+				overlapMorphMax = 10,
+				overlapPhaseOffset = 0,
+				overlapMorphShape = 0;
 
 				// Sub-sample accurate trigger generation variables
 				var stepPhase, stepTrigger, stepSlope;
@@ -189,6 +195,9 @@ NuPG_Synthesis_OscOS {
 				var ampOneMod_one, ampOneMod_two, ampOneMod_three, ampOneMod_four;
 				var ampTwoMod_one, ampTwoMod_two, ampTwoMod_three, ampTwoMod_four;
 				var ampThreeMod_one, ampThreeMod_two, ampThreeMod_three, ampThreeMod_four;
+				// Group offset triggers and accumulators
+				var stepTrigger_One, stepTrigger_Two, stepTrigger_Three;
+				var accumulator_One, accumulator_Two, accumulator_Three;
 
 				// ============================================================
 				// HELPER FUNCTIONS for sub-sample accurate triggering
@@ -297,6 +306,21 @@ NuPG_Synthesis_OscOS {
 				// Grains only start when trigger passes through all masks
 				accumulator = accumulatorSubSample.(stepTrigger, subSampleOffset);
 
+				// ============================================================
+				// GROUP OFFSET TRIGGERS AND ACCUMULATORS
+				// Each group can have its own timing offset
+				// ============================================================
+
+				// Apply offset delays to triggers for each group
+				stepTrigger_One = DelayN.ar(stepTrigger, 1, offset_1);
+				stepTrigger_Two = DelayN.ar(stepTrigger, 1, offset_2);
+				stepTrigger_Three = DelayN.ar(stepTrigger, 1, offset_3);
+
+				// Create accumulators for each offset trigger
+				accumulator_One = accumulatorSubSample.(stepTrigger_One, subSampleOffset);
+				accumulator_Two = accumulatorSubSample.(stepTrigger_Two, subSampleOffset);
+				accumulator_Three = accumulatorSubSample.(stepTrigger_Three, subSampleOffset);
+
 				//send trigger for language processing (after all masking)
 				sendTrigger = SendTrig.ar(stepTrigger, 0);
 
@@ -357,6 +381,38 @@ NuPG_Synthesis_OscOS {
 				overlap_Two = envMul_Two * envMul_Two_loop;
 				overlap_Three = envMul_Three * envMul_Three_loop;
 
+				// Overlap morphing modulation
+				// overlapMorphDepth controls mix between dilation and LFO
+				// overlapPhaseOffset controls phase spread between groups (0=sync, 1=120° spread)
+				// overlapMorphShape: 0=sine, 1=tri, 2=saw, 3=random, 4=chaos
+				overlap_One = overlap_One + (overlapMorphDepth * (
+					Select.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate),
+						LFTri.kr(overlapMorphRate),
+						LFSaw.kr(overlapMorphRate),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_One
+				));
+				overlap_Two = overlap_Two + (overlapMorphDepth * (
+					Select.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate, 2pi/3 * overlapPhaseOffset),
+						LFTri.kr(overlapMorphRate, 2/3 * overlapPhaseOffset),
+						LFSaw.kr(overlapMorphRate, 2/3 * overlapPhaseOffset),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
+				));
+				overlap_Three = overlap_Three + (overlapMorphDepth * (
+					Select.kr(overlapMorphShape, [
+						SinOsc.kr(overlapMorphRate, 4pi/3 * overlapPhaseOffset),
+						LFTri.kr(overlapMorphRate, 4/3 * overlapPhaseOffset),
+						LFSaw.kr(overlapMorphRate, 4/3 * overlapPhaseOffset),
+						LFNoise1.kr(overlapMorphRate),
+						LFNoise2.kr(overlapMorphRate)
+					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three
+				));
+
 				// Calculate grain slopes (phase increment per sample)
 				grainSlope_One = ffreq_One * SampleDur.ir;
 				grainSlope_Two = ffreq_Two * SampleDur.ir;
@@ -370,21 +426,23 @@ NuPG_Synthesis_OscOS {
 
 				// Window (envelope) slope: how fast envelope progresses
 				// Latch values at trigger for consistent grain duration
-				windowSlope_One = Latch.ar(grainSlope_One, stepTrigger) / max(0.001, Latch.ar(maxOverlap_One, stepTrigger));
-				windowSlope_Two = Latch.ar(grainSlope_Two, stepTrigger) / max(0.001, Latch.ar(maxOverlap_Two, stepTrigger));
-				windowSlope_Three = Latch.ar(grainSlope_Three, stepTrigger) / max(0.001, Latch.ar(maxOverlap_Three, stepTrigger));
+				// Use group-specific triggers for proper offset timing
+				windowSlope_One = Latch.ar(grainSlope_One, stepTrigger_One) / max(0.001, Latch.ar(maxOverlap_One, stepTrigger_One));
+				windowSlope_Two = Latch.ar(grainSlope_Two, stepTrigger_Two) / max(0.001, Latch.ar(maxOverlap_Two, stepTrigger_Two));
+				windowSlope_Three = Latch.ar(grainSlope_Three, stepTrigger_Three) / max(0.001, Latch.ar(maxOverlap_Three, stepTrigger_Three));
 
 				// Window phase: envelope position (0->1 over grain duration)
 				// clip(0,1) makes it one-shot (stays at end after grain completes)
-				windowPhase_One = (windowSlope_One * accumulator).clip(0, 1);
-				windowPhase_Two = (windowSlope_Two * accumulator).clip(0, 1);
-				windowPhase_Three = (windowSlope_Three * accumulator).clip(0, 1);
+				// Use group-specific accumulators for proper offset timing
+				windowPhase_One = (windowSlope_One * accumulator_One).clip(0, 1);
+				windowPhase_Two = (windowSlope_Two * accumulator_Two).clip(0, 1);
+				windowPhase_Three = (windowSlope_Three * accumulator_Three).clip(0, 1);
 
 				// Grain phase: pulsaret oscillation tied to envelope duration
 				// wrap(0,1) allows multiple cycles during grain
-				grainPhase_One = (windowPhase_One * Latch.ar(maxOverlap_One, stepTrigger)).wrap(0, 1);
-				grainPhase_Two = (windowPhase_Two * Latch.ar(maxOverlap_Two, stepTrigger)).wrap(0, 1);
-				grainPhase_Three = (windowPhase_Three * Latch.ar(maxOverlap_Three, stepTrigger)).wrap(0, 1);
+				grainPhase_One = (windowPhase_One * Latch.ar(maxOverlap_One, stepTrigger_One)).wrap(0, 1);
+				grainPhase_Two = (windowPhase_Two * Latch.ar(maxOverlap_Two, stepTrigger_Two)).wrap(0, 1);
+				grainPhase_Three = (windowPhase_Three * Latch.ar(maxOverlap_Three, stepTrigger_Three)).wrap(0, 1);
 
 				// Legacy grain duration calculation (for compatibility)
 				envM_One = ffreq_One * overlap_One * (2048/Server.default.sampleRate);

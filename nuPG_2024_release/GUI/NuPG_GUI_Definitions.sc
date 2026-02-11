@@ -53,7 +53,8 @@ NuPG_GUI_Definitions {
 				synthSwitcher: (width: 250, height: 45),
 				extensions: (width: 300, height: 110),
 				main: (width: 300, height: 430),
-				modulator: (width: 320, height: 130),
+				modulator: (width: 320, height: 340),
+				offset: (width: 320, height: 150),
 				scrubber: (width: 1000, height: 30),
 				record: (width: 300, height: 30),
 				maskingControl: (width: 200, height: 100),
@@ -113,7 +114,7 @@ NuPG_GUI_Definitions {
 
 				// Column 7: Modulators
 				modulators: [\col7, \row1, \modulator],
-				groupsOffset: [\col7, \row2, \modulator],
+				groupsOffset: [\col7, \row2, \offset],
 				modulationAmount: [\col7, \row2, \tableSmall],
 				modulationRatio: [\col7, \row5, \tableSmall],
 				multiParameterModulation: [\col7, \row6, \tableSmall],

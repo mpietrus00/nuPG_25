@@ -15,6 +15,7 @@ NuPG_SynthesisSwitcher {
 	var <>buffers;            // Dictionary of buffer references
 	var <>loopTask;           // NuPG_LoopTask reference for seamless switching
 	var <>groupStates;        // Track group_X_onOff states for transfer during switch
+	var <>modulatorsGUI;      // Reference to modulators GUI for overlap morph visibility
 
 	*new {
 		if (instance.isNil) {
@@ -186,6 +187,12 @@ NuPG_SynthesisSwitcher {
 			if (wasPlaying[i] == true) {
 				newSynth.trainInstances[i].play;
 			};
+		};
+
+		// Update modulators GUI overlap morph visibility
+		// OscOS supports overlap morph, standard does not
+		if (modulatorsGUI.notNil) {
+			modulatorsGUI.setOverlapMorphVisible(newMode == \oscos);
 		};
 
 		("Switched to" + mode + "synthesis").postln;

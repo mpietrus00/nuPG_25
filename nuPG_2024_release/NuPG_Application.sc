@@ -45,6 +45,12 @@ NuPG_Application {
 		^super.new.init(numChannels, numInstances)
 	}
 
+	// Class method to get the installation directory
+	// Uses the location of this class file to find resources
+	*installPath {
+		^PathName(this.filenameSymbol.asString).pathOnly;
+	}
+
 	init { |nChannels, nInstances|
 		numChannels = nChannels;
 		numInstances = nInstances;
@@ -53,11 +59,29 @@ NuPG_Application {
 	}
 
 	initPaths { |basePath|
-		// basePath should be the directory containing nuPG_2024_release
-		var releasePath = basePath +/+ "nuPG_2024_release";
+		// basePath should be the nuPG_2024_release directory (or parent containing it)
+		var releasePath;
+
+		if (basePath.isNil) {
+			// Auto-detect from class file location
+			releasePath = this.class.installPath;
+		} {
+			// Check if basePath is the release folder or its parent
+			if (PathName(basePath).folderName == "nuPG_2024_release") {
+				releasePath = basePath;
+			} {
+				releasePath = basePath +/+ "nuPG_2024_release";
+			};
+		};
+
 		tablesPath = releasePath +/+ "TABLES/";
 		filesPath = releasePath +/+ "FILES/";
 		presetsPath = releasePath +/+ "PRESETS/";
+
+		("nuPG paths initialized:").postln;
+		("  Tables: " ++ tablesPath).postln;
+		("  Files: " ++ filesPath).postln;
+		("  Presets: " ++ presetsPath).postln;
 	}
 
 	initServerOptions {
@@ -68,14 +92,14 @@ NuPG_Application {
 	}
 
 	boot { |basePath|
-		// Set paths from basePath (should be thisProcess.nowExecutingPath.dirname from startup script)
-		if (basePath.notNil) {
-			this.initPaths(basePath);
-		} {
-			if (tablesPath.isNil) {
-				"ERROR: Paths not set. Call boot(basePath) or set tablesPath, filesPath, presetsPath manually.".error;
-				^this
-			};
+		// Auto-detect paths if not provided
+		this.initPaths(basePath);
+
+		// Verify paths exist
+		if (File.exists(tablesPath).not) {
+			("ERROR: Tables path not found: " ++ tablesPath).error;
+			"Make sure nuPG is properly installed.".postln;
+			^this
 		};
 
 		Server.default.waitForBoot({
@@ -404,6 +428,10 @@ NuPG_Application {
 		modulators = NuPG_GUI_Modulators.new;
 		modulators.draw("_modulators", guiDefinitions.modulatorsViewDimensions, synthesis, n: numInstances);
 		modulators.tables = [multiparameterModulationTable, modulationRatioTable, modulationTable];
+		// Connect modulators to synthSwitcher for overlap morph visibility toggle
+		synthSwitcher.modulatorsGUI = modulators;
+		// Start with overlap morph hidden (default is standard/classic synth)
+		modulators.setOverlapMorphVisible(false);
 
 		groupsOffset = NuPG_GUI_GroupsOffset.new;
 		groupsOffset.draw("_groupsOffset", guiDefinitions.groupsOffsetViewDimensions, n: numInstances);
@@ -717,6 +745,25 @@ NuPG_Application {
 			modulator4.modType[i].action_({|m| synthesis.trainInstances[i].set(\modulator_type_four, m.value) });
 
 			4.collect{|k| 13.collect{|l| data.data_matrix[i][k][l].connect(matrixMod.matrix[i][k][l]) } };
+
+			// Overlap morph CV connections (rate, depth, min, max only)
+			// Rate [0]: slider + numberbox
+			data.data_overlapMorph[i][0].connect(modulators.overlapMorphRate[i]);
+			data.data_overlapMorph[i][0].connect(modulators.overlapMorphRateNum[i]);
+			// Depth [1]: slider + numberbox
+			data.data_overlapMorph[i][1].connect(modulators.overlapMorphDepth[i]);
+			data.data_overlapMorph[i][1].connect(modulators.overlapMorphDepthNum[i]);
+			// Min [3]: numberbox
+			data.data_overlapMorph[i][3].connect(modulators.overlapMorphMin[i]);
+			// Max [4]: numberbox
+			data.data_overlapMorph[i][4].connect(modulators.overlapMorphMax[i]);
+			// Spread [5]: slider + numberbox
+			data.data_overlapMorph[i][5].connect(modulators.overlapMorphSpread[i]);
+			data.data_overlapMorph[i][5].connect(modulators.overlapMorphSpreadNum[i]);
+			// Shape [2]: menu action to update CV
+			modulators.overlapMorphShape[i].action_({|m|
+				data.data_overlapMorph[i][2].value = m.value;
+			});
 		};
 	}
 
@@ -936,7 +983,14 @@ NuPG_Application {
 				ampThreeMod_one_active: data.data_matrix[i][0][12],
 				ampThreeMod_two_active: data.data_matrix[i][1][12],
 				ampThreeMod_three_active: data.data_matrix[i][2][12],
-				ampThreeMod_four_active: data.data_matrix[i][3][12]
+				ampThreeMod_four_active: data.data_matrix[i][3][12],
+				// Overlap morph (formantModel + fmIndex removed to make room)
+				overlapMorphRate: data.data_overlapMorph[i][0],
+				overlapMorphDepth: data.data_overlapMorph[i][1],
+				overlapMorphShape: data.data_overlapMorph[i][2],
+				overlapMorphMin: data.data_overlapMorph[i][3],
+				overlapMorphMax: data.data_overlapMorph[i][4],
+				overlapPhaseOffset: data.data_overlapMorph[i][5]
 			]);
 		};
 	}

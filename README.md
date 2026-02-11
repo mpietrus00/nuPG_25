@@ -9,16 +9,32 @@ nuPG is a pulsar synthesis instrument for SuperCollider featuring multiple grain
 
 ## Installation
 
-### 1. Install Required Quarks
+### Step 1: Install Required Quarks
+
+Open SuperCollider and run:
 
 ```supercollider
 Quarks.install("Connection");
 Quarks.install("OversamplingOscillators");  // Optional: for non-aliasing OscOS synthesis
 ```
 
-Recompile class library: `Cmd+Shift+L` (Mac) or `Ctrl+Shift+L` (Win/Linux)
+Recompile the class library: `Cmd+Shift+L` (Mac) or `Ctrl+Shift+L` (Win/Linux)
 
-### 2. Install nuPG Classes
+### Step 2: Install nuPG
+
+**Option A: Add to Include Path (Recommended)**
+
+Place the `nuPG_2024_release` folder anywhere on your machine, then add it to SuperCollider:
+
+```supercollider
+// Run once to add the path:
+LanguageConfig.addIncludePath("/path/to/your/nuPG_2024_release");
+LanguageConfig.store;
+
+// Then recompile: Cmd+Shift+L (Mac) or Ctrl+Shift+L (Win/Linux)
+```
+
+**Option B: Copy to Extensions**
 
 Copy the `nuPG_2024_release` folder to your SuperCollider Extensions directory:
 
@@ -26,58 +42,44 @@ Copy the `nuPG_2024_release` folder to your SuperCollider Extensions directory:
 Platform.userExtensionDir;  // Run this to find your Extensions path
 ```
 
-Or create a symlink to the repository location.
+Then recompile the class library.
 
-### 3. Recompile
+### Step 3: Verify Installation
 
-Recompile class library after copying files.
+After recompiling, run:
+
+```supercollider
+NuPG_Application.installPath;  // Should print the path to nuPG
+```
 
 ## Usage
 
 ### Quick Start
 
-Execute `nuPG_25_startUp.scd` - this uses the `NuPG_Application` class for clean initialization:
-
 ```supercollider
-// Configuration
-~numChannels = 1;
-~numInstances = 1;
+// Boot with default settings (1 channel, 1 instance)
+~app = NuPG_Application.new.boot;
 
-// Get the directory containing this startup script
-~basePath = thisProcess.nowExecutingPath.dirname;
-
-// Create and boot the application
-~app = NuPG_Application(~numChannels, ~numInstances).boot(~basePath);
+// Or customize:
+~app = NuPG_Application(numChannels: 2, numInstances: 3).boot;
 ```
 
-After booting, access components via `~app`:
+Paths to TABLES, FILES, and PRESETS are automatically detected from the installation location.
+
+### After Booting
+
+Access components via `~app`:
 - `~app.data` - Data model
-- `~app.synthesis` - Standard synthesis
+- `~app.synthesis` - Standard GrainBuf synthesis
 - `~app.synthesisOscOS` - Oversampling synthesis
-- `~app.synthSwitcher` - Synthesis switcher
+- `~app.synthSwitcher` - Switch between synthesis engines
 - `~app.control` - Control GUI
 - `~app.presets` - Presets GUI
 
-### Legacy Startup
-
-The original startup script `nuPG_24_startUp.scd` is still available for backwards compatibility.
-
-### Basic Controls
-
-After startup, use the GUI to control synthesis parameters. Each train has:
-- Fundamental and formant frequencies
-- Envelope multipliers (dilation)
-- Pan and amplitude per formant group
-- Burst/rest masking
-- Probability masking
-- Sieve-based rhythmic patterns
-- 4 modulators with routing matrix
-
 ### Synthesis Switching
 
-Toggle between GrainBuf (Classic) and OscOS (Oversampling) synthesis using the `_classic`/`_oversampling` button in the nuPG control GUI.
+Toggle between GrainBuf (Classic) and OscOS (Oversampling) synthesis:
 
-Or via code:
 ```supercollider
 ~app.synthSwitcher.useOscOS;       // Non-aliasing synthesis
 ~app.synthSwitcher.useStandard;    // GrainBuf-based (default)
@@ -85,9 +87,21 @@ Or via code:
 ~app.synthSwitcher.status;         // Print current status
 ```
 
-### Table Editor
+Or use the `_classic`/`_oversampling` button in the nuPG control GUI.
 
-The table editor provides waveform manipulation tools:
+### Basic Controls
+
+Each train has:
+- Fundamental and formant frequencies
+- Envelope multipliers (dilation)
+- Pan and amplitude per formant group
+- Burst/rest masking
+- Probability masking
+- Sieve-based rhythmic patterns
+- 4 modulators with routing matrix
+- Overlap morph modulation (OscOS only)
+
+### Table Editor
 
 | Button | Function |
 |--------|----------|
@@ -101,59 +115,50 @@ The table editor provides waveform manipulation tools:
 | **PW** | Power (squared curve) |
 | **RND** | Random (generate new waveform) |
 | **SIN** | Sine waveshaping |
-| **+N** | Add noise (±10% random) |
-| **← → ↑ ↓** | Shift table position |
+| **+N** | Add noise (+-10% random) |
+| **arrows** | Shift table position |
 
 ### Presets
 
-The presets GUI provides:
-- **S** - Save new preset with auto-generated name
+- **S** - Save new preset
 - **L** - Load selected preset
 - **U** - Update/overwrite selected preset
-- **_size** / **_cur** - Preset count and current index
 - **_prev** / **_nxt** - Navigate presets
-- **+** / **-** - Add/remove preset slots
 - Interpolation slider for morphing between presets
 
 ## File Structure
 
 ```
 nuPG_25/
-├── nuPG_25_startUp.scd          - New startup script (recommended)
+├── nuPG_25_startUp.scd          - Startup script
 ├── nuPG_24_startUp.scd          - Legacy startup script
 ├── README.md
 └── nuPG_2024_release/
-    ├── NuPG_Application.sc      - Application class
-    ├── DATA/                    - Data structures and CV extensions
-    ├── SYNTHESIS/               - Synthesis engines (GrainBuf, OscOS)
+    ├── NuPG_Application.sc      - Main application class
+    ├── DATA/                    - Data structures
+    ├── SYNTHESIS/               - Synthesis engines
     ├── GUI/                     - GUI components
-    ├── MIDI_OSC/                - MIDI and OSC control interfaces
-    ├── PRESET_MANAGER/          - Preset save/load system
+    ├── MIDI_OSC/                - MIDI/OSC control
+    ├── PRESET_MANAGER/          - Preset system
     ├── TABLES/                  - Wavetable files
-    ├── FILES/                   - Sieve and other data files
+    ├── FILES/                   - Sieve data files
     └── PRESETS/                 - Saved presets
 ```
 
-## Architecture
+## Troubleshooting
 
-### NuPG_Application
+**"ERROR: Tables path not found"**
+- Make sure nuPG_2024_release is in your include path or Extensions folder
+- Verify the TABLES folder exists inside nuPG_2024_release
+- Recompile the class library after installation
 
-The `NuPG_Application` class provides organized initialization:
+**OscOS synthesis not available**
+- Install the OversamplingOscillators quark: `Quarks.install("OversamplingOscillators")`
+- Recompile and restart SuperCollider
 
-- `init` - Configuration and server options
-- `initBuffers` - Create envelope, pulsaret, frequency buffers
-- `initData` - Setup data model and conductors
-- `initSynthesis` - Create standard and OscOS synths + switcher
-- `initTasks` - Loop, scrub, progress tasks
-- `initGUI` - All GUI components
-- `connectDataToGUI` - Wire data to GUI components
-- `connectBuffersToSynths` - Wire buffers to synth instances
-- `connectControlsToSynths` - Wire control parameters
-
-### Synthesis Engines
-
-- **GrainBuf (Classic)** - Standard SuperCollider grain synthesis
-- **OscOS (Oversampling)** - Non-aliasing synthesis via OversamplingOscillators quark
+**GUI elements missing or misaligned**
+- Check that all class files compiled without errors
+- Look for error messages in the post window during boot
 
 ## License
 
