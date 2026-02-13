@@ -1,5 +1,5 @@
 // NuPG_Synthesis_OscOS.sc
-// Non-aliasing variant using OscOS from OversamplingOscillators quark
+// Non-aliasing variant using OscOS from OversamplingOscillators plugin
 // Provides band-limited wavetable oscillation for cleaner high-frequency content
 // Enhanced with sub-sample accurate triggering and explicit overlap control
 
@@ -13,7 +13,7 @@ NuPG_OscOS {
 		// Use Phasor triggered by impulse for wavetable position
 		phase = Phasor.ar(trigger, rate, 0, 1);
 
-		// OscOS provides oversampled wavetable lookup (requires OversamplingOscillators quark)
+		// OscOS provides oversampled wavetable lookup (requires OversamplingOscillators plugin)
 		// Falls back to Osc if OscOS not available
 		pulsaret = OscOS.ar(pulsar_buffer, rate * BufSampleRate.ir(pulsar_buffer) / BufFrames.ir(pulsar_buffer), 0, 4);
 

@@ -48,7 +48,7 @@ s.waitForBoot({
 	//generate equal number of synthesis graphs
 	~synthesis = NuPG_Synthesis.new;
 	~synthesis.trains(~numberOfInstances, numChannels: ~numChannels);
-	// Create OscOS synthesis variant (non-aliasing, requires OversamplingOscillators quark)
+	// Create OscOS synthesis variant (non-aliasing, requires OversamplingOscillators plugin)
 	~synthesisOscOS = NuPG_Synthesis_OscOS.new;
 	~synthesisOscOS.trains(~numberOfInstances, numChannels: ~numChannels);
 	// Setup synthesis switcher for easy switching between engines
