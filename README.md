@@ -15,8 +15,14 @@ Open SuperCollider and run:
 
 ```supercollider
 Quarks.install("Connection");
-Quarks.install("OversamplingOscillators");  // Optional: for non-aliasing OscOS synthesis
 ```
+
+**Optional: OversamplingOscillators** (for non-aliasing OscOS synthesis)
+
+Download from [spluta/OversamplingOscillators](https://github.com/spluta/OversamplingOscillators):
+- Download pre-built binaries from Releases, or build from source
+- Place the OversamplingOscillators folder in your Extensions directory
+- Mac users: unquarantine downloaded binaries
 
 Recompile the class library: `Cmd+Shift+L` (Mac) or `Ctrl+Shift+L` (Win/Linux)
 
@@ -153,8 +159,8 @@ nuPG_25/
 - Recompile the class library after installation
 
 **OscOS synthesis not available**
-- Install the OversamplingOscillators quark: `Quarks.install("OversamplingOscillators")`
-- Recompile and restart SuperCollider
+- Download OversamplingOscillators from https://github.com/spluta/OversamplingOscillators
+- Place in your Extensions folder and recompile
 
 **GUI elements missing or misaligned**
 - Check that all class files compiled without errors

@@ -90,7 +90,7 @@ NuPG_GUI_Control_View {
 				switcher.useOscOS;
 				this.updateButtonStates;
 			} {
-				"OscOS not available - install OversamplingOscillators quark".warn;
+				"OscOS not available - download OversamplingOscillators from github.com/spluta/OversamplingOscillators".warn;
 			};
 		} {
 			"Switcher not setup - use setupSwitcher method first".warn;

@@ -68,12 +68,11 @@
 // --------------------------------------------
 // INSTALL OSCOS (if not already installed)
 // --------------------------------------------
-(
-// Run this once, then recompile class library
-Quarks.install("OversamplingOscillators");
-)
-
-// Recompile: Cmd+Shift+L (Mac) or Ctrl+Shift+L (Win/Linux)
+// Download OversamplingOscillators from:
+// https://github.com/spluta/OversamplingOscillators
+//
+// Place in Extensions folder and recompile:
+// Cmd+Shift+L (Mac) or Ctrl+Shift+L (Win/Linux)
 
 // --------------------------------------------
 // EXAMPLE: A/B COMPARISON
