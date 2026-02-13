@@ -138,6 +138,9 @@ if (~app.numInstances > 1) {
 // View all current mappings
 ~app.midiMapper.getMappings;
 
+// Print a summary of all mappings to the post window
+~app.midiMapper.printMappings;
+
 // Remove a specific mapping
 ~app.midiMapper.unmap(74, nil);   // unmap CC74 any-channel
 ~app.midiMapper.unmap(1, 0);     // unmap CC1 channel 0
@@ -145,12 +148,29 @@ if (~app.numInstances > 1) {
 // Clear all mappings
 ~app.midiMapper.clearAll;
 
-// Save mappings to file
+
+// =====================================================================
+// 6. SAVE / LOAD MIDI MAPPINGS
+// =====================================================================
+
+// Save current mappings to a file
+// Mappings are stored by parameter name, so they restore correctly
+// even if your MIDI device changes
 ~app.midiMapper.save(~app.presetsPath ++ "midi_map.txt");
+
+// Load mappings from a file (replaces current mappings)
+~app.midiMapper.load(~app.presetsPath ++ "midi_map.txt");
+
+// You can save multiple mapping profiles for different controllers
+~app.midiMapper.save(~app.presetsPath ++ "midi_map_apc40.txt");
+~app.midiMapper.save(~app.presetsPath ++ "midi_map_nanokontrol.txt");
+
+// Then load the one you need
+~app.midiMapper.load(~app.presetsPath ++ "midi_map_nanokontrol.txt");
 
 
 // =====================================================================
-// 6. ENABLE / DISABLE MIDI
+// 7. ENABLE / DISABLE MIDI
 // =====================================================================
 
 // MIDI is enabled automatically on boot. To manually control:

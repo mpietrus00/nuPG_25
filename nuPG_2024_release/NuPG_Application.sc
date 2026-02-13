@@ -177,16 +177,18 @@ NuPG_Application {
 		midiMapper.enable;
 	}
 
-	// Helper: add Ctrl+click MIDI learn to a slider
+	// Helper: add Ctrl+click MIDI learn to a slider and register the CV for save/load
 	// When user Ctrl+clicks a slider, it enters MIDI learn mode for the associated CV
 	prAddMIDILearn { |slider, cv, name|
+		// Register CV in the mapper's registry for save/load support
+		midiMapper.registerCV(name, cv);
 		slider.mouseDownAction_{|view, x, y, modifiers, buttonNumber, clickCount|
 			// Ctrl+click (modifiers: 262144 on macOS, check bit 18)
 			// Also support right-click (buttonNumber == 1)
 			if ((buttonNumber == 1) or: { modifiers.isKindOf(Integer) and: { modifiers & 262144 > 0 } }) {
 				midiMapper.learn(cv, {|cc, chan|
 					("MIDI Learned: CC" + cc + "ch" + chan + "->" + name).postln;
-				});
+				}, name);
 			};
 		};
 	}
@@ -854,38 +856,48 @@ NuPG_Application {
 			// Main sliders (13 parameters)
 			13.collect{|l|
 				this.prAddMIDILearn(main.slider[i][l], data.data_main[i][l],
-					"inst" + i + mainNames[l]);
+					"inst" ++ i ++ "_" ++ mainNames[l]);
 			};
 
 			// Modulator sliders (3 parameters)
 			3.collect{|l|
 				this.prAddMIDILearn(modulators.slider[i][l], data.data_modulators[i][l],
-					"inst" + i + modulatorNames[l]);
+					"inst" ++ i ++ "_" ++ modulatorNames[l]);
 			};
 
 			// Groups offset sliders (3 parameters)
 			3.collect{|l|
 				this.prAddMIDILearn(groupsOffset.slider[i][l], data.data_groupsOffset[i][l],
-					"inst" + i + offsetNames[l]);
+					"inst" ++ i ++ "_" ++ offsetNames[l]);
 			};
 
 			// Modulator 1-4 freq and depth
-			this.prAddMIDILearn(modulator1.modFreq[i], data.data_modulator1[i][1], "inst" + i + "mod1_freq");
-			this.prAddMIDILearn(modulator1.modDepth[i], data.data_modulator1[i][2], "inst" + i + "mod1_depth");
-			this.prAddMIDILearn(modulator2.modFreq[i], data.data_modulator2[i][1], "inst" + i + "mod2_freq");
-			this.prAddMIDILearn(modulator2.modDepth[i], data.data_modulator2[i][2], "inst" + i + "mod2_depth");
-			this.prAddMIDILearn(modulator3.modFreq[i], data.data_modulator3[i][1], "inst" + i + "mod3_freq");
-			this.prAddMIDILearn(modulator3.modDepth[i], data.data_modulator3[i][2], "inst" + i + "mod3_depth");
-			this.prAddMIDILearn(modulator4.modFreq[i], data.data_modulator4[i][1], "inst" + i + "mod4_freq");
-			this.prAddMIDILearn(modulator4.modDepth[i], data.data_modulator4[i][2], "inst" + i + "mod4_depth");
+			this.prAddMIDILearn(modulator1.modFreq[i], data.data_modulator1[i][1], "inst" ++ i ++ "_mod1_freq");
+			this.prAddMIDILearn(modulator1.modDepth[i], data.data_modulator1[i][2], "inst" ++ i ++ "_mod1_depth");
+			this.prAddMIDILearn(modulator2.modFreq[i], data.data_modulator2[i][1], "inst" ++ i ++ "_mod2_freq");
+			this.prAddMIDILearn(modulator2.modDepth[i], data.data_modulator2[i][2], "inst" ++ i ++ "_mod2_depth");
+			this.prAddMIDILearn(modulator3.modFreq[i], data.data_modulator3[i][1], "inst" ++ i ++ "_mod3_freq");
+			this.prAddMIDILearn(modulator3.modDepth[i], data.data_modulator3[i][2], "inst" ++ i ++ "_mod3_depth");
+			this.prAddMIDILearn(modulator4.modFreq[i], data.data_modulator4[i][1], "inst" ++ i ++ "_mod4_freq");
+			this.prAddMIDILearn(modulator4.modDepth[i], data.data_modulator4[i][2], "inst" ++ i ++ "_mod4_depth");
 
 			// Overlap morph sliders
-			this.prAddMIDILearn(modulators.overlapMorphRate[i], data.data_overlapMorph[i][0], "inst" + i + "overlap_rate");
-			this.prAddMIDILearn(modulators.overlapMorphDepth[i], data.data_overlapMorph[i][1], "inst" + i + "overlap_depth");
-			this.prAddMIDILearn(modulators.overlapMorphSpread[i], data.data_overlapMorph[i][5], "inst" + i + "overlap_spread");
+			this.prAddMIDILearn(modulators.overlapMorphRate[i], data.data_overlapMorph[i][0], "inst" ++ i ++ "_overlap_rate");
+			this.prAddMIDILearn(modulators.overlapMorphDepth[i], data.data_overlapMorph[i][1], "inst" ++ i ++ "_overlap_depth");
+			this.prAddMIDILearn(modulators.overlapMorphSpread[i], data.data_overlapMorph[i][5], "inst" ++ i ++ "_overlap_spread");
 
 			// Masking probability
-			this.prAddMIDILearn(masking.probability[i], data.data_probabilityMaskSingular[i], "inst" + i + "probability");
+			this.prAddMIDILearn(masking.probability[i], data.data_probabilityMaskSingular[i], "inst" ++ i ++ "_probability");
+
+			// Register additional CVs for programmatic MIDI mapping (no sliders, but mappable)
+			midiMapper.registerCV("inst" ++ i ++ "_burst", data.data_burstMask[i][0]);
+			midiMapper.registerCV("inst" ++ i ++ "_rest", data.data_burstMask[i][1]);
+			midiMapper.registerCV("inst" ++ i ++ "_chan_mask", data.data_channelMask[i][0]);
+			midiMapper.registerCV("inst" ++ i ++ "_center_mask", data.data_channelMask[i][1]);
+			midiMapper.registerCV("inst" ++ i ++ "_sieve_mod", data.data_sieveMask[i][0]);
+			midiMapper.registerCV("inst" ++ i ++ "_sieve_seq", data.data_sieveMask[i][1]);
+			midiMapper.registerCV("inst" ++ i ++ "_overlap_min", data.data_overlapMorph[i][3]);
+			midiMapper.registerCV("inst" ++ i ++ "_overlap_max", data.data_overlapMorph[i][4]);
 		};
 	}
 
