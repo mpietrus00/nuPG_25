@@ -2,68 +2,69 @@
 // NuPG Synthesis Switcher - API Reference
 // ============================================
 // Switch between standard GrainBuf and OscOS (non-aliasing) synthesis
-// Both engines are initialized automatically in nuPG_24_startUp.scd
+// Both engines are initialized automatically on boot.
+// See also: nuPG_API.scd for the full API reference.
 
 // --------------------------------------------
 // SWITCH SYNTHESIS ENGINES
 // --------------------------------------------
 
 // Use standard GrainBuf-based synthesis (default)
-~synthSwitcher.useStandard;
+~app.synthSwitcher.useStandard;
 
 // Use oversampled OscOS synthesis (non-aliasing)
-~synthSwitcher.useOscOS;
+~app.synthSwitcher.useOscOS;
 
 // Toggle between modes
-~synthSwitcher.toggle;
+~app.synthSwitcher.toggle;
 
 // --------------------------------------------
 // QUERY STATE
 // --------------------------------------------
 
 // Get current mode (\standard or \oscos)
-~synthSwitcher.mode;
+~app.synthSwitcher.mode;
 
 // Get active synthesis object
-~synthSwitcher.current;
+~app.synthSwitcher.current;
 
 // Get active train Ndefs
-~synthSwitcher.trainInstances;
+~app.synthSwitcher.trainInstances;
 
 // Print detailed status
-~synthSwitcher.status;
+~app.synthSwitcher.status;
 
 // Check if OscOS UGen is installed
-~synthSwitcher.oscOSAvailable;
+~app.synthSwitcher.oscOSAvailable;
 
 // --------------------------------------------
 // PLAYBACK CONTROL
 // --------------------------------------------
 
 // Play all trains
-~synthSwitcher.play;
+~app.synthSwitcher.play;
 
 // Stop all trains
-~synthSwitcher.stop;
+~app.synthSwitcher.stop;
 
 // --------------------------------------------
 // OSCOS-SPECIFIC SETTINGS
 // --------------------------------------------
 
 // Set oversample factor (1-8x, higher = cleaner but more CPU)
-~synthSwitcher.oversample_(4);
+~app.synthSwitcher.oversample_(4);
 
 // --------------------------------------------
 // DIRECT ACCESS TO ENGINES
 // --------------------------------------------
 
 // Standard GrainBuf synthesis
-~synthesis;
-~synthesis.trainInstances;
+~app.synthesis;
+~app.synthesis.trainInstances;
 
 // OscOS oversampled synthesis
-~synthesisOscOS;
-~synthesisOscOS.trainInstances;
+~app.synthesisOscOS;
+~app.synthesisOscOS.trainInstances;
 
 // --------------------------------------------
 // INSTALL OSCOS (if not already installed)
@@ -81,19 +82,19 @@
 // Quick A/B test between synthesis engines
 fork {
     "Playing STANDARD synthesis...".postln;
-    ~synthSwitcher.useStandard;
-    ~synthSwitcher.play;
+    ~app.synthSwitcher.useStandard;
+    ~app.synthSwitcher.play;
     3.wait;
-    ~synthSwitcher.stop;
+    ~app.synthSwitcher.stop;
     0.5.wait;
 
     "Playing OSCOS synthesis...".postln;
-    ~synthSwitcher.useOscOS;
-    ~synthSwitcher.play;
+    ~app.synthSwitcher.useOscOS;
+    ~app.synthSwitcher.play;
     3.wait;
-    ~synthSwitcher.stop;
+    ~app.synthSwitcher.stop;
 
-    "Comparison complete. Use ~synthSwitcher.toggle to switch.".postln;
+    "Comparison complete. Use ~app.synthSwitcher.toggle to switch.".postln;
 };
 )
 
