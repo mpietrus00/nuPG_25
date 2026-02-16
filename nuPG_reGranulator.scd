@@ -27,20 +27,18 @@ Prerequisites:
 
 // When using \filterIn, the filter runs in the SAME Ndef context.
 // Controls with matching names reference the SAME control - they are shared.
-// The default value (e.g., kr(100)) is only used if the control isn't set.
-
-// However, to be EXPLICIT that we're using existing controls, we can
-// reference them via the Ndef's control proxy:
+//
+// CORRECT SYNTAX: Use \controlName.kr (without default value)
+// This references the existing control that nuPG already set up.
+// The control is shared - changes from GUI/CV update this value.
 
 (
-// Get reference to the active Ndef
-~train = Ndef(\nuPG_train_0);
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	// These reference the EXISTING controls in the Ndef
+	// (set by nuPG's connectControlsToSynths)
+	var fund = \fundamental_frequency.kr;
+	var amp = \amplitude_One.kr;
 
-// The Ndef's controls can be accessed as control-rate proxies
-// These are the LIVE values from the running synth
-~train[1] = \filterIn -> { |in|
-	var fund = ~train.kr(\fundamental_frequency);
-	var amp = ~train.kr(\amplitude_One);
 	var trig = Impulse.ar(fund);
 	GrainIn.ar(2, trig, fund.reciprocal * 2, in) * amp
 };
@@ -91,16 +89,15 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 
 
 // =====================================================================
-// 3. READING FROM NDEF DIRECTLY (Ndef.kr proxy)
+// 3. USING SHARED CONTROLS (RECOMMENDED)
 // =====================================================================
 
-// Ndef provides .kr method to read its internal control values
-// This is the cleanest approach for filterIn
+// Within \filterIn, use \controlName.kr to access existing controls.
+// These are the SAME controls that nuPG sets - they share values.
+// When you move a GUI slider, \fundamental_frequency.kr updates.
 
 (
-~train = Ndef(\nuPG_train_0);
-
-~train[1] = \filterIn -> { |in|
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	// Read existing controls from the Ndef
 	var fund = \fundamental_frequency.kr;
 	var formant1 = \formant_frequency_One.kr;
@@ -127,9 +124,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 // =====================================================================
 
 (
-~train = Ndef(\nuPG_train_0);
-
-~train[1] = \filterIn -> { |in|
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	// === EXISTING SYNTH PARAMETERS ===
 	var fund = \fundamental_frequency.kr;
 	var formant1 = \formant_frequency_One.kr;
@@ -182,9 +177,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 // =====================================================================
 
 (
-~trainOS = Ndef(\nuPG_train_oscos_0);
-
-~trainOS[1] = \filterIn -> { |in|
+Ndef(\nuPG_train_oscos_0)[1] = \filterIn -> { |in|
 	// OscOS has additional overlap parameters
 	var fund = \fundamental_frequency.kr;
 	var formant1 = \formant_frequency_One.kr;
