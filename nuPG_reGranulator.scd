@@ -46,24 +46,35 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 
 
 // =====================================================================
-// 2. USING CV VALUES VIA BUSES
+// 2. USING CV VALUES VIA BUSES (with addDependant)
 // =====================================================================
 
-// The CV system can map to buses. We can read those buses in the filter.
-// This ensures we're using the exact values from the GUI/CV system.
+// If you need to read CV values via buses (e.g., for complex routing),
+// use addDependant to sync CV changes to the bus.
 
 (
-// Create buses for the parameters we want to use
+// Create buses
 ~fundBus = Bus.control(Server.default, 1);
 ~ampBus = Bus.control(Server.default, 1);
 ~panBus = Bus.control(Server.default, 1);
 ~formantBus = Bus.control(Server.default, 1);
 
-// Map CVs to buses (these update automatically when GUI changes)
-~app.data.data_main[0][0].connect(~fundBus);      // fundamental
-~app.data.data_main[0][10].connect(~ampBus);      // amplitude 1
-~app.data.data_main[0][7].connect(~panBus);       // pan 1
-~app.data.data_main[0][1].connect(~formantBus);   // formant 1
+// Set initial values
+~fundBus.set(~app.data.data_main[0][0].value);
+~ampBus.set(~app.data.data_main[0][10].value);
+~panBus.set(~app.data.data_main[0][7].value);
+~formantBus.set(~app.data.data_main[0][1].value);
+
+// Add dependants to update buses when CVs change
+~fundDep = { |cv, what, val| if(what == \value) { ~fundBus.set(val) } };
+~ampDep = { |cv, what, val| if(what == \value) { ~ampBus.set(val) } };
+~panDep = { |cv, what, val| if(what == \value) { ~panBus.set(val) } };
+~formantDep = { |cv, what, val| if(what == \value) { ~formantBus.set(val) } };
+
+~app.data.data_main[0][0].addDependant(~fundDep);
+~app.data.data_main[0][10].addDependant(~ampDep);
+~app.data.data_main[0][7].addDependant(~panDep);
+~app.data.data_main[0][1].addDependant(~formantDep);
 
 // Now use these buses in the filter
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
@@ -79,8 +90,12 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 };
 )
 
-// Cleanup buses when done
+// Cleanup: remove dependants and free buses
 (
+~app.data.data_main[0][0].removeDependant(~fundDep);
+~app.data.data_main[0][10].removeDependant(~ampDep);
+~app.data.data_main[0][7].removeDependant(~panDep);
+~app.data.data_main[0][1].removeDependant(~formantDep);
 ~fundBus.free;
 ~ampBus.free;
 ~panBus.free;
@@ -239,7 +254,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var amp = \amplitude_One.kr;
 	var formant = \formant_frequency_One.kr;
 
-	var chain = FFT(LocalBuf(2048), in.sum);
+	var chain = FFT(LocalBuf(2048), Mix(in));
 
 	// Spectral gate threshold from amplitude
 	chain = PV_MagAbove(chain, amp.linlin(0, 1, 0.1, 0.01));
