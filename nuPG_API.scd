@@ -238,7 +238,149 @@ replace [0] with the desired instance index (0 to numInstances-1).
 
 
 // =====================================================================
-// 5. PLAYBACK TASKS
+// 5. FILTERING OUTPUT WITH Ndef filterIn
+// =====================================================================
+
+// nuPG outputs through Ndefs. You can route this into filter Ndefs using
+// the \filterIn role. This lets you add effects without modifying nuPG.
+
+// --- Get the active train Ndef name ---
+// Standard mode: \nuPG_train_0, \nuPG_train_1, \nuPG_train_2
+// OscOS mode:    \nuPG_train_oscos_0, \nuPG_train_oscos_1, \nuPG_train_oscos_2
+
+// Helper to get the current Ndef for an instance
+~getNdefName = {|instance=0|
+	if (~app.synthSwitcher.mode == \oscos) {
+		(\nuPG_train_oscos_ ++ instance).asSymbol
+	} {
+		(\nuPG_train_ ++ instance).asSymbol
+	};
+};
+
+// --- Basic lowpass filter ---
+(
+Ndef(\nuPG_filter, {
+	var sig = \filterIn.ar(0!2);  // receives stereo from nuPG
+	var freq = \cutoff.kr(2000);
+	var rq = \rq.kr(0.5);
+	RLPF.ar(sig, freq, rq)
+});
+Ndef(\nuPG_filter) <<>.filterIn Ndef(~getNdefName.(0));
+Ndef(\nuPG_filter).play;
+)
+
+// Modulate filter cutoff
+Ndef(\nuPG_filter).set(\cutoff, 800);
+Ndef(\nuPG_filter).set(\rq, 0.2);
+
+// Stop filter (reverts to dry nuPG output)
+Ndef(\nuPG_filter).stop;
+
+// --- Resonant bandpass filter ---
+(
+Ndef(\nuPG_bandpass, {
+	var sig = \filterIn.ar(0!2);
+	var freq = \freq.kr(1000);
+	var bw = \bw.kr(200);
+	BPF.ar(sig, freq, bw / freq)
+});
+Ndef(\nuPG_bandpass) <<>.filterIn Ndef(~getNdefName.(0));
+Ndef(\nuPG_bandpass).play;
+)
+
+// --- Reverb effect ---
+(
+Ndef(\nuPG_reverb, {
+	var sig = \filterIn.ar(0!2);
+	var wet = \wet.kr(0.3);
+	var room = \room.kr(0.7);
+	var damp = \damp.kr(0.5);
+	var rev = FreeVerb2.ar(sig[0], sig[1], wet, room, damp);
+	rev
+});
+Ndef(\nuPG_reverb) <<>.filterIn Ndef(~getNdefName.(0));
+Ndef(\nuPG_reverb).play;
+)
+
+// --- Delay effect ---
+(
+Ndef(\nuPG_delay, {
+	var sig = \filterIn.ar(0!2);
+	var delayTime = \delayTime.kr(0.25);
+	var feedback = \feedback.kr(0.4);
+	var wet = \wet.kr(0.5);
+	var delayed = CombL.ar(sig, 2, delayTime, feedback * 4);
+	(sig * (1 - wet)) + (delayed * wet)
+});
+Ndef(\nuPG_delay) <<>.filterIn Ndef(~getNdefName.(0));
+Ndef(\nuPG_delay).play;
+)
+
+// --- Chain multiple filters ---
+(
+// Create filter chain: nuPG -> filter -> reverb -> output
+Ndef(\nuPG_lpf, {
+	var sig = \filterIn.ar(0!2);
+	RLPF.ar(sig, \cutoff.kr(3000), \rq.kr(0.7))
+});
+Ndef(\nuPG_verb, {
+	var sig = \filterIn.ar(0!2);
+	FreeVerb2.ar(sig[0], sig[1], \wet.kr(0.2), 0.8, 0.5)
+});
+
+// Connect the chain
+Ndef(\nuPG_lpf) <<>.filterIn Ndef(~getNdefName.(0));
+Ndef(\nuPG_verb) <<>.filterIn Ndef(\nuPG_lpf);
+Ndef(\nuPG_verb).play;
+)
+
+// --- Disconnect filter (return to dry output) ---
+Ndef(\nuPG_filter).stop;
+Ndef(\nuPG_filter).clear;
+
+// Or reconnect nuPG directly to hardware
+Ndef(~getNdefName.(0)).play;
+
+// --- Dynamic filter switching when synth mode changes ---
+// When switching between standard/OscOS, reconnect filters:
+(
+~reconnectFilter = {|filterNdef, instance=0|
+	filterNdef <<>.filterIn Ndef(~getNdefName.(instance));
+};
+
+// After switching synth mode:
+~app.synthSwitcher.useOscOS;
+~reconnectFilter.(Ndef(\nuPG_filter), 0);
+
+// Or switch back:
+~app.synthSwitcher.useStandard;
+~reconnectFilter.(Ndef(\nuPG_filter), 0);
+)
+
+// --- Filter multiple instances ---
+(
+// Create a mixer that combines filtered outputs from multiple instances
+~app.numInstances.do{|i|
+	Ndef((\nuPG_filt_ ++ i).asSymbol, {
+		var sig = \filterIn.ar(0!2);
+		RLPF.ar(sig, \cutoff.kr(2000 + (i * 500)), 0.5)
+	});
+	Ndef((\nuPG_filt_ ++ i).asSymbol) <<>.filterIn Ndef(~getNdefName.(i));
+};
+
+// Mix all filtered outputs
+Ndef(\nuPG_mix, {
+	var sigs = ~app.numInstances.collect{|i|
+		Ndef((\nuPG_filt_ ++ i).asSymbol).ar
+	};
+	sigs.sum / ~app.numInstances
+});
+Ndef(\nuPG_mix).play;
+)
+
+
+// =====================================================================
+// 6. PLAYBACK TASKS
 // =====================================================================
 
 // --- Loop playback ---
@@ -282,7 +424,7 @@ fork {
 
 
 // =====================================================================
-// 6. PRESETS
+// 7. PRESETS
 // =====================================================================
 
 // Access the preset manager for instance 0
@@ -343,7 +485,7 @@ fork {
 
 
 // =====================================================================
-// 7. BUFFERS
+// 8. BUFFERS
 // =====================================================================
 
 // Access buffers directly
@@ -360,7 +502,7 @@ fork {
 
 
 // =====================================================================
-// 8. MIDI MAPPING
+// 9. MIDI MAPPING
 // =====================================================================
 
 // MIDI is initialized automatically on boot.
@@ -395,7 +537,7 @@ fork {
 
 
 // =====================================================================
-// 9. LISTENING TO PARAMETER CHANGES
+// 10. LISTENING TO PARAMETER CHANGES
 // =====================================================================
 
 // Use addDependant to watch for value changes on any CV
@@ -424,7 +566,7 @@ var names = ["fund", "form1", "form2", "form3"];
 
 
 // =====================================================================
-// 10. AUTOMATION EXAMPLES
+// 11. AUTOMATION EXAMPLES
 // =====================================================================
 
 // --- Sweep fundamental frequency ---
@@ -500,7 +642,7 @@ fork {
 
 
 // =====================================================================
-// 11. APPLICATION INFO
+// 12. APPLICATION INFO
 // =====================================================================
 
 // Number of instances
