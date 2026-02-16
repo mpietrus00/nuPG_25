@@ -20,7 +20,7 @@ NuPG_GUI_TrainControl_View {
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//window
 		window = Window("_train control", dimensions, resizable: false);
-		window.userCanClose_(0);
+		window.userCanClose = false;
 		//window.alwaysOnTop_(true);
 		window.view.background_(guiDefinitions.bAndKGreen);
 		//load stackLayaut to display multiple instances on top of each other

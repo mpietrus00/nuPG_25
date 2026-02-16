@@ -15,7 +15,7 @@ NuPG_GUI_GroupControl_View {
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//window
 		window = Window("_groups control", dimensions, resizable: false);
-		window.userCanClose_(0);
+		window.userCanClose = false;
 		//window.alwaysOnTop_(true);
 		window.view.background_(guiDefinitions.bAndKGreen);
 		//load stackLayaut to display multiple instances on top of each other

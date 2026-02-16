@@ -15,7 +15,7 @@ NuPG_GUI_Extensions_View {
 		//control window contains two separate views -> global and -> local
 		//global is the same across all instances
 		window = Window("_extensions", dimensions, resizable: false);
-		window.userCanClose_(0);
+		window.userCanClose = false;
 		//window.alwaysOnTop_(true);
 		window.view.background_(guiDefinitions.bAndKGreen);
 		window.layout_(layout = GridLayout.new() );

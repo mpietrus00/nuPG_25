@@ -20,7 +20,7 @@ NuPG_GUI_ScrubberView {
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//window
 		window = Window("_scanner", dimensions, resizable: false);
-		window.userCanClose_(0);
+		window.userCanClose = false;
 		//window.alwaysOnTop_(true);
 		window.view.background_(guiDefinitions.bAndKGreen);
 		//load stackLayaut to display multiple instances on top of each other
