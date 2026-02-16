@@ -6,6 +6,16 @@ Granular processing of nuPG output using parameters from the running synth.
 This file shows how to properly access existing synth parameters rather than
 creating new NamedControls.
 
+KEY CONCEPT: SYNCHRONIZED CLOCK
+-------------------------------
+The fundamental_frequency is the master clock (rate of pulse emission).
+By deriving triggers from this same frequency, all additional processes
+stay phase-locked to the original synthesis. This ensures:
+- Grains align with pulsar emissions
+- Filters modulate in sync with the pulse train
+- Delays and effects follow the rhythmic structure
+- Multiple processes share the same temporal grid
+
 Prerequisites:
   ~app = NuPG_Application(1, 1).boot;
 */
@@ -279,7 +289,139 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 
 
 // =====================================================================
-// 9. CLEAR ALL FILTERS
+// 9. SYNCHRONIZED CLOCK PROCESSES
+// =====================================================================
+
+// The fundamental_frequency is the master clock. All processes derived
+// from it stay phase-locked to the original pulse train.
+
+// --- Sync'd delay (rhythmic echo aligned to pulse rate) ---
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var period = fund.reciprocal;  // one pulse period
+	var divisions = \delayDiv.kr(4);  // subdivisions per pulse
+
+	// Delay time = fraction of pulse period
+	var delayTime = (period / divisions).clip(0.001, 1.0);
+	var feedback = \amplitude_One.kr * 0.7;
+
+	CombL.ar(in, 1.0, delayTime, feedback * 4)
+};
+
+// --- Sync'd tremolo (amplitude modulation at pulse rate) ---
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var tremRate = fund * \tremMul.kr(0.5);  // fraction of pulse rate
+	var depth = \envMul_One.kr.linlin(0.01, 2, 0, 1);
+
+	var mod = SinOsc.ar(tremRate).range(1 - depth, 1);
+	in * mod
+};
+
+// --- Sync'd ring modulation ---
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var formant = \formant_frequency_One.kr;
+
+	// Ring mod at formant frequency (harmonic relationship)
+	var ringFreq = fund * formant;
+	var mod = SinOsc.ar(ringFreq);
+	var wet = \amplitude_One.kr;
+
+	(in * (1 - wet)) + ((in * mod) * wet)
+};
+
+// --- Sync'd sample-and-hold filter ---
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var trig = Impulse.ar(fund);  // sync'd to pulse emission
+
+	// Sample filter cutoff at each pulse
+	var cutoff = Latch.ar(
+		\formant_frequency_One.kr * fund * LFNoise1.ar(fund * 0.1).range(0.5, 2),
+		trig
+	);
+
+	RLPF.ar(in, cutoff.clip(20, 18000), 0.3)
+};
+
+// --- Sync'd chorus (multiple delay taps at pulse divisions) ---
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var period = fund.reciprocal;
+
+	// Four delay taps at different pulse subdivisions
+	var tap1 = DelayL.ar(in, 1, period * 0.25);
+	var tap2 = DelayL.ar(in, 1, period * 0.5);
+	var tap3 = DelayL.ar(in, 1, period * 0.75);
+	var tap4 = DelayL.ar(in, 1, period);
+
+	// Mix with original, weighted by amplitude
+	var wet = \amplitude_One.kr * 0.5;
+	(in * (1 - wet)) + ((tap1 + tap2 + tap3 + tap4) * wet * 0.25)
+};
+
+// --- Sync'd granular with phase-locked triggers ---
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var formant = \formant_frequency_One.kr;
+	var amp = \amplitude_One.kr;
+	var pan = \pan_One.kr;
+
+	// Trigger at exact pulse rate (phase-locked)
+	var trig = Impulse.ar(fund);
+
+	// Grain duration = one complete pulse cycle
+	var grainDur = fund.reciprocal;
+
+	// Overlap factor from formant (higher formant = more overlap)
+	var overlap = formant.clip(1, 8);
+
+	// Multiple overlapping grain streams
+	var grains = overlap.collect { |i|
+		var phasedTrig = Impulse.ar(fund, i / overlap);
+		GrainIn.ar(2, phasedTrig, grainDur, in, pan, amp / overlap)
+	}.sum;
+
+	grains
+};
+
+// --- Sync'd waveshaping (distortion amount follows pulse) ---
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var trig = Impulse.ar(fund);
+
+	// Envelope follower sync'd to pulses
+	var env = Decay2.ar(trig, 0.001, fund.reciprocal * 0.8);
+
+	// Waveshaping amount modulated by envelope
+	var amount = \envMul_One.kr * env;
+
+	(in * (1 + amount)).tanh
+};
+
+// --- Multi-process sync chain (slot 1 + slot 2) ---
+(
+// Slot 1: sync'd granular
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var trig = Impulse.ar(fund);
+	var grainDur = fund.reciprocal * \formant_frequency_One.kr;
+	GrainIn.ar(2, trig, grainDur.clip(0.001, 0.5), in, \pan_One.kr, \amplitude_One.kr)
+};
+
+// Slot 2: sync'd rhythmic delay (processes output of slot 1)
+Ndef(\nuPG_train_0)[2] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr;
+	var period = fund.reciprocal;
+	var delayed = CombL.ar(in, 1, period * 2, \amplitude_Two.kr * 3);
+	(in * 0.7) + (delayed * 0.5)
+};
+)
+
+
+// =====================================================================
+// 10. CLEAR ALL FILTERS
 // =====================================================================
 
 (
