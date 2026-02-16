@@ -325,6 +325,97 @@ Ndef(\nuPG_train_oscos_0)[1] = \filterIn -> { |in|
 };
 )
 
+// --- Granular processing using synth parameters ---
+// The filterIn function has access to all Ndef controls, so you can use
+// the same parameters that drive the nuPG synth (fundamental_frequency,
+// amplitude_One, formant_frequency_One, etc.)
+
+// Basic granularizer using fundamental frequency as trigger rate
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var trig = Impulse.ar(\fundamental_frequency.kr(100));
+	var grainDur = \fundamental_frequency.kr(100).reciprocal * 2;
+	GrainIn.ar(2, trig, grainDur, in, \pan_One.kr(0))
+};
+
+// Granular with formant frequency controlling grain pitch/rate
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var trigRate = \fundamental_frequency.kr(100);
+	var trig = Impulse.ar(trigRate);
+	var grainDur = \formant_frequency_One.kr(1).reciprocal.clip(0.01, 0.5);
+	var pos = LFSaw.ar(trigRate * 0.1).range(0, 1);
+	GrainIn.ar(2, trig, grainDur, in, \pan_One.kr(0)) * \amplitude_One.kr(0.8)
+};
+
+// Spectral freeze/smear effect using amplitude as mix control
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var chain = FFT(LocalBuf(2048), in.sum);
+	var freeze = \amplitude_One.kr(0.8) > 0.5;  // freeze when amp > 0.5
+	chain = PV_MagFreeze(chain, freeze);
+	Pan2.ar(IFFT(chain), \pan_One.kr(0))
+};
+
+// Pitch shift controlled by formant frequency ratio
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var ratio = \formant_frequency_One.kr(1) / \formant_frequency_Two.kr(1);
+	PitchShift.ar(in, 0.2, ratio.clip(0.5, 2), 0, 0.01)
+};
+
+// Complex granular texture using multiple synth parameters
+(
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var fund = \fundamental_frequency.kr(100);
+	var form1 = \formant_frequency_One.kr(1);
+	var amp1 = \amplitude_One.kr(0.8);
+	var pan1 = \pan_One.kr(0);
+
+	// Trigger rate derived from fundamental
+	var trig = Impulse.ar(fund * \grainRateMul.kr(1));
+
+	// Grain duration from formant (higher formant = shorter grains)
+	var grainDur = (1 / (fund * form1)).clip(0.005, 0.5);
+
+	// Randomize position slightly based on amplitude
+	var posRand = amp1 * 0.1;
+
+	// Granularize with amplitude-controlled density
+	var numGrains = (amp1 * 4).floor.max(1);
+	var grains = GrainIn.ar(
+		numChannels: 2,
+		trigger: trig,
+		dur: grainDur * LFNoise1.kr(fund * 0.1).range(0.5, 1.5),
+		in: in,
+		pan: pan1 + LFNoise2.kr(fund * 0.05).range(-0.3, 0.3),
+		mul: amp1
+	);
+
+	// Mix dry/wet based on envelope dilation
+	var wet = \envMul_One.kr(1).linlin(0, 2, 0, 1);
+	(in * (1 - wet)) + (grains * wet)
+};
+)
+
+// Set additional granular parameters
+Ndef(\nuPG_train_0).set(\grainRateMul, 2);  // double the grain rate
+
+// Comb filtering with fundamental as delay time
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var delayTime = \fundamental_frequency.kr(100).reciprocal;
+	var feedback = \amplitude_One.kr(0.8) * 0.8;
+	CombL.ar(in, 0.1, delayTime.clip(0.0001, 0.1), feedback * 2)
+};
+
+// Resonant filter following formant frequencies
+Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
+	var f1 = \fundamental_frequency.kr(100) * \formant_frequency_One.kr(1);
+	var f2 = \fundamental_frequency.kr(100) * \formant_frequency_Two.kr(1);
+	var f3 = \fundamental_frequency.kr(100) * \formant_frequency_Three.kr(1);
+	var rq = 0.1;
+	// Parallel resonant filters at formant frequencies
+	(BPF.ar(in, f1.clip(20, 20000), rq) * \amplitude_One.kr(0.8)) +
+	(BPF.ar(in, f2.clip(20, 20000), rq) * \amplitude_Two.kr(0.8)) +
+	(BPF.ar(in, f3.clip(20, 20000), rq) * \amplitude_Three.kr(0.8))
+};
+
 
 // =====================================================================
 // 6. PLAYBACK TASKS
