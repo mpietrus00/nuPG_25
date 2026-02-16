@@ -370,28 +370,23 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 };
 
 // --- Sync'd granular with phase-locked triggers ---
+// Uses 4 fixed grain streams with staggered phases
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var fund = \fundamental_frequency.kr;
 	var formant = \formant_frequency_One.kr;
 	var amp = \amplitude_One.kr;
 	var pan = \pan_One.kr;
 
-	// Trigger at exact pulse rate (phase-locked)
-	var trig = Impulse.ar(fund);
+	// Grain duration based on formant
+	var grainDur = (fund * formant).reciprocal.clip(0.001, 0.5);
 
-	// Grain duration = one complete pulse cycle
-	var grainDur = fund.reciprocal;
+	// 4 phase-locked grain streams at different phase offsets
+	var g1 = GrainIn.ar(2, Impulse.ar(fund, 0.00), grainDur, in, pan, amp * 0.25);
+	var g2 = GrainIn.ar(2, Impulse.ar(fund, 0.25), grainDur, in, pan, amp * 0.25);
+	var g3 = GrainIn.ar(2, Impulse.ar(fund, 0.50), grainDur, in, pan, amp * 0.25);
+	var g4 = GrainIn.ar(2, Impulse.ar(fund, 0.75), grainDur, in, pan, amp * 0.25);
 
-	// Overlap factor from formant (higher formant = more overlap)
-	var overlap = formant.clip(1, 8);
-
-	// Multiple overlapping grain streams
-	var grains = overlap.collect { |i|
-		var phasedTrig = Impulse.ar(fund, i / overlap);
-		GrainIn.ar(2, phasedTrig, grainDur, in, pan, amp / overlap)
-	}.sum;
-
-	grains
+	g1 + g2 + g3 + g4
 };
 
 // --- Sync'd waveshaping (distortion amount follows pulse) ---
