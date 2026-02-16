@@ -31,8 +31,8 @@ NuPG_OscOS {
 
 		output = pulsaret * envelope;
 
-		// Pan to stereo
-		output = Pan2.ar(output, panning);
+		// Pan according to channels_number: mono (1) or stereo (2)
+		output = if(channels_number == 1, output, Pan2.ar(output, panning));
 
 		^output;
 	}
@@ -56,7 +56,8 @@ NuPG_BLIT {
 		);
 
 		output = pulsaret * envelope;
-		output = Pan2.ar(output, panning);
+		// Pan according to channels_number: mono (1) or stereo (2)
+		output = if(channels_number == 1, output, Pan2.ar(output, panning));
 
 		^output;
 	}
@@ -580,16 +581,17 @@ NuPG_Synthesis_OscOS {
 
 				// Pulsar outputs
 				// Scale by 0.9 to match classic GrainBuf amplitude level
+				// Respect numChannels setting: mono (1) or stereo (2)
 				pulsar_1 = pulsaret_One * envelope_One * 0.9;
-				pulsar_1 = Pan2.ar(pulsar_1, pan_One);
+				pulsar_1 = if(numChannels == 1, pulsar_1, Pan2.ar(pulsar_1, pan_One));
 				pulsar_1 = pulsar_1 * amplitude_One * amplitude_local_One;
 
 				pulsar_2 = pulsaret_Two * envelope_Two * 0.9;
-				pulsar_2 = Pan2.ar(pulsar_2, pan_Two);
+				pulsar_2 = if(numChannels == 1, pulsar_2, Pan2.ar(pulsar_2, pan_Two));
 				pulsar_2 = pulsar_2 * amplitude_Two * amplitude_local_Two;
 
 				pulsar_3 = pulsaret_Three * envelope_Three * 0.9;
-				pulsar_3 = Pan2.ar(pulsar_3, pan_Three);
+				pulsar_3 = if(numChannels == 1, pulsar_3, Pan2.ar(pulsar_3, pan_Three));
 				pulsar_3 = pulsar_3 * amplitude_Three * amplitude_local_Three;
 
 				mix = Mix.new([pulsar_1, pulsar_2, pulsar_3]) * globalAmplitude;
