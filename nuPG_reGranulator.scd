@@ -84,7 +84,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var formant = In.kr(~formantBus);
 
 	var trig = Impulse.ar(fund);
-	var grainDur = (formant * fund).reciprocal.clip(0.005, 0.5);
+	var grainDur = formant.reciprocal.clip(0.005, 0.5);
 
 	GrainIn.ar(2, trig, grainDur, in, pan) * amp
 };
@@ -124,7 +124,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 
 	// Granular synthesis using these values
 	var trig = Impulse.ar(fund);
-	var grainDur = (fund * formant1).reciprocal.clip(0.001, 0.5);
+	var grainDur = formant1.reciprocal.clip(0.001, 0.5);
 	var grains = GrainIn.ar(2, trig, grainDur, in, pan1, amp1);
 
 	// Dry/wet mix controlled by envelope multiplier
@@ -160,9 +160,9 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var trig = Impulse.ar(trigRate);
 
 	// Three grain streams, each following a formant group
-	var grainDur1 = (fund * formant1).reciprocal.clip(0.001, 0.5);
-	var grainDur2 = (fund * formant2).reciprocal.clip(0.001, 0.5);
-	var grainDur3 = (fund * formant3).reciprocal.clip(0.001, 0.5);
+	var grainDur1 = formant1.reciprocal.clip(0.001, 0.5);
+	var grainDur2 = formant2.reciprocal.clip(0.001, 0.5);
+	var grainDur3 = formant3.reciprocal.clip(0.001, 0.5);
 
 	// Stagger triggers using envelope multipliers as phase offsets
 	var trig1 = Impulse.ar(trigRate, 0);
@@ -229,7 +229,7 @@ Ndef(\nuPG_train_oscos_0)[1] = \filterIn -> { |in|
 		var envMul = \envMul_One.kr;
 
 		var trig = Impulse.ar(fund);
-		var grainDur = (fund * formant).reciprocal.clip(0.001, 0.5);
+		var grainDur = formant.reciprocal.clip(0.001, 0.5);
 		var grains = GrainIn.ar(2, trig, grainDur, in, pan, amp);
 
 		var wet = envMul.linlin(0.01, 2, 0, 1);
@@ -259,8 +259,8 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	// Spectral gate threshold from amplitude
 	chain = PV_MagAbove(chain, amp.linlin(0, 1, 0.1, 0.01));
 
-	// Bin shift based on formant ratio
-	chain = PV_BinShift(chain, formant.clip(0.5, 2));
+	// Bin shift based on formant (normalize to ratio around 1)
+	chain = PV_BinShift(chain, (formant / 400).clip(0.5, 2));
 
 	// Smear based on fundamental (lower = more smear)
 	chain = PV_MagSmear(chain, fund.linlin(20, 500, 10, 1).asInteger);
@@ -284,9 +284,9 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var buf = \pulsaret_buffer.kr;  // Reference to pulsaret buffer
 
 	var trig = Impulse.ar(fund);
-	var grainDur = (fund * formant).reciprocal.clip(0.01, 0.5);
+	var grainDur = formant.reciprocal.clip(0.01, 0.5);
 	var pos = LFNoise2.kr(fund * 0.1).range(0, 1);
-	var rate = formant;
+	var rate = formant / 400;  // normalize to playback rate ratio
 
 	// Mix original with buffer grains
 	var bufGrains = GrainBuf.ar(2, trig, grainDur, buf, rate, pos, pan: pan, mul: amp);
@@ -331,8 +331,8 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var fund = \fundamental_frequency.kr;
 	var formant = \formant_frequency_One.kr;
 
-	// Ring mod at formant frequency (harmonic relationship)
-	var ringFreq = fund * formant;
+	// Ring mod at formant frequency (absolute Hz)
+	var ringFreq = formant;
 	var mod = SinOsc.ar(ringFreq);
 	var wet = \amplitude_One.kr;
 
@@ -344,9 +344,9 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var fund = \fundamental_frequency.kr;
 	var trig = Impulse.ar(fund);  // sync'd to pulse emission
 
-	// Sample filter cutoff at each pulse
+	// Sample filter cutoff at each pulse (formant is absolute Hz)
 	var cutoff = Latch.ar(
-		\formant_frequency_One.kr * fund * LFNoise1.ar(fund * 0.1).range(0.5, 2),
+		\formant_frequency_One.kr * LFNoise1.ar(fund * 0.1).range(0.5, 2),
 		trig
 	);
 
@@ -377,8 +377,8 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var amp = \amplitude_One.kr;
 	var pan = \pan_One.kr;
 
-	// Grain duration based on formant
-	var grainDur = (fund * formant).reciprocal.clip(0.001, 0.5);
+	// Grain duration based on formant (absolute Hz)
+	var grainDur = formant.reciprocal.clip(0.001, 0.5);
 
 	// 4 phase-locked grain streams at different phase offsets
 	var g1 = GrainIn.ar(2, Impulse.ar(fund, 0.00), grainDur, in, pan, amp * 0.25);
@@ -409,7 +409,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var fund = \fundamental_frequency.kr;
 	var trig = Impulse.ar(fund);
-	var grainDur = fund.reciprocal * \formant_frequency_One.kr;
+	var grainDur = \formant_frequency_One.kr.reciprocal;
 	GrainIn.ar(2, trig, grainDur.clip(0.001, 0.5), in, \pan_One.kr, \amplitude_One.kr)
 };
 

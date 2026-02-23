@@ -163,7 +163,7 @@ replace [0] with the desired instance index (0 to numInstances-1).
 // --- Set multiple parameters at once ---
 (
 ~app.data.data_main[0][0].value = 220;   // fundamental
-~app.data.data_main[0][1].value = 3.0;   // formant 1
+~app.data.data_main[0][1].value = 800;    // formant 1 (Hz)
 ~app.data.data_main[0][10].value = 0.9;  // amp 1
 ~app.data.data_main[0][7].value = 0;     // pan 1 center
 )
@@ -341,14 +341,14 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var trigRate = \fundamental_frequency.kr(100);
 	var trig = Impulse.ar(trigRate);
-	var grainDur = \formant_frequency_One.kr(1).reciprocal.clip(0.01, 0.5);
+	var grainDur = \formant_frequency_One.kr(400).reciprocal.clip(0.01, 0.5);
 	var pos = LFSaw.ar(trigRate * 0.1).range(0, 1);
 	GrainIn.ar(2, trig, grainDur, in, \pan_One.kr(0)) * \amplitude_One.kr(0.8)
 };
 
 // Spectral freeze/smear effect using amplitude as mix control
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
-	var chain = FFT(LocalBuf(2048), in.sum);
+	var chain = FFT(LocalBuf(2048), Mix(in));
 	var freeze = \amplitude_One.kr(0.8) > 0.5;  // freeze when amp > 0.5
 	chain = PV_MagFreeze(chain, freeze);
 	Pan2.ar(IFFT(chain), \pan_One.kr(0))
@@ -356,7 +356,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 
 // Pitch shift controlled by formant frequency ratio
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
-	var ratio = \formant_frequency_One.kr(1) / \formant_frequency_Two.kr(1);
+	var ratio = \formant_frequency_One.kr(400) / \formant_frequency_Two.kr(400);
 	PitchShift.ar(in, 0.2, ratio.clip(0.5, 2), 0, 0.01)
 };
 
@@ -364,15 +364,15 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 (
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var fund = \fundamental_frequency.kr(100);
-	var form1 = \formant_frequency_One.kr(1);
+	var form1 = \formant_frequency_One.kr(400);
 	var amp1 = \amplitude_One.kr(0.8);
 	var pan1 = \pan_One.kr(0);
 
 	// Trigger rate derived from fundamental
 	var trig = Impulse.ar(fund * \grainRateMul.kr(1));
 
-	// Grain duration from formant (higher formant = shorter grains)
-	var grainDur = (1 / (fund * form1)).clip(0.005, 0.5);
+	// Grain duration from formant (higher formant Hz = shorter grains)
+	var grainDur = form1.reciprocal.clip(0.005, 0.5);
 
 	// Randomize position slightly based on amplitude
 	var posRand = amp1 * 0.1;
@@ -404,11 +404,11 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	CombL.ar(in, 0.1, delayTime.clip(0.0001, 0.1), feedback * 2)
 };
 
-// Resonant filter following formant frequencies
+// Resonant filter following formant frequencies (absolute Hz)
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
-	var f1 = \fundamental_frequency.kr(100) * \formant_frequency_One.kr(1);
-	var f2 = \fundamental_frequency.kr(100) * \formant_frequency_Two.kr(1);
-	var f3 = \fundamental_frequency.kr(100) * \formant_frequency_Three.kr(1);
+	var f1 = \formant_frequency_One.kr(400);
+	var f2 = \formant_frequency_Two.kr(400);
+	var f3 = \formant_frequency_Three.kr(400);
 	var rq = 0.1;
 	// Parallel resonant filters at formant frequencies
 	(BPF.ar(in, f1.clip(20, 20000), rq) * \amplitude_One.kr(0.8)) +
@@ -784,9 +784,9 @@ Table min/max [max, min] pairs:
   data_pulsaret_maxMin          [-1, 1]
   data_envelope_maxMin          [-1, 1]
   data_fundamentalFrequency_maxMin  [0, 20]
-  data_formantFrequencyOne_maxMin   [0, 20000]
-  data_formantFrequencyTwo_maxMin   [0, 20000]
-  data_formantFrequencyThree_maxMin [0, 20000]
+  data_formantFrequencyOne_maxMin   [0, 10]  (multiplier on main slider Hz value)
+  data_formantFrequencyTwo_maxMin   [0, 10]  (multiplier on main slider Hz value)
+  data_formantFrequencyThree_maxMin [0, 10]  (multiplier on main slider Hz value)
   data_panOne_maxMin            [-1, 1]
   data_panTwo_maxMin            [-1, 1]
   data_panThree_maxMin          [-1, 1]

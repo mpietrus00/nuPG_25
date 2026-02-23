@@ -261,9 +261,9 @@ NuPG_Data {
 		data_envelope_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
 		data_frequency_maxMin[index] = this.prMakeRangeCV(1, 0.0, 0, 1);
 		data_fundamentalFrequency_maxMin[index] = this.prMakeRangeCV(10, 0, 0, 20);
-		data_formantFrequencyOne_maxMin[index] = this.prMakeRangeCV(20000, 1, 0, 20000);
-		data_formantFrequencyTwo_maxMin[index] = this.prMakeRangeCV(20000, 1, 0, 20000);
-		data_formantFrequencyThree_maxMin[index] = this.prMakeRangeCV(20000, 1, 0, 20000);
+		data_formantFrequencyOne_maxMin[index] = this.prMakeRangeCV(10, 0.1, 0, 10);
+		data_formantFrequencyTwo_maxMin[index] = this.prMakeRangeCV(10, 0.1, 0, 10);
+		data_formantFrequencyThree_maxMin[index] = this.prMakeRangeCV(10, 0.1, 0, 10);
 		data_panOne_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
 		data_panTwo_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
 		data_panThree_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
