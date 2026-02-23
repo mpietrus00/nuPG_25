@@ -336,7 +336,7 @@ NuPG_Synthesis_OscOS {
 				formantOneMod_four = Select.ar(formantOneMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 
 				formant_frequency_One_loop = Select.kr(group_1_onOff, [1, formant_frequency_One_loop]);
-				ffreq_One = (fundamental_frequency * formant_frequency_One * formant_frequency_One_loop) +
+				ffreq_One = (formant_frequency_One * formant_frequency_One_loop) +
 				(formantOneMod_one + formantOneMod_two + formantOneMod_three + formantOneMod_four);
 
 				//formant 2 modulators
@@ -346,7 +346,7 @@ NuPG_Synthesis_OscOS {
 				formantTwoMod_four = Select.ar(formantTwoMod_four_active, [K2A.ar(0), (modulation_index_four * mod_two)]);
 
 				formant_frequency_Two_loop = Select.kr(group_2_onOff, [1, formant_frequency_Two_loop]);
-				ffreq_Two = (fundamental_frequency * formant_frequency_Two * formant_frequency_Two_loop) +
+				ffreq_Two = (formant_frequency_Two * formant_frequency_Two_loop) +
 							(formantTwoMod_one + formantTwoMod_two + formantTwoMod_three + formantTwoMod_four);
 
 				//formant 3 modulators
@@ -356,7 +356,7 @@ NuPG_Synthesis_OscOS {
 				formantThreeMod_four = Select.ar(formantThreeMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 
 				formant_frequency_Three_loop = Select.kr(group_3_onOff, [1, formant_frequency_Three_loop]);
-				ffreq_Three = (fundamental_frequency * formant_frequency_Three * formant_frequency_Three_loop) +
+				ffreq_Three = (formant_frequency_Three * formant_frequency_Three_loop) +
 							(formantThreeMod_one + formantThreeMod_two + formantThreeMod_three + formantThreeMod_four);
 
 				// Apply formant flux

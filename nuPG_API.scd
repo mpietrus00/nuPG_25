@@ -20,9 +20,9 @@ replace [0] with the desired instance index (0 to numInstances-1).
 // All scalar CVs have a .value getter
 
 ~app.data.data_main[0][0].value;   // fundamental frequency (1-3000 Hz, exp)
-~app.data.data_main[0][1].value;   // formant frequency 1 (0.05-16 Hz, exp)
-~app.data.data_main[0][2].value;   // formant frequency 2 (0.05-16 Hz, exp)
-~app.data.data_main[0][3].value;   // formant frequency 3 (0.05-16 Hz, exp)
+~app.data.data_main[0][1].value;   // formant frequency 1 (1-20000 Hz, exp)
+~app.data.data_main[0][2].value;   // formant frequency 2 (1-20000 Hz, exp)
+~app.data.data_main[0][3].value;   // formant frequency 3 (1-20000 Hz, exp)
 ~app.data.data_main[0][4].value;   // envelope dilation 1 (0.0-2.0, lin)
 ~app.data.data_main[0][5].value;   // envelope dilation 2 (0.0-2.0, lin)
 ~app.data.data_main[0][6].value;   // envelope dilation 3 (0.01-2.0, lin)
@@ -625,7 +625,7 @@ fork {
 ~walker = fork {
 	loop {
 		~app.data.data_main[0][0].value = exprand(50, 1000);
-		~app.data.data_main[0][1].value = exprand(0.1, 10);
+		~app.data.data_main[0][1].value = exprand(100, 5000);
 		~app.data.data_main[0][7].value = rrand(-1.0, 1.0);
 		rrand(0.1, 0.5).wait;
 	};
@@ -715,9 +715,9 @@ NuPG_Application.installPath;
 /*
 data_main[inst][index]:  (13 per instance)
   0  - fundamental frequency    1-3000 Hz    exp
-  1  - formant frequency 1      0.05-16 Hz   exp
-  2  - formant frequency 2      0.05-16 Hz   exp
-  3  - formant frequency 3      0.05-16 Hz   exp
+  1  - formant frequency 1      1-20000 Hz   exp  (absolute, independent of fundamental)
+  2  - formant frequency 2      1-20000 Hz   exp  (absolute, independent of fundamental)
+  3  - formant frequency 3      1-20000 Hz   exp  (absolute, independent of fundamental)
   4  - envelope dilation 1      0.0-2.0      lin
   5  - envelope dilation 2      0.0-2.0      lin
   6  - envelope dilation 3      0.01-2.0     lin
@@ -784,9 +784,9 @@ Table min/max [max, min] pairs:
   data_pulsaret_maxMin          [-1, 1]
   data_envelope_maxMin          [-1, 1]
   data_fundamentalFrequency_maxMin  [0, 20]
-  data_formantFrequencyOne_maxMin   [0, 10]
-  data_formantFrequencyTwo_maxMin   [0, 10]
-  data_formantFrequencyThree_maxMin [0, 10]
+  data_formantFrequencyOne_maxMin   [0, 20000]
+  data_formantFrequencyTwo_maxMin   [0, 20000]
+  data_formantFrequencyThree_maxMin [0, 20000]
   data_panOne_maxMin            [-1, 1]
   data_panTwo_maxMin            [-1, 1]
   data_panThree_maxMin          [-1, 1]
