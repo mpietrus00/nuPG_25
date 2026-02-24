@@ -418,7 +418,126 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 
 
 // =====================================================================
-// 6. PLAYBACK TASKS
+// 6. FORMANT RATIO MODE (Optional Layer)
+// =====================================================================
+
+// By default, formant frequencies are absolute Hz (matching original PG).
+// For harmonic/timbral relationships that track fundamental, use ratio mode.
+// This multiplies a ratio value by fundamental and sends to the synth,
+// bypassing the formant CV slider.
+
+// --- Enable ratio mode for one formant ---
+(
+~formantRatioMode = { |instance=0, formantNum=1, ratio=2|
+	var fundCV = ~app.data.data_main[instance][0];
+	var synth = ~app.synthesis.trainInstances[instance];
+	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
+	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
+
+	// Store dependant for later removal
+	var dep = { |cv, what, val|
+		if (what == \value) {
+			var newFreq = val * ratio;
+			synth.set(paramName, newFreq);
+			synthOscOS.set(paramName, newFreq);
+		};
+	};
+
+	// Apply immediately and on future changes
+	dep.(fundCV, \value, fundCV.value);
+	fundCV.addDependant(dep);
+
+	// Return cleanup function
+	("Formant" + formantNum + "now tracks fundamental ×" + ratio).postln;
+	{ fundCV.removeDependant(dep); "Ratio mode disabled".postln }
+};
+
+// Usage: returns a cleanup function
+~disableRatio1 = ~formantRatioMode.(0, 1, 2);   // formant 1 = fund × 2
+~disableRatio2 = ~formantRatioMode.(0, 2, 3);   // formant 2 = fund × 3
+~disableRatio3 = ~formantRatioMode.(0, 3, 5);   // formant 3 = fund × 5
+
+// To disable:
+~disableRatio1.value;
+)
+
+// --- Ratio mode for all three formants ---
+(
+~ratioModeAll = { |instance=0, ratios=#[2, 3, 5]|
+	var cleanups = ratios.collect { |ratio, i|
+		~formantRatioMode.(instance, i + 1, ratio)
+	};
+	// Return function to disable all
+	{ cleanups.do(_.value) }
+};
+
+// Enable all with harmonic ratios
+~disableAllRatios = ~ratioModeAll.(0, [2, 3, 5]);
+
+// Disable all
+~disableAllRatios.value;
+)
+
+// --- Dynamic ratio control (ratio as a variable you can change) ---
+(
+~dynamicRatioMode = { |instance=0, formantNum=1|
+	var fundCV = ~app.data.data_main[instance][0];
+	var synth = ~app.synthesis.trainInstances[instance];
+	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
+	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
+
+	// Ratio stored in environment variable
+	var ratioKey = ("formantRatio" ++ formantNum).asSymbol;
+	currentEnvironment[ratioKey] = 2;  // default ratio
+
+	var dep = { |cv, what, val|
+		if (what == \value) {
+			var ratio = currentEnvironment[ratioKey];
+			var newFreq = val * ratio;
+			synth.set(paramName, newFreq);
+			synthOscOS.set(paramName, newFreq);
+		};
+	};
+
+	dep.(fundCV, \value, fundCV.value);
+	fundCV.addDependant(dep);
+
+	("Formant" + formantNum + "tracks fundamental × ~" ++ ratioKey).postln;
+	{ fundCV.removeDependant(dep) }
+};
+
+// Enable dynamic ratio mode
+~disableDynamic = ~dynamicRatioMode.(0, 1);
+
+// Now change ratio on the fly:
+~formantRatio1 = 4;   // changes to fund × 4
+~formantRatio1 = 0.5; // changes to fund × 0.5 (subharmonic)
+
+// Trigger update by nudging fundamental
+~app.data.data_main[0][0].value = ~app.data.data_main[0][0].value;
+
+// Disable
+~disableDynamic.value;
+)
+
+// --- Classic harmonic series presets ---
+(
+// Harmonic series: 1, 2, 3, 4, 5...
+~harmonicSeries = ~ratioModeAll.(0, [1, 2, 3]);
+
+// Odd harmonics: 1, 3, 5, 7...
+~oddHarmonics = ~ratioModeAll.(0, [1, 3, 5]);
+
+// Subharmonics
+~subharmonics = ~ratioModeAll.(0, [0.5, 0.25, 0.125]);
+
+// Just intonation major chord
+~majorChord = ~ratioModeAll.(0, [1, 1.25, 1.5]);  // 1:5/4:3/2
+)
+
+
+// =====================================================================
+// 7. PLAYBACK TASKS
 // =====================================================================
 
 // --- Loop playback ---
@@ -462,7 +581,7 @@ fork {
 
 
 // =====================================================================
-// 7. PRESETS
+// 8. PRESETS
 // =====================================================================
 
 // Access the preset manager for instance 0
@@ -523,7 +642,7 @@ fork {
 
 
 // =====================================================================
-// 8. BUFFERS
+// 9. BUFFERS
 // =====================================================================
 
 // Access buffers directly
@@ -540,7 +659,7 @@ fork {
 
 
 // =====================================================================
-// 9. MIDI MAPPING
+// 10. MIDI MAPPING
 // =====================================================================
 
 // MIDI is initialized automatically on boot.
@@ -575,7 +694,7 @@ fork {
 
 
 // =====================================================================
-// 10. LISTENING TO PARAMETER CHANGES
+// 11. LISTENING TO PARAMETER CHANGES
 // =====================================================================
 
 // Use addDependant to watch for value changes on any CV
@@ -604,7 +723,7 @@ var names = ["fund", "form1", "form2", "form3"];
 
 
 // =====================================================================
-// 11. AUTOMATION EXAMPLES
+// 12. AUTOMATION EXAMPLES
 // =====================================================================
 
 // --- Sweep fundamental frequency ---
@@ -680,7 +799,7 @@ fork {
 
 
 // =====================================================================
-// 12. APPLICATION INFO
+// 13. APPLICATION INFO
 // =====================================================================
 
 // Number of instances
