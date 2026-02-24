@@ -430,6 +430,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 (
 ~formantRatioMode = { |instance=0, formantNum=1, ratio=2|
 	var fundCV = ~app.data.data_main[instance][0];
+	var formantCV = ~app.data.data_main[instance][formantNum];
 	var synth = ~app.synthesis.trainInstances[instance];
 	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
 	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
@@ -444,9 +445,15 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	dep.(fundCV, \value, fundCV.value);
 	fundCV.addDependant(dep);
 
-	// Return cleanup function
+	// Return cleanup function that restores formant CV value to synth
 	("Formant" + formantNum + "now tracks fundamental ×" + ratio).postln;
-	{ fundCV.removeDependant(dep); "Ratio mode disabled".postln }
+	{
+		fundCV.removeDependant(dep);
+		// Restore: push the formant slider's current Hz value back to synth
+		synth.set(paramName, formantCV.value);
+		synthOscOS.set(paramName, formantCV.value);
+		("Formant" + formantNum + "restored to" + formantCV.value + "Hz").postln;
+	}
 };
 
 // Usage: returns a cleanup function
@@ -479,6 +486,7 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 (
 ~dynamicRatioMode = { |instance=0, formantNum=1|
 	var fundCV = ~app.data.data_main[instance][0];
+	var formantCV = ~app.data.data_main[instance][formantNum];
 	var synth = ~app.synthesis.trainInstances[instance];
 	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
 	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
@@ -497,7 +505,12 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	fundCV.addDependant(dep);
 
 	("Formant" + formantNum + "tracks fundamental × ~" ++ ratioKey).postln;
-	{ fundCV.removeDependant(dep) }
+	{
+		fundCV.removeDependant(dep);
+		synth.set(paramName, formantCV.value);
+		synthOscOS.set(paramName, formantCV.value);
+		("Formant" + formantNum + "restored to" + formantCV.value + "Hz").postln;
+	}
 };
 
 // Enable dynamic ratio mode
