@@ -425,121 +425,105 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 // For harmonic/timbral relationships that track fundamental, use ratio mode.
 // This multiplies a ratio value by fundamental and sends to the synth,
 // bypassing the formant CV slider.
+//
+// Dependants are stored in ~formantRatioDeps so they can always be found
+// and removed — safe to evaluate multiple times without leaking listeners.
 
-// --- Enable ratio mode for one formant ---
+// --- Setup: evaluate this block once ---
 (
-~formantRatioMode = { |instance=0, formantNum=1, ratio=2|
+// Persistent storage for active dependants (survives re-evaluation)
+~formantRatioDeps = ~formantRatioDeps ?? { Dictionary.new };
+
+~formantRatioEnable = { |instance=0, formantNum=1, ratio=2|
+	var key = (instance.asString ++ "_" ++ formantNum).asSymbol;
 	var fundCV = ~app.data.data_main[instance][0];
-	var formantCV = ~app.data.data_main[instance][formantNum];
 	var synth = ~app.synthesis.trainInstances[instance];
 	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
 	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
-	var dep = { |cv, what, val|
+	var dep;
+
+	// Remove existing dependant first (prevents duplicates)
+	if (~formantRatioDeps[key].notNil) {
+		fundCV.removeDependant(~formantRatioDeps[key]);
+	};
+
+	dep = { |cv, what, val|
 		if (what == \value) {
 			synth.set(paramName, val * ratio);
 			synthOscOS.set(paramName, val * ratio);
 		};
 	};
 
+	// Store reference for later removal
+	~formantRatioDeps[key] = dep;
+
 	// Apply immediately and on future changes
 	dep.(fundCV, \value, fundCV.value);
 	fundCV.addDependant(dep);
 
-	// Return cleanup function that restores formant CV value to synth
-	("Formant" + formantNum + "now tracks fundamental ×" + ratio).postln;
-	{
-		fundCV.removeDependant(dep);
-		// Restore: push the formant slider's current Hz value back to synth
-		synth.set(paramName, formantCV.value);
-		synthOscOS.set(paramName, formantCV.value);
-		("Formant" + formantNum + "restored to" + formantCV.value + "Hz").postln;
-	}
+	("Formant" + formantNum + ": ratio mode ON (fundamental ×" + ratio ++ ")").postln;
 };
 
-// Usage: returns a cleanup function
-~disableRatio1 = ~formantRatioMode.(0, 1, 2);   // formant 1 = fund × 2
-~disableRatio2 = ~formantRatioMode.(0, 2, 3);   // formant 2 = fund × 3
-~disableRatio3 = ~formantRatioMode.(0, 3, 5);   // formant 3 = fund × 5
-
-// To disable:
-~disableRatio1.value;
-)
-
-// --- Ratio mode for all three formants ---
-(
-~ratioModeAll = { |instance=0, ratios=#[2, 3, 5]|
-	var cleanups = ratios.collect { |ratio, i|
-		~formantRatioMode.(instance, i + 1, ratio)
-	};
-	// Return function to disable all
-	{ cleanups.do(_.value) }
-};
-
-// Enable all with harmonic ratios
-~disableAllRatios = ~ratioModeAll.(0, [2, 3, 5]);
-
-// Disable all
-~disableAllRatios.value;
-)
-
-// --- Dynamic ratio control (ratio as a variable you can change) ---
-(
-~dynamicRatioMode = { |instance=0, formantNum=1|
+~formantRatioDisable = { |instance=0, formantNum=1|
+	var key = (instance.asString ++ "_" ++ formantNum).asSymbol;
 	var fundCV = ~app.data.data_main[instance][0];
 	var formantCV = ~app.data.data_main[instance][formantNum];
 	var synth = ~app.synthesis.trainInstances[instance];
 	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
 	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
-	var ratioKey = ("formantRatio" ++ formantNum).asSymbol;
-	var dep = { |cv, what, val|
-		if (what == \value) {
-			synth.set(paramName, val * currentEnvironment[ratioKey]);
-			synthOscOS.set(paramName, val * currentEnvironment[ratioKey]);
-		};
-	};
 
-	// Set default ratio in environment
-	currentEnvironment[ratioKey] = 2;
-
-	dep.(fundCV, \value, fundCV.value);
-	fundCV.addDependant(dep);
-
-	("Formant" + formantNum + "tracks fundamental × ~" ++ ratioKey).postln;
-	{
-		fundCV.removeDependant(dep);
+	if (~formantRatioDeps[key].notNil) {
+		fundCV.removeDependant(~formantRatioDeps[key]);
+		~formantRatioDeps[key] = nil;
+		// Restore formant slider value to synth
 		synth.set(paramName, formantCV.value);
 		synthOscOS.set(paramName, formantCV.value);
-		("Formant" + formantNum + "restored to" + formantCV.value + "Hz").postln;
-	}
+		("Formant" + formantNum + ": ratio mode OFF (restored to" + formantCV.value + "Hz)").postln;
+	} {
+		("Formant" + formantNum + ": not in ratio mode").postln;
+	};
 };
 
-// Enable dynamic ratio mode
-~disableDynamic = ~dynamicRatioMode.(0, 1);
-
-// Now change ratio on the fly:
-~formantRatio1 = 4;   // changes to fund × 4
-~formantRatio1 = 0.5; // changes to fund × 0.5 (subharmonic)
-
-// Trigger update by nudging fundamental
-~app.data.data_main[0][0].value = ~app.data.data_main[0][0].value;
-
-// Disable
-~disableDynamic.value;
+~formantRatioDisableAll = { |instance=0|
+	3.do { |i| ~formantRatioDisable.(instance, i + 1) };
+};
 )
 
-// --- Classic harmonic series presets ---
+// --- Enable ratio mode ---
+~formantRatioEnable.(0, 1, 2);   // formant 1 = fund × 2
+~formantRatioEnable.(0, 2, 3);   // formant 2 = fund × 3
+~formantRatioEnable.(0, 3, 5);   // formant 3 = fund × 5
+
+// --- Disable ratio mode (back to absolute Hz) ---
+~formantRatioDisable.(0, 1);     // formant 1 back to slider Hz
+~formantRatioDisable.(0, 2);     // formant 2 back to slider Hz
+~formantRatioDisable.(0, 3);     // formant 3 back to slider Hz
+
+// --- Or disable all at once ---
+~formantRatioDisableAll.(0);
+
+// --- Re-enable is safe (removes old dependant first) ---
+~formantRatioEnable.(0, 1, 4);   // change formant 1 to fund × 4
+
+// --- Classic harmonic presets ---
 (
-// Harmonic series: 1, 2, 3, 4, 5...
-~harmonicSeries = ~ratioModeAll.(0, [1, 2, 3]);
+// Harmonic series: fund × 1, × 2, × 3
+[1, 2, 3].do { |r, i| ~formantRatioEnable.(0, i + 1, r) };
+)
 
-// Odd harmonics: 1, 3, 5, 7...
-~oddHarmonics = ~ratioModeAll.(0, [1, 3, 5]);
+(
+// Odd harmonics: fund × 1, × 3, × 5
+[1, 3, 5].do { |r, i| ~formantRatioEnable.(0, i + 1, r) };
+)
 
-// Subharmonics
-~subharmonics = ~ratioModeAll.(0, [0.5, 0.25, 0.125]);
+(
+// Subharmonics: fund × 0.5, × 0.25, × 0.125
+[0.5, 0.25, 0.125].do { |r, i| ~formantRatioEnable.(0, i + 1, r) };
+)
 
-// Just intonation major chord
-~majorChord = ~ratioModeAll.(0, [1, 1.25, 1.5]);  // 1:5/4:3/2
+(
+// Just intonation major chord: 1 : 5/4 : 3/2
+[1, 1.25, 1.5].do { |r, i| ~formantRatioEnable.(0, i + 1, r) };
 )
 
 
