@@ -433,13 +433,10 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var synth = ~app.synthesis.trainInstances[instance];
 	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
 	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
-
-	// Store dependant for later removal
 	var dep = { |cv, what, val|
 		if (what == \value) {
-			var newFreq = val * ratio;
-			synth.set(paramName, newFreq);
-			synthOscOS.set(paramName, newFreq);
+			synth.set(paramName, val * ratio);
+			synthOscOS.set(paramName, val * ratio);
 		};
 	};
 
@@ -485,19 +482,16 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var synth = ~app.synthesis.trainInstances[instance];
 	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
 	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
-
-	// Ratio stored in environment variable
 	var ratioKey = ("formantRatio" ++ formantNum).asSymbol;
-	currentEnvironment[ratioKey] = 2;  // default ratio
-
 	var dep = { |cv, what, val|
 		if (what == \value) {
-			var ratio = currentEnvironment[ratioKey];
-			var newFreq = val * ratio;
-			synth.set(paramName, newFreq);
-			synthOscOS.set(paramName, newFreq);
+			synth.set(paramName, val * currentEnvironment[ratioKey]);
+			synthOscOS.set(paramName, val * currentEnvironment[ratioKey]);
 		};
 	};
+
+	// Set default ratio in environment
+	currentEnvironment[ratioKey] = 2;
 
 	dep.(fundCV, \value, fundCV.value);
 	fundCV.addDependant(dep);
