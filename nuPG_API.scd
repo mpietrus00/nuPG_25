@@ -416,119 +416,8 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	(BPF.ar(in, f3.clip(20, 20000), rq) * \amplitude_Three.kr(0.8))
 };
 
-
 // =====================================================================
-// 6. FORMANT RATIO MODE (Optional Layer)
-// =====================================================================
-
-// By default, formant frequencies are absolute Hz (matching original PG).
-// For harmonic/timbral relationships that track fundamental, use ratio mode.
-// This multiplies a ratio value by fundamental and sends to the synth,
-// bypassing the formant CV slider.
-//
-// Dependants are stored in ~formantRatioDeps so they can always be found
-// and removed — safe to evaluate multiple times without leaking listeners.
-
-// --- Setup: evaluate this block once ---
-(
-// Persistent storage for active dependants (survives re-evaluation)
-~formantRatioDeps = ~formantRatioDeps ?? { Dictionary.new };
-
-~formantRatioEnable = { |instance=0, formantNum=1, ratio=2|
-	var key = (instance.asString ++ "_" ++ formantNum).asSymbol;
-	var fundCV = ~app.data.data_main[instance][0];
-	var synth = ~app.synthesis.trainInstances[instance];
-	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
-	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
-	var dep;
-
-	// Remove existing dependant first (prevents duplicates)
-	if (~formantRatioDeps[key].notNil) {
-		fundCV.removeDependant(~formantRatioDeps[key]);
-	};
-
-	dep = { |cv, what, val|
-		if (what == \value) {
-			synth.set(paramName, val * ratio);
-			synthOscOS.set(paramName, val * ratio);
-		};
-	};
-
-	// Store reference for later removal
-	~formantRatioDeps[key] = dep;
-
-	// Apply immediately and on future changes
-	dep.(fundCV, \value, fundCV.value);
-	fundCV.addDependant(dep);
-
-	("Formant" + formantNum + ": ratio mode ON (fundamental ×" + ratio ++ ")").postln;
-};
-
-~formantRatioDisable = { |instance=0, formantNum=1|
-	var key = (instance.asString ++ "_" ++ formantNum).asSymbol;
-	var fundCV = ~app.data.data_main[instance][0];
-	var formantCV = ~app.data.data_main[instance][formantNum];
-	var synth = ~app.synthesis.trainInstances[instance];
-	var synthOscOS = ~app.synthesisOscOS.trainInstances[instance];
-	var paramName = [\formant_frequency_One, \formant_frequency_Two, \formant_frequency_Three][formantNum - 1];
-
-	if (~formantRatioDeps[key].notNil) {
-		fundCV.removeDependant(~formantRatioDeps[key]);
-		~formantRatioDeps[key] = nil;
-		// Restore formant slider value to synth
-		synth.set(paramName, formantCV.value);
-		synthOscOS.set(paramName, formantCV.value);
-		("Formant" + formantNum + ": ratio mode OFF (restored to" + formantCV.value + "Hz)").postln;
-	} {
-		("Formant" + formantNum + ": not in ratio mode").postln;
-	};
-};
-
-~formantRatioDisableAll = { |instance=0|
-	3.do { |i| ~formantRatioDisable.(instance, i + 1) };
-};
-)
-
-// --- Enable ratio mode ---
-~formantRatioEnable.(0, 1, 2);   // formant 1 = fund × 2
-~formantRatioEnable.(0, 2, 3);   // formant 2 = fund × 3
-~formantRatioEnable.(0, 3, 5);   // formant 3 = fund × 5
-
-// --- Disable ratio mode (back to absolute Hz) ---
-~formantRatioDisable.(0, 1);     // formant 1 back to slider Hz
-~formantRatioDisable.(0, 2);     // formant 2 back to slider Hz
-~formantRatioDisable.(0, 3);     // formant 3 back to slider Hz
-
-// --- Or disable all at once ---
-~formantRatioDisableAll.(0);
-
-// --- Re-enable is safe (removes old dependant first) ---
-~formantRatioEnable.(0, 1, 4);   // change formant 1 to fund × 4
-
-// --- Classic harmonic presets ---
-(
-// Harmonic series: fund × 1, × 2, × 3
-[1, 2, 3].do { |r, i| ~formantRatioEnable.(0, i + 1, r) };
-)
-
-(
-// Odd harmonics: fund × 1, × 3, × 5
-[1, 3, 5].do { |r, i| ~formantRatioEnable.(0, i + 1, r) };
-)
-
-(
-// Subharmonics: fund × 0.5, × 0.25, × 0.125
-[0.5, 0.25, 0.125].do { |r, i| ~formantRatioEnable.(0, i + 1, r) };
-)
-
-(
-// Just intonation major chord: 1 : 5/4 : 3/2
-[1, 1.25, 1.5].do { |r, i| ~formantRatioEnable.(0, i + 1, r) };
-)
-
-
-// =====================================================================
-// 7. PLAYBACK TASKS
+// 6. PLAYBACK TASKS
 // =====================================================================
 
 // --- Loop playback ---
@@ -572,7 +461,7 @@ fork {
 
 
 // =====================================================================
-// 8. PRESETS
+// 7. PRESETS
 // =====================================================================
 
 // Access the preset manager for instance 0
@@ -633,7 +522,7 @@ fork {
 
 
 // =====================================================================
-// 9. BUFFERS
+// 8. BUFFERS
 // =====================================================================
 
 // Access buffers directly
@@ -650,7 +539,7 @@ fork {
 
 
 // =====================================================================
-// 10. MIDI MAPPING
+// 9. MIDI MAPPING
 // =====================================================================
 
 // MIDI is initialized automatically on boot.
@@ -685,7 +574,7 @@ fork {
 
 
 // =====================================================================
-// 11. LISTENING TO PARAMETER CHANGES
+// 10. LISTENING TO PARAMETER CHANGES
 // =====================================================================
 
 // Use addDependant to watch for value changes on any CV
@@ -714,7 +603,7 @@ var names = ["fund", "form1", "form2", "form3"];
 
 
 // =====================================================================
-// 12. AUTOMATION EXAMPLES
+// 11. AUTOMATION EXAMPLES
 // =====================================================================
 
 // --- Sweep fundamental frequency ---
@@ -790,7 +679,7 @@ fork {
 
 
 // =====================================================================
-// 13. APPLICATION INFO
+// 12. APPLICATION INFO
 // =====================================================================
 
 // Number of instances
