@@ -454,6 +454,12 @@ NuPG_Synthesis_OscOS {
 				grainDur_Two = 2048 / Server.default.sampleRate / max(0.0001, envM_Two);
 				grainDur_Three = 2048 / Server.default.sampleRate / max(0.0001, envM_Three);
 
+				// Safety clamp: limit grain duration to prevent "too many grains"
+				// Max concurrent grains ≈ fundamental × grainDur, keep under ~400
+				grainDur_One = min(grainDur_One, 400 / fundamental_frequency);
+				grainDur_Two = min(grainDur_Two, 400 / fundamental_frequency);
+				grainDur_Three = min(grainDur_Three, 400 / fundamental_frequency);
+
 				// ============================================================
 				// AMPLITUDE CALCULATION
 				// ============================================================

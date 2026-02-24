@@ -370,6 +370,12 @@ NuPG_Synthesis {
 				//grain duration 3
 				grainDur_Three = 2048 / Server.default.sampleRate / envM_Three;
 
+				// Safety clamp: limit grain duration to prevent "too many grains"
+				// Max concurrent grains ≈ fundamental × grainDur, keep under ~400
+				grainDur_One = min(grainDur_One, 400 / fundamental_frequency);
+				grainDur_Two = min(grainDur_Two, 400 / fundamental_frequency);
+				grainDur_Three = min(grainDur_Three, 400 / fundamental_frequency);
+
 				//formant 1 flux
 				ffreq_One = ffreq_One * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
 				//formant 2 flux
