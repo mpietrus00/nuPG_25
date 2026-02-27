@@ -74,20 +74,22 @@ var d = ~app.data;
 // Fundamental (emission rate): 200 Hz
 d.data_main[0][0].value_(200);
 
-// Formant: 6000 Hz — HIGH formant to maximize aliasing difference
-// At 6000 Hz with 32 harmonics, partials extend far beyond Nyquist.
-// GrainBuf will fold these back as inharmonic content (metallic).
-// OscOS will cleanly attenuate them (smooth, natural rolloff).
-d.data_main[0][1].value_(6000);
+// Three formants spread across the spectrum for richer texture
+// Group 1: 3000 Hz (mid)
+// Group 2: 5000 Hz (upper-mid)
+// Group 3: 7000 Hz (high - maximum aliasing)
+d.data_main[0][1].value_(3000);   // formant 1
+d.data_main[0][2].value_(5000);   // formant 2
+d.data_main[0][3].value_(7000);   // formant 3
 
 // Envelope dilation: 1 (natural grain duration)
 d.data_main[0][4].value_(1);
 
-// Group 1 only, moderate amplitude
-d.data_main[0][10].value_(0.6);
-d.data_main[0][11].value_(0);
-d.data_main[0][12].value_(0);
-d.data_main[0][7].value_(0);   // pan centre
+// All three groups active
+d.data_main[0][10].value_(0.5);  // group 1 amp
+d.data_main[0][11].value_(0.5);  // group 2 amp
+d.data_main[0][12].value_(0.5);  // group 3 amp
+d.data_main[0][7].value_(0);     // pan centre
 
 // Burst mask: 7:1 — a periodic accent structure
 // At 200 Hz emission rate, the 8-step cycle takes 40 ms:
@@ -108,39 +110,42 @@ d.data_modulators[0][1].value_(0);
 ~app.synthSwitcher.activeSynth.trainInstances[0].set(\sieveMaskOn, 0);
 
 "Step 2 complete: shared configuration set".postln;
-"  Fundamental: 200 Hz | Formant: 6000 Hz | Burst: 7:1".postln;
-"  32 harmonics -> extreme aliasing in Classic engine".postln;
+"  Fundamental: 200 Hz | Formants: 3000/5000/7000 Hz | Burst: 7:1".postln;
+"  Three formant groups with 32 harmonics each".postln;
 )
 
 // =====================================================================
 // Step 3: Automated A/B comparison with formant sweep
 // =====================================================================
-// Sweeps the formant from 500 Hz to 8000 Hz while the fundamental
-// remains at 200 Hz. Aliasing increases dramatically as the formant
-// rises. Plays each engine for 15 seconds with the same sweep.
+// Sweeps all three formants from low to high while the fundamental
+// remains at 200 Hz. Aliasing increases dramatically as formants
+// rise. Plays each engine for 15 seconds with the same sweep.
 
 (
 var dur = 15;
 var updateRate = 20;
 var steps = (dur * updateRate).asInteger;
-var startFormant = 500;
-var endFormant = 8000;
+// Three formants sweep in parallel, maintaining spread
+var startFormants = [500, 800, 1200];
+var endFormants = [4000, 6000, 8000];
 
 ~abRoutine = Routine({
 	// --- Phase A: Classic engine ---
 	"=== A/B COMPARISON ===".postln;
-	"Phase A: CLASSIC (GrainBuf) - formant sweep 500->8000 Hz".postln;
+	"Phase A: CLASSIC (GrainBuf) - 3 formants sweeping up".postln;
 
 	~app.synthSwitcher.useStandard;
 	~app.synthSwitcher.activeSynth.trainInstances[0].set(
 		\globalAmplitude, 1.0, \mute, 0,
-		\group_1_onOff, 0
+		\group_1_onOff, 0, \group_2_onOff, 0, \group_3_onOff, 0
 	);
 	~app.synthSwitcher.activeSynth.trainInstances[0].play;
 
 	steps.do { |step|
-		var formant = step.linexp(0, steps - 1, startFormant, endFormant);
-		~app.data.data_main[0][1].value_(formant);
+		var t = step / (steps - 1);
+		~app.data.data_main[0][1].value_(startFormants[0].linexp(0, 1, startFormants[0], endFormants[0], t));
+		~app.data.data_main[0][2].value_(startFormants[1].linexp(0, 1, startFormants[1], endFormants[1], t));
+		~app.data.data_main[0][3].value_(startFormants[2].linexp(0, 1, startFormants[2], endFormants[2], t));
 		(1 / updateRate).wait;
 	};
 
@@ -148,25 +153,29 @@ var endFormant = 8000;
 	1.wait;
 
 	// --- Phase B: OscOS engine ---
-	"Phase B: OSCOS (Oversampling) - same sweep 500->8000 Hz".postln;
+	"Phase B: OSCOS (Oversampling) - same 3-formant sweep".postln;
 
 	~app.synthSwitcher.useOscOS;
 	~app.synthSwitcher.activeSynth.trainInstances[0].set(
 		\globalAmplitude, 1.0, \mute, 0,
-		\group_1_onOff, 0
+		\group_1_onOff, 0, \group_2_onOff, 0, \group_3_onOff, 0
 	);
 	~app.synthSwitcher.activeSynth.trainInstances[0].play;
 
 	steps.do { |step|
-		var formant = step.linexp(0, steps - 1, startFormant, endFormant);
-		~app.data.data_main[0][1].value_(formant);
+		var t = step / (steps - 1);
+		~app.data.data_main[0][1].value_(startFormants[0].linexp(0, 1, startFormants[0], endFormants[0], t));
+		~app.data.data_main[0][2].value_(startFormants[1].linexp(0, 1, startFormants[1], endFormants[1], t));
+		~app.data.data_main[0][3].value_(startFormants[2].linexp(0, 1, startFormants[2], endFormants[2], t));
 		(1 / updateRate).wait;
 	};
 
 	~app.synthSwitcher.activeSynth.trainInstances[0].stop;
 
-	// Reset formant to initial value
-	~app.data.data_main[0][1].value_(6000);
+	// Reset formants
+	~app.data.data_main[0][1].value_(3000);
+	~app.data.data_main[0][2].value_(5000);
+	~app.data.data_main[0][3].value_(7000);
 
 	"=== A/B comparison complete ===".postln;
 	"The temporal structure (burst pattern, emission-rate".postln;
@@ -187,7 +196,7 @@ var endFormant = 8000;
 // =====================================================================
 // Step 4 (optional): A/B fundamental sweep comparison
 // =====================================================================
-// Keeps formant high (8000 Hz), sweeps fundamental from 50 to 400 Hz.
+// Keeps formants high, sweeps fundamental from 50 to 400 Hz.
 // Higher fundamental = faster wavetable playback = more aliasing.
 // Uses same A/B format as Step 3 for easy comparison.
 
@@ -198,18 +207,21 @@ var updateRate = 20;
 var steps = (dur * updateRate).asInteger;
 var startFund = 50;
 var endFund = 400;
-var formant = 8000;
 
-d.data_main[0][1].value_(formant);
+// Set high formants on all three groups
+d.data_main[0][1].value_(5000);
+d.data_main[0][2].value_(6500);
+d.data_main[0][3].value_(8000);
 
 ~fundSweepRoutine = Routine({
-	"=== STEP 4: A/B Fundamental Sweep (formant fixed at 8000 Hz) ===".postln;
+	"=== STEP 4: A/B Fundamental Sweep (3 formants at 5k/6.5k/8k Hz) ===".postln;
 
 	// --- Phase A: Classic engine ---
 	"--- A: Classic engine (fundamental 50->400 Hz) ---".postln;
 	~app.synthSwitcher.useStandard;
 	~app.synthSwitcher.activeSynth.trainInstances[0].set(
-		\globalAmplitude, 1.0, \mute, 0, \group_1_onOff, 0
+		\globalAmplitude, 1.0, \mute, 0,
+		\group_1_onOff, 0, \group_2_onOff, 0, \group_3_onOff, 0
 	);
 	~app.synthSwitcher.activeSynth.trainInstances[0].play;
 
@@ -226,7 +238,8 @@ d.data_main[0][1].value_(formant);
 	"--- B: OscOS engine (fundamental 50->400 Hz) ---".postln;
 	~app.synthSwitcher.useOscOS;
 	~app.synthSwitcher.activeSynth.trainInstances[0].set(
-		\globalAmplitude, 1.0, \mute, 0, \group_1_onOff, 0
+		\globalAmplitude, 1.0, \mute, 0,
+		\group_1_onOff, 0, \group_2_onOff, 0, \group_3_onOff, 0
 	);
 	~app.synthSwitcher.activeSynth.trainInstances[0].play;
 
@@ -240,7 +253,9 @@ d.data_main[0][1].value_(formant);
 
 	// Reset
 	d.data_main[0][0].value_(200);
-	d.data_main[0][1].value_(6000);
+	d.data_main[0][1].value_(3000);
+	d.data_main[0][2].value_(5000);
+	d.data_main[0][3].value_(7000);
 
 	"=== Fundamental sweep complete ===".postln;
 }).play(AppClock);
@@ -255,22 +270,21 @@ d.data_main[0][1].value_(formant);
 // =====================================================================
 // Listening guide:
 //
-// Step 3 - A/B formant sweep comparison (500 -> 8000 Hz):
+// Step 3 - A/B formant sweep (3 formants sweeping in parallel):
 //
-//   Classic (GrainBuf): Aliasing intensifies as formant rises.
-//   Upper harmonics fold back as inharmonic spectral content,
-//   creating metallic brightness that worsens at high formants.
-//   This is the "digital dirt" characteristic of historical
-//   pulsar synthesis implementations.
+//   Classic (GrainBuf): Aliasing intensifies as formants rise.
+//   With three formant groups (32 harmonics each), spectral
+//   foldback creates dense inharmonic content - the "digital
+//   dirt" characteristic of historical pulsar implementations.
 //
 //   OscOS (Oversampling): Clean sweep throughout. Same temporal
 //   structure (burst pattern, emission quantization) but natural
 //   timbral brightening without the metallic artifacts.
 //
-// Step 4 (optional) - A/B fundamental sweep (50 -> 400 Hz):
+// Step 4 (optional) - A/B fundamental sweep (3 formants fixed high):
 //
 //   Higher fundamental = faster wavetable playback = more aliasing.
-//   Classic engine becomes increasingly harsh at higher fundamentals.
+//   With three high formants, Classic becomes increasingly harsh.
 //   OscOS maintains consistent clean timbre throughout.
 //
 // The archaeological distinction:
