@@ -28,7 +28,7 @@ NuPG_GUI_Control_View {
 		//global is the same across all instances
 		//local is instance specific, using stackView for multiple views
 		window = Window("nuPG", dimensions, resizable: false);
-		window.userCanClose_(0);
+		window.userCanClose = false;
 		//window.alwaysOnTop_(true);
 		window.view.background_(guiDefinitions.bAndKGreen);
 		window.layout_(layout = GridLayout.new() );

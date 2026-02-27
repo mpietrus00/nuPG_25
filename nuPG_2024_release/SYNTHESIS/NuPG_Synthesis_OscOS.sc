@@ -31,8 +31,8 @@ NuPG_OscOS {
 
 		output = pulsaret * envelope;
 
-		// Pan to stereo
-		output = Pan2.ar(output, panning);
+		// Pan according to channels_number: mono (1) or stereo (2)
+		output = if(channels_number == 1, output, Pan2.ar(output, panning));
 
 		^output;
 	}
@@ -56,7 +56,8 @@ NuPG_BLIT {
 		);
 
 		output = pulsaret * envelope;
-		output = Pan2.ar(output, panning);
+		// Pan according to channels_number: mono (1) or stereo (2)
+		output = if(channels_number == 1, output, Pan2.ar(output, panning));
 
 		^output;
 	}
@@ -335,17 +336,17 @@ NuPG_Synthesis_OscOS {
 				formantOneMod_four = Select.ar(formantOneMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 
 				formant_frequency_One_loop = Select.kr(group_1_onOff, [1, formant_frequency_One_loop]);
-				ffreq_One = (fundamental_frequency * formant_frequency_One * formant_frequency_One_loop) +
+				ffreq_One = (formant_frequency_One * formant_frequency_One_loop) +
 				(formantOneMod_one + formantOneMod_two + formantOneMod_three + formantOneMod_four);
 
 				//formant 2 modulators
 				formantTwoMod_one = Select.ar(formantTwoMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
 				formantTwoMod_two = Select.ar(formantTwoMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
-				formantTwoMod_three = Select.ar(formantTwoMod_three_active, [K2A.ar(0), (modulation_index_three * mod_one)]);
-				formantTwoMod_four = Select.ar(formantTwoMod_four_active, [K2A.ar(0), (modulation_index_four * mod_two)]);
+				formantTwoMod_three = Select.ar(formantTwoMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
+				formantTwoMod_four = Select.ar(formantTwoMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 
 				formant_frequency_Two_loop = Select.kr(group_2_onOff, [1, formant_frequency_Two_loop]);
-				ffreq_Two = (fundamental_frequency * formant_frequency_Two * formant_frequency_Two_loop) +
+				ffreq_Two = (formant_frequency_Two * formant_frequency_Two_loop) +
 							(formantTwoMod_one + formantTwoMod_two + formantTwoMod_three + formantTwoMod_four);
 
 				//formant 3 modulators
@@ -355,7 +356,7 @@ NuPG_Synthesis_OscOS {
 				formantThreeMod_four = Select.ar(formantThreeMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 
 				formant_frequency_Three_loop = Select.kr(group_3_onOff, [1, formant_frequency_Three_loop]);
-				ffreq_Three = (fundamental_frequency * formant_frequency_Three * formant_frequency_Three_loop) +
+				ffreq_Three = (formant_frequency_Three * formant_frequency_Three_loop) +
 							(formantThreeMod_one + formantThreeMod_two + formantThreeMod_three + formantThreeMod_four);
 
 				// Apply formant flux
@@ -453,6 +454,12 @@ NuPG_Synthesis_OscOS {
 				grainDur_Two = 2048 / Server.default.sampleRate / max(0.0001, envM_Two);
 				grainDur_Three = 2048 / Server.default.sampleRate / max(0.0001, envM_Three);
 
+				// Safety clamp: limit grain duration to prevent "too many grains"
+				// Max concurrent grains ≈ fundamental × grainDur, keep under ~400
+				grainDur_One = min(grainDur_One, 400 / fundamental_frequency);
+				grainDur_Two = min(grainDur_Two, 400 / fundamental_frequency);
+				grainDur_Three = min(grainDur_Three, 400 / fundamental_frequency);
+
 				// ============================================================
 				// AMPLITUDE CALCULATION
 				// ============================================================
@@ -462,7 +469,7 @@ NuPG_Synthesis_OscOS {
 				ampOneMod_one = Select.ar(ampOneMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
 				ampOneMod_two = Select.ar(ampOneMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
 				ampOneMod_three = Select.ar(ampOneMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
-				ampOneMod_four = Select.ar(ampOneMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
+				ampOneMod_four = Select.ar(ampOneMod_four_active, [K2A.ar(1), ((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)]);
 				amplitude_One = amplitude_One * amplitude_One_loop *
 				(ampOneMod_one * ampOneMod_two * ampOneMod_three * ampOneMod_four) * (1 - mute);
 				amplitude_One = amplitude_One.clip(0, 1);
@@ -472,7 +479,7 @@ NuPG_Synthesis_OscOS {
 				ampTwoMod_one = Select.ar(ampTwoMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
 				ampTwoMod_two = Select.ar(ampTwoMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
 				ampTwoMod_three = Select.ar(ampTwoMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
-				ampTwoMod_four = Select.ar(ampTwoMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
+				ampTwoMod_four = Select.ar(ampTwoMod_four_active, [K2A.ar(1), ((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)]);
 				amplitude_Two = amplitude_Two * amplitude_Two_loop *
 				(ampTwoMod_one * ampTwoMod_two * ampTwoMod_three * ampTwoMod_four) * (1 - mute);
 				amplitude_Two = amplitude_Two.clip(0, 1);
@@ -482,7 +489,7 @@ NuPG_Synthesis_OscOS {
 				ampThreeMod_one = Select.ar(ampThreeMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
 				ampThreeMod_two = Select.ar(ampThreeMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
 				ampThreeMod_three = Select.ar(ampThreeMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
-				ampThreeMod_four = Select.ar(ampThreeMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
+				ampThreeMod_four = Select.ar(ampThreeMod_four_active, [K2A.ar(1), ((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)]);
 				amplitude_Three = amplitude_Three * amplitude_Three_loop *
 				(ampThreeMod_one * ampThreeMod_two * ampThreeMod_three * ampThreeMod_four) * (1 - mute);
 				amplitude_Three = amplitude_Three.clip(0, 1);
@@ -561,34 +568,37 @@ NuPG_Synthesis_OscOS {
 				// ============================================================
 
 				// Pulsaret: use OscOS for anti-aliased wavetable oscillation
-				// OscOS.ar(buffer, phase, numSubTables, subTablePos, oversample, mul)
-				// numSubTables=1 (single 2048-sample wavetable), subTablePos=0, oversample=1
-				pulsaret_One = OscOS.ar(pulsaret_buffer, grainPhase_One, 1, 0, 1);
-				pulsaret_Two = OscOS.ar(pulsaret_buffer, grainPhase_Two, 1, 0, 1);
-				pulsaret_Three = OscOS.ar(pulsaret_buffer, grainPhase_Three, 1, 0, 1);
+				// OscOS.ar(buffer, phase, numSubTables, subTablePos, oversample)
+				// numSubTables=1 (single 2048-sample wavetable), subTablePos=0
+				// oversample=4 (4x oversampling for anti-aliasing)
+				pulsaret_One = OscOS.ar(pulsaret_buffer, grainPhase_One, 1, 0, oversample);
+				pulsaret_Two = OscOS.ar(pulsaret_buffer, grainPhase_Two, 1, 0, oversample);
+				pulsaret_Three = OscOS.ar(pulsaret_buffer, grainPhase_Three, 1, 0, oversample);
 
 				// Envelope: use OscOS for anti-aliased one-shot reading
 				// windowPhase is clipped 0-1 (one-shot), so it reads through buffer once
-				// OscOS.ar(buffer, phase, numSubTables=1, subTablePos=0, oversample=1)
-				envelope_One = OscOS.ar(envelope_buffer, windowPhase_One, 1, 0, 1);
-				envelope_Two = OscOS.ar(envelope_buffer, windowPhase_Two, 1, 0, 1);
-				envelope_Three = OscOS.ar(envelope_buffer, windowPhase_Three, 1, 0, 1);
+				// Use same oversample factor for consistency
+				envelope_One = OscOS.ar(envelope_buffer, windowPhase_One, 1, 0, oversample);
+				envelope_Two = OscOS.ar(envelope_buffer, windowPhase_Two, 1, 0, oversample);
+				envelope_Three = OscOS.ar(envelope_buffer, windowPhase_Three, 1, 0, oversample);
 
 				// ============================================================
 				// OUTPUT MIX
 				// ============================================================
 
 				// Pulsar outputs
-				pulsar_1 = pulsaret_One * envelope_One * 4;
-				pulsar_1 = Pan2.ar(pulsar_1, pan_One);
+				// Scale by 0.9 to match classic GrainBuf amplitude level
+				// Respect numChannels setting: mono (1) or stereo (2)
+				pulsar_1 = pulsaret_One * envelope_One * 0.9;
+				pulsar_1 = if(numChannels == 1, pulsar_1, Pan2.ar(pulsar_1, pan_One));
 				pulsar_1 = pulsar_1 * amplitude_One * amplitude_local_One;
 
-				pulsar_2 = pulsaret_Two * envelope_Two * 4;
-				pulsar_2 = Pan2.ar(pulsar_2, pan_Two);
+				pulsar_2 = pulsaret_Two * envelope_Two * 0.9;
+				pulsar_2 = if(numChannels == 1, pulsar_2, Pan2.ar(pulsar_2, pan_Two));
 				pulsar_2 = pulsar_2 * amplitude_Two * amplitude_local_Two;
 
-				pulsar_3 = pulsaret_Three * envelope_Three * 4;
-				pulsar_3 = Pan2.ar(pulsar_3, pan_Three);
+				pulsar_3 = pulsaret_Three * envelope_Three * 0.9;
+				pulsar_3 = if(numChannels == 1, pulsar_3, Pan2.ar(pulsar_3, pan_Three));
 				pulsar_3 = pulsar_3 * amplitude_Three * amplitude_local_Three;
 
 				mix = Mix.new([pulsar_1, pulsar_2, pulsar_3]) * globalAmplitude;

@@ -261,9 +261,9 @@ NuPG_Data {
 		data_envelope_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
 		data_frequency_maxMin[index] = this.prMakeRangeCV(1, 0.0, 0, 1);
 		data_fundamentalFrequency_maxMin[index] = this.prMakeRangeCV(10, 0, 0, 20);
-		data_formantFrequencyOne_maxMin[index] = this.prMakeRangeCV(10, 0.01, 0, 10);
-		data_formantFrequencyTwo_maxMin[index] = this.prMakeRangeCV(10, 0.01, 0, 10);
-		data_formantFrequencyThree_maxMin[index] = this.prMakeRangeCV(10, 0.01, 0, 10);
+		data_formantFrequencyOne_maxMin[index] = this.prMakeRangeCV(10, 0.1, 0, 10);
+		data_formantFrequencyTwo_maxMin[index] = this.prMakeRangeCV(10, 0.1, 0, 10);
+		data_formantFrequencyThree_maxMin[index] = this.prMakeRangeCV(10, 0.1, 0, 10);
 		data_panOne_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
 		data_panTwo_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
 		data_panThree_maxMin[index] = this.prMakeRangeCV(1, -1, -1, 1);
@@ -296,12 +296,12 @@ NuPG_Data {
 	}
 
 	prMakeMainCVs {
-		var defVal = [1, 15, 15, 15, 1, 1, 1, 0, 0, 0, 0.5, 0.5, 0.5];
+		var defVal = [1, 400, 400, 400, 1, 1, 1, 0, 0, 0, 0.5, 0.5, 0.5];
 		var ranges = [
-			[1.0, 3000],    // fundamental
-			[0.05, 16.0],   // formant 1
-			[0.05, 16.0],   // formant 2
-			[0.05, 16.0],   // formant 3
+			[1.0, 3000],      // fundamental (Hz)
+			[1.0, 20000.0],   // formant 1 (absolute Hz)
+			[1.0, 20000.0],   // formant 2 (absolute Hz)
+			[1.0, 20000.0],   // formant 3 (absolute Hz)
 			[0.0, 2],       // envMult 1
 			[0.0, 2],       // envMult 2
 			[0.01, 2],      // envMult 3

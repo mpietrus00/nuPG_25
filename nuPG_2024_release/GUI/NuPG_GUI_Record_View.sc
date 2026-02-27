@@ -21,7 +21,7 @@ NuPG_GUI_Record_View {
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//window
 		window = Window("_record", dimensions, resizable: false);
-		window.userCanClose_(0);
+		window.userCanClose = false;
 		//window.alwaysOnTop_(true);
 		window.view.background_(guiDefinitions.bAndKGreen);
 		window.layout_(layout = GridLayout.new() );
