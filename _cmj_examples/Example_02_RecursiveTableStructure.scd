@@ -161,9 +161,10 @@ d.data_burstMask[0][1].value_(0);
 // Fundamental: 150 Hz — stable pitch in the audio range
 d.data_main[0][0].value_(150);
 
-// Formant frequency base: 800 Hz
-// (the loop table will modulate this via the _loop parameter)
-d.data_main[0][1].value_(800);
+// Formant frequency base: 1 Hz
+// The loop table value (mapped to maxMin) MULTIPLIES this base.
+// Setting base to 1 Hz means loop table directly controls absolute Hz.
+d.data_main[0][1].value_(1);
 
 // Envelope dilation
 d.data_main[0][4].value_(1);
@@ -180,9 +181,29 @@ d.data_modulators[0][2].value_(0.0);
 d.data_probabilityMaskSingular[0].value_(1.0);
 
 // --- Loop task configuration ---
-// The formant frequency loop table maps -1..1 to this range:
-d.data_formantFrequencyOne_maxMin[0][0].value_(2000);  // max Hz
-d.data_formantFrequencyOne_maxMin[0][1].value_(200);   // min Hz
+// The formant loop table maps -1..1 to this range (multiplied by slider).
+// With slider at 1 Hz, these become absolute Hz values.
+d.data_formantFrequencyOne_maxMin[0][0].value_(2000);  // max
+d.data_formantFrequencyOne_maxMin[0][1].value_(200);   // min
+
+// Initialize other group 1 tables to neutral values:
+// - Amplitude table: all 1s (no change from slider value)
+// - Pan table: all 0s (no offset from slider)
+// - Envelope dilation table: all 0s mapped to 1 via maxMin
+d.data_ampOne[0].value = Array.fill(2048, { 0 });  // will map to 1 via maxMin
+d.data_panOne[0].value = Array.fill(2048, { 0 });  // stays at 0 (center)
+d.data_envelopeMulOne[0].value = Array.fill(2048, { 0 }); // will map to 1
+
+// Set maxMin for neutral behavior on other group 1 parameters:
+// Amplitude: -1..1 maps to 1..1 (constant)
+d.data_ampOne_maxMin[0][0].value_(1);   // max
+d.data_ampOne_maxMin[0][1].value_(1);   // min
+// Pan: -1..1 maps to 0..0 (no offset)
+d.data_panOne_maxMin[0][0].value_(0);   // max
+d.data_panOne_maxMin[0][1].value_(0);   // min
+// Envelope dilation: -1..1 maps to 1..1 (constant)
+d.data_envelopeMulOne_maxMin[0][0].value_(1);  // max
+d.data_envelopeMulOne_maxMin[0][1].value_(1);  // min
 
 // Train duration: 8 seconds per full traversal of 2048 points
 // This means each table point is held for ~3.9 ms
@@ -192,6 +213,15 @@ d.data_trainDuration[0].value_(8);
 ~baseShape = Signal.sineFill(2048, [1, 0.3, 0.1]).as(Array);
 
 "Setup complete.".postln;
+)
+
+// --- Enable group 1 loop table reading ---
+// IMPORTANT: This must be evaluated after setup, before playing.
+// group_1_onOff = 1 enables the loop task to modulate group 1 parameters.
+(
+~app.synthesis.trainInstances[0].set(\group_1_onOff, 1);
+~app.synthesisOscOS.trainInstances[0].set(\group_1_onOff, 1);
+"Group 1 loop enabled.".postln;
 )
 
 
