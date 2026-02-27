@@ -82,32 +82,26 @@ SynthDef(\nuPG_rungler, { |out=0, osc1Freq=100, osc2Freq=200, clockDiv=4|
 	var osc1 = LFTri.ar(osc1Freq);
 	var osc2 = LFTri.ar(osc2Freq);
 	var clock = Impulse.ar(osc1Freq / clockDiv);
-
-	// Comparator
 	var compare = (osc1 > osc2);
-
-	// Simplified shift register using feedback delay
-	var sr = LocalBuf(8).clear;
+	var bit0, bit1, bit2, bit3, bit4, bit5, bit6, bit7;
+	var rungler;
 
 	// Shift register bits (using Latch for sample-and-hold behavior)
-	var bit0 = Latch.ar(compare, clock);
-	var bit1 = Latch.ar(Delay1.ar(bit0), clock);
-	var bit2 = Latch.ar(Delay1.ar(bit1), clock);
-	var bit3 = Latch.ar(Delay1.ar(bit2), clock);
-	var bit4 = Latch.ar(Delay1.ar(bit3), clock);
-	var bit5 = Latch.ar(Delay1.ar(bit4), clock);
-	var bit6 = Latch.ar(Delay1.ar(bit5), clock);
-	var bit7 = Latch.ar(Delay1.ar(bit6), clock);
+	bit0 = Latch.ar(compare, clock);
+	bit1 = Latch.ar(Delay1.ar(bit0), clock);
+	bit2 = Latch.ar(Delay1.ar(bit1), clock);
+	bit3 = Latch.ar(Delay1.ar(bit2), clock);
+	bit4 = Latch.ar(Delay1.ar(bit3), clock);
+	bit5 = Latch.ar(Delay1.ar(bit4), clock);
+	bit6 = Latch.ar(Delay1.ar(bit5), clock);
+	bit7 = Latch.ar(Delay1.ar(bit6), clock);
 
-	// DAC - weighted sum (resistor ladder)
-	var rungler = (bit0 * 1) + (bit1 * 2) + (bit2 * 4) + (bit3 * 8) +
-	              (bit4 * 16) + (bit5 * 32) + (bit6 * 64) + (bit7 * 128);
-
-	// Normalize to 0-1
-	rungler = rungler / 255;
-
-	// Smooth slightly to reduce zipper noise
-	rungler = Lag.ar(rungler, 0.001);
+	// DAC - weighted sum (resistor ladder), normalize to 0-1, smooth
+	rungler = Lag.ar(
+		((bit0 * 1) + (bit1 * 2) + (bit2 * 4) + (bit3 * 8) +
+		 (bit4 * 16) + (bit5 * 32) + (bit6 * 64) + (bit7 * 128)) / 255,
+		0.001
+	);
 
 	Out.ar(out, rungler);
 }).add;
@@ -124,27 +118,29 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var fund = \fundamental_frequency.kr(100);
 	var formant = \formant_frequency_One.kr(400);
 	var amp = \amplitude_One.kr(0.8);
+	var osc1, osc2, clock, compare;
+	var bit0, bit1, bit2, bit3;
+	var rungler, cutoff;
 
 	// Two oscillators for rungler
-	var osc1 = LFTri.ar(fund);
-	var osc2 = LFTri.ar(formant);
-	var clock = Impulse.ar(fund / 4);  // clock at 1/4 fundamental
+	osc1 = LFTri.ar(fund);
+	osc2 = LFTri.ar(formant);
+	clock = Impulse.ar(fund / 4);  // clock at 1/4 fundamental
 
 	// Comparator
-	var compare = (osc1 > osc2);
+	compare = (osc1 > osc2);
 
 	// Simple 4-bit shift register (lighter CPU)
-	var bit0 = Latch.ar(compare, clock);
-	var bit1 = Latch.ar(DelayN.ar(bit0, 0.1, fund.reciprocal), clock);
-	var bit2 = Latch.ar(DelayN.ar(bit1, 0.1, fund.reciprocal), clock);
-	var bit3 = Latch.ar(DelayN.ar(bit2, 0.1, fund.reciprocal), clock);
+	bit0 = Latch.ar(compare, clock);
+	bit1 = Latch.ar(DelayN.ar(bit0, 0.1, fund.reciprocal), clock);
+	bit2 = Latch.ar(DelayN.ar(bit1, 0.1, fund.reciprocal), clock);
+	bit3 = Latch.ar(DelayN.ar(bit2, 0.1, fund.reciprocal), clock);
 
 	// 4-bit DAC
-	var rungler = ((bit0 * 1) + (bit1 * 2) + (bit2 * 4) + (bit3 * 8)) / 15;
-	rungler = Lag.ar(rungler, 0.005);
+	rungler = Lag.ar(((bit0 * 1) + (bit1 * 2) + (bit2 * 4) + (bit3 * 8)) / 15, 0.005);
 
 	// Use rungler to modulate filter cutoff
-	var cutoff = rungler.linexp(0, 1, 200, 8000);
+	cutoff = rungler.linexp(0, 1, 200, 8000);
 
 	RLPF.ar(in, cutoff, 0.3) * amp
 };
@@ -201,27 +197,28 @@ Ndef(\rungler, {
 	var fund = \osc1Freq.kr(100);
 	var formant = \osc2Freq.kr(103);  // slight detune for chaos
 	var clockDiv = \clockDiv.kr(4);
+	var osc1, osc2, clock, compare;
+	var bits, rungler, rung1, rung2, rung3;
 
-	var osc1 = LFTri.ar(fund);
-	var osc2 = LFTri.ar(formant);
-	var clock = Impulse.ar(fund / clockDiv);
+	osc1 = LFTri.ar(fund);
+	osc2 = LFTri.ar(formant);
+	clock = Impulse.ar(fund / clockDiv);
 
-	var compare = (osc1 > osc2);
+	compare = (osc1 > osc2);
 
 	// 8-bit shift register
-	var bits = Array.fill(8, { |i|
+	bits = Array.fill(8, { |i|
 		var delay = (fund.reciprocal * (i + 1)).min(0.1);
 		Latch.ar(DelayN.ar(compare, 0.1, delay), clock)
 	});
 
 	// Weighted sum
-	var rungler = bits.collect({ |b, i| b * (2 ** i) }).sum / 255;
-	rungler = Lag.kr(A2K.kr(rungler), 0.01);
+	rungler = Lag.kr(A2K.kr(bits.collect({ |b, i| b * (2 ** i) }).sum / 255), 0.01);
 
 	// Output 3 different "rungs" (tap points in the shift register)
-	var rung1 = (bits[0] + bits[1] * 2 + bits[2] * 4) / 7;
-	var rung2 = (bits[2] + bits[3] * 2 + bits[4] * 4) / 7;
-	var rung3 = (bits[5] + bits[6] * 2 + bits[7] * 4) / 7;
+	rung1 = (bits[0] + bits[1] * 2 + bits[2] * 4) / 7;
+	rung2 = (bits[2] + bits[3] * 2 + bits[4] * 4) / 7;
+	rung3 = (bits[5] + bits[6] * 2 + bits[7] * 4) / 7;
 
 	[rungler, A2K.kr(Lag.ar(rung1, 0.01)), A2K.kr(Lag.ar(rung2, 0.01)), A2K.kr(Lag.ar(rung3, 0.01))]
 });
@@ -259,35 +256,31 @@ Ndef(\rungler).set(\osc1Freq, 100, \osc2Freq, 103);
 Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 	var fund = \fundamental_frequency.kr(100);
 	var formant = \formant_frequency_One.kr(400);
-
-	// Two oscillators with cross-modulation
-	var osc1Freq = fund;
-	var osc2Freq = formant;
+	var osc1, osc2, clock, compare;
+	var bit0, bit1, bit2, bit3, bit4, bit5;
+	var rungler1, rungler2, cutoff, modAmp;
 
 	// Rungler from osc1 vs osc2
-	var osc1 = LFTri.ar(osc1Freq);
-	var osc2 = LFTri.ar(osc2Freq);
-	var clock = Impulse.ar(fund / 2);
-	var compare = (osc1 > osc2);
+	osc1 = LFTri.ar(fund);
+	osc2 = LFTri.ar(formant);
+	clock = Impulse.ar(fund / 2);
+	compare = (osc1 > osc2);
 
 	// 6-bit shift register
-	var bit0 = Latch.ar(compare, clock);
-	var bit1 = Latch.ar(DelayN.ar(bit0, 0.1, fund.reciprocal.min(0.1)), clock);
-	var bit2 = Latch.ar(DelayN.ar(bit1, 0.1, fund.reciprocal.min(0.1)), clock);
-	var bit3 = Latch.ar(DelayN.ar(bit2, 0.1, fund.reciprocal.min(0.1)), clock);
-	var bit4 = Latch.ar(DelayN.ar(bit3, 0.1, fund.reciprocal.min(0.1)), clock);
-	var bit5 = Latch.ar(DelayN.ar(bit4, 0.1, fund.reciprocal.min(0.1)), clock);
+	bit0 = Latch.ar(compare, clock);
+	bit1 = Latch.ar(DelayN.ar(bit0, 0.1, fund.reciprocal.min(0.1)), clock);
+	bit2 = Latch.ar(DelayN.ar(bit1, 0.1, fund.reciprocal.min(0.1)), clock);
+	bit3 = Latch.ar(DelayN.ar(bit2, 0.1, fund.reciprocal.min(0.1)), clock);
+	bit4 = Latch.ar(DelayN.ar(bit3, 0.1, fund.reciprocal.min(0.1)), clock);
+	bit5 = Latch.ar(DelayN.ar(bit4, 0.1, fund.reciprocal.min(0.1)), clock);
 
 	// Two rungler outputs from different tap points
-	var rungler1 = ((bit0 * 1) + (bit1 * 2) + (bit2 * 4)) / 7;
-	var rungler2 = ((bit3 * 1) + (bit4 * 2) + (bit5 * 4)) / 7;
-
-	rungler1 = Lag.ar(rungler1, 0.002);
-	rungler2 = Lag.ar(rungler2, 0.002);
+	rungler1 = Lag.ar(((bit0 * 1) + (bit1 * 2) + (bit2 * 4)) / 7, 0.002);
+	rungler2 = Lag.ar(((bit3 * 1) + (bit4 * 2) + (bit5 * 4)) / 7, 0.002);
 
 	// Use runglers to modulate filter and amplitude
-	var cutoff = rungler1.linexp(0, 1, 300, 6000);
-	var modAmp = rungler2.linlin(0, 1, 0.3, 1);
+	cutoff = rungler1.linexp(0, 1, 300, 6000);
+	modAmp = rungler2.linlin(0, 1, 0.3, 1);
 
 	RLPF.ar(in, cutoff, 0.2) * modAmp * \amplitude_One.kr(0.8)
 };
@@ -425,9 +418,11 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 (
 ~runglerEnvelope = { |osc1Freq=5, osc2Freq=7, length=2048|
 	var table = ~runglerTable.(osc1Freq, osc2Freq, length);
-	// Smooth with moving average
 	var smoothed = Array.newClear(length);
 	var windowSize = 32;
+	var min, max;
+
+	// Smooth with moving average
 	length.do { |i|
 		var sum = 0;
 		windowSize.do { |j|
@@ -435,9 +430,10 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 		};
 		smoothed[i] = sum / windowSize;
 	};
+
 	// Normalize
-	var min = smoothed.minItem;
-	var max = smoothed.maxItem;
+	min = smoothed.minItem;
+	max = smoothed.maxItem;
 	smoothed.collect { |v| (v - min) / (max - min) * 2 - 1 }
 };
 
@@ -545,9 +541,10 @@ Ndef(\nuPG_train_0)[1] = \filterIn -> { |in|
 
 ~setChaosMode = { |mode, baseFreq=100|
 	var ratio = ~chaosPresets[mode];
+	var freq1, freq2;
 	if (ratio.notNil) {
-		var freq1 = baseFreq * ratio[0];
-		var freq2 = baseFreq * ratio[1];
+		freq1 = baseFreq * ratio[0];
+		freq2 = baseFreq * ratio[1];
 		Ndef(\rungler).set(\osc1Freq, freq1, \osc2Freq, freq2);
 		("Chaos mode:" + mode + "- freqs:" + freq1 + "," + freq2).postln;
 	} {
