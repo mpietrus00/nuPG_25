@@ -39,10 +39,9 @@
 // =====================================================================
 
 (
-// --- Load a shape into BOTH the pulsaret buffer AND the formant
-//     frequency loop table simultaneously ---
+// --- Load a shape into pulsaret buffer, formant table, AND fundamental table ---
 // shape: Array of 2048 floats in -1..1 range
-// This is the core operation: one shape, two temporal scales.
+// This is the core operation: one shape, multiple temporal scales.
 
 ~loadShapeBothScales = { |shape|
 	// Audio rate: pulsaret waveform
@@ -55,6 +54,10 @@
 	// at (trainDuration / 2048) seconds per step, mapping -1..1
 	// to the maxMin range. Setting .value replaces the whole array.
 	~app.data.data_formantFrequencyOne[0].value = shape;
+
+	// Parametric rate: fundamental frequency loop table
+	// Same shape also controls fundamental sweep
+	~app.data.data_fundamentalFrequency[0].value = shape;
 };
 
 // --- Table operations ---
@@ -149,7 +152,12 @@
 (
 var d = ~app.data;
 
-// Hanning envelope
+// --- Load pulsaret waveform to buffer ---
+var pulsaretData = Signal.sineFill(2048, [1, 0.3, 0.1]).as(Array);
+d.data_pulsaret[0].value = pulsaretData;
+~app.pulsaretBuffers[0].sendCollection(pulsaretData);
+
+// --- Load envelope to buffer ---
 var envData = Signal.hanningWindow(2048).as(Array);
 d.data_envelope[0].value = envData;
 ~app.envelopeBuffers[0].sendCollection(envData);
@@ -158,13 +166,11 @@ d.data_envelope[0].value = envData;
 d.data_burstMask[0][0].value_(1);
 d.data_burstMask[0][1].value_(0);
 
-// Fundamental: 150 Hz — stable pitch in the audio range
-d.data_main[0][0].value_(150);
+// Fundamental: 20 Hz base — loop table multiplies this by 1-10x
+d.data_main[0][0].value_(20);
 
-// Formant frequency base: 1 Hz
-// The loop table value (mapped to maxMin) MULTIPLIES this base.
-// Setting base to 1 Hz means loop table directly controls absolute Hz.
-d.data_main[0][1].value_(1);
+// Formant frequency base: 200 Hz — loop table multiplies this by 1-10x
+d.data_main[0][1].value_(200);
 
 // Envelope dilation
 d.data_main[0][4].value_(1);
@@ -181,18 +187,23 @@ d.data_modulators[0][2].value_(0.0);
 d.data_probabilityMaskSingular[0].value_(1.0);
 
 // --- Loop task configuration ---
-// The formant loop table maps -1..1 to this range (multiplied by slider).
-// With slider at 1 Hz, these become absolute Hz values.
-d.data_formantFrequencyOne_maxMin[0][0].value_(2000);  // max
-d.data_formantFrequencyOne_maxMin[0][1].value_(200);   // min
+// Formant loop table: maps -1..1 to multiplier range 1-10
+// With slider at 200 Hz: formant sweeps 200-2000 Hz
+d.data_formantFrequencyOne_maxMin[0][0].value_(10);  // max multiplier
+d.data_formantFrequencyOne_maxMin[0][1].value_(1);   // min multiplier
+
+// Fundamental loop table: maps -1..1 to multiplier range 1-10
+// With slider at 20 Hz: fundamental sweeps 20-200 Hz
+d.data_fundamentalFrequency_maxMin[0][0].value_(10);  // max multiplier
+d.data_fundamentalFrequency_maxMin[0][1].value_(1);   // min multiplier
 
 // Initialize other group 1 tables to neutral values:
-// - Amplitude table: all 1s (no change from slider value)
+// - Amplitude table: all 0s mapped to 1 via maxMin
 // - Pan table: all 0s (no offset from slider)
 // - Envelope dilation table: all 0s mapped to 1 via maxMin
-d.data_ampOne[0].value = Array.fill(2048, { 0 });  // will map to 1 via maxMin
-d.data_panOne[0].value = Array.fill(2048, { 0 });  // stays at 0 (center)
-d.data_envelopeMulOne[0].value = Array.fill(2048, { 0 }); // will map to 1
+d.data_ampOne[0].value = Array.fill(2048, { 0 });
+d.data_panOne[0].value = Array.fill(2048, { 0 });
+d.data_envelopeMulOne[0].value = Array.fill(2048, { 0 });
 
 // Set maxMin for neutral behavior on other group 1 parameters:
 // Amplitude: -1..1 maps to 1..1 (constant)
@@ -228,21 +239,23 @@ d.data_trainDuration[0].value_(8);
 // =====================================================================
 // PART A: Smooth sine shape at both scales
 // =====================================================================
-// The shape — a sine with mild harmonics — is loaded into both the
-// pulsaret waveform buffer and the formant frequency loop table.
+// The shape — a sine with mild harmonics — is loaded into the
+// pulsaret waveform buffer, formant frequency table, AND fundamental table.
 //
 // At audio rate: the shape defines each pulsaret's spectral content.
 //   A smooth sine produces a clean, harmonically simple tone.
 //
-// At parametric rate: the same shape sweeps the formant frequency
-//   between 200 and 2000 Hz over 8 seconds. The trajectory is
-//   smooth and continuous because the underlying data is smooth.
+// At parametric rate: the same shape sweeps both:
+//   - Fundamental frequency: 20-200 Hz (slider 20 Hz × multiplier 1-10)
+//   - Formant frequency: 200-2000 Hz (slider 200 Hz × multiplier 1-10)
+// The trajectory is smooth because the underlying data is smooth.
 
 (
 ~loadShapeBothScales.(~baseShape);
 "Part A: Smooth sine loaded at both scales.".postln;
 "  Pulsaret: clean, harmonically simple tone".postln;
-"  Formant trajectory: smooth 200-2000 Hz sweep over 8 seconds".postln;
+"  Fundamental trajectory: smooth 20-200 Hz sweep".postln;
+"  Formant trajectory: smooth 200-2000 Hz sweep".postln;
 )
 
 // --- Play Part A ---
@@ -264,7 +277,7 @@ d.data_trainDuration[0].value_(8);
 // PART B: Quantized shape — the core demonstration
 // =====================================================================
 // The SAME sine shape is quantized to 8 discrete levels, then
-// loaded into both scales simultaneously. The operation is
+// loaded into all scales simultaneously. The operation is
 // identical — same algorithm, same number of levels, same data
 // structure. But the sonic results are categorically different:
 //
@@ -272,21 +285,21 @@ d.data_trainDuration[0].value_(8);
 //   producing a harsh, bitcrushed spectral character. The 8 levels
 //   create a staircase waveform similar to low-bit-depth audio.
 //
-// At parametric rate: the formant frequency now snaps between 8
-//   discrete values instead of gliding smoothly. The trajectory
-//   has a mechanical, sequencer-like character — stepped plateaus
-//   with abrupt jumps.
+// At parametric rate: both fundamental and formant frequencies now
+//   snap between 8 discrete values instead of gliding smoothly.
+//   The trajectory has a mechanical, sequencer-like character —
+//   stepped plateaus with abrupt jumps.
 //
-// ONE operation. TWO incommensurable sonic phenomena.
-// Both are the same thing at different temporal scales.
+// ONE operation. THREE incommensurable sonic phenomena.
+// All are the same thing at different temporal scales.
 
 (
 var quantized = ~tableQuantize.(~baseShape, 8);
 ~loadShapeBothScales.(quantized);
-"Part B: Quantized (8 levels) loaded at both scales.".postln;
+"Part B: Quantized (8 levels) loaded at all scales.".postln;
 "  Pulsaret: harsh, bitcrushed spectral character".postln;
+"  Fundamental trajectory: 8-step staircase between 20-200 Hz".postln;
 "  Formant trajectory: 8-step staircase between 200-2000 Hz".postln;
-"  SAME data structure, SAME operation — different temporal scales".postln;
 )
 
 // --- Play Part B ---
