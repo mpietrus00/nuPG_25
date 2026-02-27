@@ -230,9 +230,9 @@ d.data_trainDuration[0].value_(8);
 // --- Enable group 1 loop table reading ---
 // IMPORTANT: This must be evaluated after setup, before playing.
 // group_1_onOff = 1 enables the loop task to modulate group 1 parameters.
+// Using .valueAction_() updates the GUI button AND sets the synth parameter.
 (
-~app.synthesis.trainInstances[0].set(\group_1_onOff, 1);
-~app.synthesisOscOS.trainInstances[0].set(\group_1_onOff, 1);
+~app.groupsControl.localActivators[0][0].valueAction_(1);
 "Group 1 loop enabled.".postln;
 )
 
