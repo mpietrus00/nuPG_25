@@ -438,11 +438,11 @@ shaped = ~tablePower.(shaped, 2);
 // PART D: Progressive transformation as formal process
 // =====================================================================
 // A single formal process operates simultaneously at all temporal
-// scales. The piece begins with a smooth sine-based table, then
-// progressively applies:
-//   Phase 1 (0–20 s):  Noise addition — increasing roughness
-//   Phase 2 (20–40 s): Quantization — decreasing resolution
-//   Phase 3 (40–60 s): Power curve — increasing concentration
+// scales. Changes happen once per complete loop cycle (8 seconds).
+// The piece progresses through 18 iterations (3 phases × 6 iterations):
+//   Phase 1 (iterations 1-6):  Noise addition — increasing roughness
+//   Phase 2 (iterations 7-12): Quantization — decreasing resolution
+//   Phase 3 (iterations 13-18): Power curve — increasing concentration
 //
 // Each transformation simultaneously roughens the timbral character
 // of individual pulsarets (audio rate) and introduces increasing
@@ -453,61 +453,60 @@ shaped = ~tablePower.(shaped, 2);
 
 (
 var d = ~app.data;
-var duration = 60;
-var updateRate = 2;  // table updates per second (2048 CVs per update)
-var numSteps = (duration * updateRate).asInteger;
+var trainDuration = d.data_trainDuration[0].value;  // 8 seconds per loop
+var numIterations = 18;  // Total loop iterations (3 phases × 6 each)
+var iterationsPerPhase = 6;
 
 // Start playback
 ~playSynth.(0);
 ~app.loopTask.tasks[0].set(\playbackDirection, 0);
 ~playLoop.(0);
 
-"--- Part D: Progressive transformation (60 seconds) ---".postln;
+("--- Part D: Progressive transformation (" ++ numIterations ++ " iterations × "
+	++ trainDuration ++ "s = " ++ (numIterations * trainDuration) ++ "s total) ---").postln;
 
 ~progressRoutine = Routine({
-	numSteps.do { |step|
-		var progress = step / numSteps;  // 0.0 → 1.0
+	numIterations.do { |iteration|
+		var progress = iteration / numIterations;
 		var shaped = ~baseShape.deepCopy;
-		var phase;
+		var phase, phaseProgress, noiseAmt, levels, power;
 
-		// Phase 1 (0–0.33): Progressive noise addition
-		// Noise amount increases from 0 to 0.3
-		if (progress < 0.33) {
-			var noiseAmt = progress.linlin(0, 0.33, 0, 0.3);
+		// Phase 1 (iterations 0-5): Progressive noise addition
+		if (iteration < iterationsPerPhase) {
+			phaseProgress = iteration / iterationsPerPhase;
+			noiseAmt = phaseProgress.linlin(0, 1, 0, 0.3);
 			shaped = ~tableAddNoise.(shaped, noiseAmt);
-			phase = "noise (amt: " ++ noiseAmt.round(0.01) ++ ")";
+			phase = "Phase 1: noise (amt: " ++ noiseAmt.round(0.01) ++ ")";
 		};
 
-		// Phase 2 (0.33–0.66): Progressive quantization
-		// Levels decrease from 64 to 3
-		// Noise from end of Phase 1 is retained (0.3)
-		if (progress >= 0.33 and: { progress < 0.66 }) {
-			var levels = progress.linlin(0.33, 0.66, 64, 3).round.asInteger.max(2);
+		// Phase 2 (iterations 6-11): Progressive quantization
+		if (iteration >= iterationsPerPhase and: { iteration < (iterationsPerPhase * 2) }) {
+			phaseProgress = (iteration - iterationsPerPhase) / iterationsPerPhase;
+			levels = phaseProgress.linlin(0, 1, 64, 3).round.asInteger.max(2);
 			shaped = ~tableAddNoise.(shaped, 0.3);
 			shaped = ~tableQuantize.(shaped, levels);
-			phase = "quantize (levels: " ++ levels ++ ")";
+			phase = "Phase 2: quantize (levels: " ++ levels ++ ")";
 		};
 
-		// Phase 3 (0.66–1.0): Progressive power curve
-		// Exponent increases from 1 to 4
-		// Noise and moderate quantization retained
-		if (progress >= 0.66) {
-			var power = progress.linlin(0.66, 1.0, 1, 4);
+		// Phase 3 (iterations 12-17): Progressive power curve
+		if (iteration >= (iterationsPerPhase * 2)) {
+			phaseProgress = (iteration - (iterationsPerPhase * 2)) / iterationsPerPhase;
+			power = phaseProgress.linlin(0, 1, 1, 4);
 			shaped = ~tableAddNoise.(shaped, 0.3);
 			shaped = ~tableQuantize.(shaped, 5);
 			shaped = ~tablePower.(shaped, power);
-			phase = "power (exp: " ++ power.round(0.01) ++ ")";
+			phase = "Phase 3: power (exp: " ++ power.round(0.01) ++ ")";
 		};
 
-		// Load transformed shape at both scales
+		// Load transformed shape at start of this iteration
 		~loadShapeBothScales.(shaped);
 
 		// Progress reporting
-		if (step % (numSteps / 6).asInteger == 0) {
-			("  " ++ (progress * 100).round(1) ++ "% | " ++ phase).postln;
-		};
+		("  Iteration " ++ (iteration + 1) ++ "/" ++ numIterations
+			++ " | " ++ phase).postln;
 
-		(1 / updateRate).wait;
+		// Wait for one complete loop cycle
+		trainDuration.wait;
 	};
 
 	"--- Progressive transformation complete ---".postln;
