@@ -309,13 +309,13 @@ NuPG_Synthesis {
 					(modulation_frequency_two * modulation_index_two)
 				);*/
 
-				formantTwoMod_three = Select.ar(formantTwoMod_three_active, [K2A.ar(0), (modulation_index_three * mod_one)]);
+				formantTwoMod_three = Select.ar(formantTwoMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
 				/*formantTwoMod_three = formantTwoMod_three.range(
 					(modulation_frequency_three * modulation_index_three).neg,
 					(modulation_frequency_three * modulation_index_three)
 				);*/
 
-				formantTwoMod_four = Select.ar(formantTwoMod_four_active, [K2A.ar(0), (modulation_index_four * mod_two)]);
+				formantTwoMod_four = Select.ar(formantTwoMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 				/*formantTwoMod_four = formantOneMod_four.range(
 					(modulation_frequency_four * modulation_index_four).neg,
 					(modulation_frequency_four * modulation_index_four)
@@ -364,11 +364,11 @@ NuPG_Synthesis {
 				envM_Three = ffreq_Three * (envMul_Three * envMul_Three_loop) * (2048/Server.default.sampleRate);
 
 				//grain duration 1
-				grainDur_One = 2048 / Server.default.sampleRate / envM_One;
+				grainDur_One = 2048 / Server.default.sampleRate / max(0.0001, envM_One);
 				//grain duration 2
-				grainDur_Two = 2048 / Server.default.sampleRate / envM_Two;
+				grainDur_Two = 2048 / Server.default.sampleRate / max(0.0001, envM_Two);
 				//grain duration 3
-				grainDur_Three = 2048 / Server.default.sampleRate / envM_Three;
+				grainDur_Three = 2048 / Server.default.sampleRate / max(0.0001, envM_Three);
 
 				// Safety clamp: limit grain duration to prevent "too many grains"
 				// Max concurrent grains ≈ fundamental × grainDur, keep under ~400
@@ -400,7 +400,7 @@ NuPG_Synthesis {
 				]);
 				ampOneMod_four = Select.ar(ampOneMod_four_active, [
 					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)
+					((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)
 				]);
 
 				amplitude_One = amplitude_One * amplitude_One_loop *
@@ -423,7 +423,7 @@ NuPG_Synthesis {
 				]);
 				ampTwoMod_four = Select.ar(ampTwoMod_four_active, [
 					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)
+					((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)
 				]);
 				amplitude_Two = amplitude_Two * amplitude_Two_loop *
 				(ampTwoMod_one * ampTwoMod_two * ampTwoMod_three * ampTwoMod_four) * (1 - mute);
@@ -445,7 +445,7 @@ NuPG_Synthesis {
 				]);
 				ampThreeMod_four = Select.ar(ampThreeMod_four_active, [
 					K2A.ar(1),
-					((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)
+					((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)
 				]);
 				amplitude_Three = amplitude_Three * amplitude_Three_loop *
 				(ampThreeMod_one * ampThreeMod_two * ampThreeMod_three * ampThreeMod_four) * (1 - mute);
@@ -598,7 +598,7 @@ NuPG_Synthesis {
 
 				mix = Mix.new([pulsar_1, pulsar_2, pulsar_3]) * globalAmplitude;
 
-				LeakDC.ar(mix)
+				LeakDC.ar(mix).softclip
 			});
 		};
 

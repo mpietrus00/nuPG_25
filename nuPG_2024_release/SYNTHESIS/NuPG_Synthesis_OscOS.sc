@@ -342,8 +342,8 @@ NuPG_Synthesis_OscOS {
 				//formant 2 modulators
 				formantTwoMod_one = Select.ar(formantTwoMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
 				formantTwoMod_two = Select.ar(formantTwoMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
-				formantTwoMod_three = Select.ar(formantTwoMod_three_active, [K2A.ar(0), (modulation_index_three * mod_one)]);
-				formantTwoMod_four = Select.ar(formantTwoMod_four_active, [K2A.ar(0), (modulation_index_four * mod_two)]);
+				formantTwoMod_three = Select.ar(formantTwoMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
+				formantTwoMod_four = Select.ar(formantTwoMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 
 				formant_frequency_Two_loop = Select.kr(group_2_onOff, [1, formant_frequency_Two_loop]);
 				ffreq_Two = (formant_frequency_Two * formant_frequency_Two_loop) +
@@ -469,7 +469,7 @@ NuPG_Synthesis_OscOS {
 				ampOneMod_one = Select.ar(ampOneMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
 				ampOneMod_two = Select.ar(ampOneMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
 				ampOneMod_three = Select.ar(ampOneMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
-				ampOneMod_four = Select.ar(ampOneMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
+				ampOneMod_four = Select.ar(ampOneMod_four_active, [K2A.ar(1), ((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)]);
 				amplitude_One = amplitude_One * amplitude_One_loop *
 				(ampOneMod_one * ampOneMod_two * ampOneMod_three * ampOneMod_four) * (1 - mute);
 				amplitude_One = amplitude_One.clip(0, 1);
@@ -479,7 +479,7 @@ NuPG_Synthesis_OscOS {
 				ampTwoMod_one = Select.ar(ampTwoMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
 				ampTwoMod_two = Select.ar(ampTwoMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
 				ampTwoMod_three = Select.ar(ampTwoMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
-				ampTwoMod_four = Select.ar(ampTwoMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
+				ampTwoMod_four = Select.ar(ampTwoMod_four_active, [K2A.ar(1), ((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)]);
 				amplitude_Two = amplitude_Two * amplitude_Two_loop *
 				(ampTwoMod_one * ampTwoMod_two * ampTwoMod_three * ampTwoMod_four) * (1 - mute);
 				amplitude_Two = amplitude_Two.clip(0, 1);
@@ -489,7 +489,7 @@ NuPG_Synthesis_OscOS {
 				ampThreeMod_one = Select.ar(ampThreeMod_one_active, [K2A.ar(1), ((1 + (modulation_index_one * 0.1)) * mod_one.unipolar)]);
 				ampThreeMod_two = Select.ar(ampThreeMod_two_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_two.unipolar)]);
 				ampThreeMod_three = Select.ar(ampThreeMod_three_active, [K2A.ar(1), ((1 + (modulation_index_three * 0.1)) * mod_three.unipolar)]);
-				ampThreeMod_four = Select.ar(ampThreeMod_four_active, [K2A.ar(1), ((1 + (modulation_index_two * 0.1)) * mod_four.unipolar)]);
+				ampThreeMod_four = Select.ar(ampThreeMod_four_active, [K2A.ar(1), ((1 + (modulation_index_four * 0.1)) * mod_four.unipolar)]);
 				amplitude_Three = amplitude_Three * amplitude_Three_loop *
 				(ampThreeMod_one * ampThreeMod_two * ampThreeMod_three * ampThreeMod_four) * (1 - mute);
 				amplitude_Three = amplitude_Three.clip(0, 1);
