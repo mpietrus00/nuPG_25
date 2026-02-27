@@ -37,10 +37,12 @@
 (
 var d = ~app.data;
 
-// --- Pulsaret: spectrally rich waveform (first 8 harmonics) ---
-// This maximises aliasing potential: at high playback rates, upper
-// harmonics fold back below Nyquist in the GrainBuf engine.
-var pulsaretData = Signal.sineFill(2048, Array.fill(8, { |i| 1.0 / (i + 1) })).as(Array);
+// --- Pulsaret: spectrally rich sawtooth-like waveform (32 harmonics) ---
+// Sawtooth has equal-amplitude harmonics (1/n), maximizing aliasing potential.
+// At high formant frequencies, upper harmonics fold back dramatically
+// in the GrainBuf engine but are cleanly filtered in OscOS.
+var numHarmonics = 32;
+var pulsaretData = Signal.sineFill(2048, Array.fill(numHarmonics, { |i| 1.0 / (i + 1) })).as(Array);
 
 // Hanning envelope
 var envelopeData = Signal.hanningWindow(2048).as(Array);
@@ -57,7 +59,7 @@ d.data_envelope[0].value = envelopeData;
 ~app.envelopeBuffers[0].sendCollection(envelopeData);
 ~app.frequencyBuffers[0].sendCollection(frequencyData);
 
-"Step 1 complete: buffers loaded with 8-harmonic pulsaret".postln;
+("Step 1 complete: buffers loaded with " ++ numHarmonics ++ "-harmonic sawtooth pulsaret").postln;
 )
 
 // =====================================================================
@@ -70,15 +72,13 @@ d.data_envelope[0].value = envelopeData;
 var d = ~app.data;
 
 // Fundamental (emission rate): 200 Hz
-// High enough that the 8-harmonic pulsaret pushes upper partials
-// well above Nyquist/2, triggering aliasing in GrainBuf
 d.data_main[0][0].value_(200);
 
-// Formant: 2000 Hz (absolute Hz, independent of fundamental)
-// At 2000 Hz with 8 harmonics, the 8th partial is at 16,000 Hz.
-// GrainBuf's table-lookup without oversampling will produce
-// aliased foldback from partials exceeding Nyquist/oversample_factor.
-d.data_main[0][1].value_(2000);
+// Formant: 6000 Hz — HIGH formant to maximize aliasing difference
+// At 6000 Hz with 32 harmonics, partials extend far beyond Nyquist.
+// GrainBuf will fold these back as inharmonic content (metallic).
+// OscOS will cleanly attenuate them (smooth, natural rolloff).
+d.data_main[0][1].value_(6000);
 
 // Envelope dilation: 1 (natural grain duration)
 d.data_main[0][4].value_(1);
@@ -108,19 +108,18 @@ d.data_modulators[0][1].value_(0);
 ~app.synthSwitcher.activeSynth.trainInstances[0].set(\sieveMaskOn, 0);
 
 "Step 2 complete: shared configuration set".postln;
-"  Fundamental: 200 Hz | Formant: 2000 Hz | Burst: 7:1".postln;
-"  8 harmonics -> highest partial at ~16 kHz".postln;
+"  Fundamental: 200 Hz | Formant: 6000 Hz | Burst: 7:1".postln;
+"  32 harmonics -> extreme aliasing in Classic engine".postln;
 )
 
 // =====================================================================
 // Step 3A: Listen with CLASSIC (GrainBuf) engine — historical logic
 // =====================================================================
 // The GrainBuf engine reads the 2048-point wavetable without
-// oversampling. At the playback rates required for a 2000 Hz formant,
-// upper harmonics exceed the Nyquist frequency and fold back into
-// the audible spectrum as inharmonic artifacts. These artifacts are
-// the sonic signature of the original PG's computational constraints
-// — present in every recording made with the original software.
+// oversampling. At 6000 Hz formant with 32 harmonics, upper partials
+// extend far beyond Nyquist and fold back as inharmonic artifacts.
+// Listen for: metallic brightness, harsh inharmonic content,
+// spectral "dirt" especially in higher frequencies.
 
 (
 ~app.synthSwitcher.useStandard;
@@ -142,12 +141,10 @@ d.data_modulators[0][1].value_(0);
 // Step 3B: Listen with OSCOS (Oversampling) engine — contemporary logic
 // =====================================================================
 // The OscOS engine uses 4x oversampled wavetable lookup. The same
-// 2000 Hz formant with 8 harmonics is rendered cleanly — upper
-// partials that would alias in GrainBuf are correctly attenuated.
-// What remains is ONLY the temporal ontology: the discrete emission
-// clock, the burst masking, the stepped parameter logic. The sonic
-// character of these temporal structures is revealed without the
-// spectral artifacts that historically accompanied them.
+// 6000 Hz formant with 32 harmonics is rendered cleanly — upper
+// partials are correctly attenuated before downsampling.
+// Listen for: smoother timbre, natural harmonic rolloff,
+// same temporal structure but without the metallic harshness.
 
 (
 ~app.synthSwitcher.useOscOS;
@@ -219,7 +216,7 @@ var endFormant = 8000;
 	~app.synthSwitcher.activeSynth.trainInstances[0].stop;
 
 	// Reset formant to initial value
-	~app.data.data_main[0][1].value_(2000);
+	~app.data.data_main[0][1].value_(6000);
 
 	"=== A/B comparison complete ===".postln;
 	"The temporal structure (burst pattern, emission-rate".postln;
@@ -238,35 +235,169 @@ var endFormant = 8000;
 )
 
 // =====================================================================
+// Step 5: Harmonic complexity comparison
+// =====================================================================
+// Demonstrates how harmonic content affects aliasing severity.
+// Plays the same formant/fundamental through both engines with
+// progressively more harmonics: 4 -> 16 -> 32.
+// Classic engine becomes increasingly harsh; OscOS stays clean.
+
+(
+var d = ~app.data;
+var harmonicCounts = [4, 16, 32];
+var formant = 6000;
+var dur = 6;  // seconds per harmonic count per engine
+
+d.data_main[0][0].value_(200);  // fundamental
+d.data_main[0][1].value_(formant);
+
+~harmonicRoutine = Routine({
+	"=== STEP 5: Harmonic Complexity Comparison ===".postln;
+
+	harmonicCounts.do { |numH|
+		var pulsaretData = Signal.sineFill(2048, Array.fill(numH, { |i| 1.0 / (i + 1) })).as(Array);
+
+		// Update pulsaret
+		d.data_pulsaret[0].value = pulsaretData;
+		~app.pulsaretBuffers[0].sendCollection(pulsaretData);
+
+		// Classic engine
+		("--- Classic engine: " ++ numH ++ " harmonics ---").postln;
+		~app.synthSwitcher.useStandard;
+		~app.synthSwitcher.activeSynth.trainInstances[0].set(
+			\globalAmplitude, 1.0, \mute, 0, \group_1_onOff, 0
+		);
+		~app.synthSwitcher.activeSynth.trainInstances[0].play;
+		dur.wait;
+		~app.synthSwitcher.activeSynth.trainInstances[0].stop;
+		0.5.wait;
+
+		// OscOS engine
+		("--- OscOS engine: " ++ numH ++ " harmonics ---").postln;
+		~app.synthSwitcher.useOscOS;
+		~app.synthSwitcher.activeSynth.trainInstances[0].set(
+			\globalAmplitude, 1.0, \mute, 0, \group_1_onOff, 0
+		);
+		~app.synthSwitcher.activeSynth.trainInstances[0].play;
+		dur.wait;
+		~app.synthSwitcher.activeSynth.trainInstances[0].stop;
+		1.wait;
+	};
+
+	"=== Harmonic comparison complete ===".postln;
+}).play(AppClock);
+)
+
+// --- Stop Step 5 ---
+(
+~harmonicRoutine.stop;
+~app.synthSwitcher.stop;
+)
+
+// =====================================================================
+// Step 6: Fundamental frequency sweep (fixed high formant)
+// =====================================================================
+// Keeps formant at 8000 Hz, sweeps fundamental from 50 to 400 Hz.
+// Higher fundamental = faster table playback = more aliasing.
+// Demonstrates that aliasing depends on BOTH formant AND fundamental.
+
+(
+var d = ~app.data;
+var dur = 12;
+var updateRate = 20;
+var steps = (dur * updateRate).asInteger;
+var startFund = 50;
+var endFund = 400;
+var formant = 8000;
+
+d.data_main[0][1].value_(formant);
+
+~fundSweepRoutine = Routine({
+	"=== STEP 6: Fundamental Sweep (formant fixed at 8000 Hz) ===".postln;
+
+	// Classic engine
+	"--- Classic engine: fundamental 50->400 Hz ---".postln;
+	~app.synthSwitcher.useStandard;
+	~app.synthSwitcher.activeSynth.trainInstances[0].set(
+		\globalAmplitude, 1.0, \mute, 0, \group_1_onOff, 0
+	);
+	~app.synthSwitcher.activeSynth.trainInstances[0].play;
+
+	steps.do { |step|
+		var fund = step.linexp(0, steps - 1, startFund, endFund);
+		d.data_main[0][0].value_(fund);
+		(1 / updateRate).wait;
+	};
+
+	~app.synthSwitcher.activeSynth.trainInstances[0].stop;
+	1.wait;
+
+	// OscOS engine
+	"--- OscOS engine: fundamental 50->400 Hz ---".postln;
+	~app.synthSwitcher.useOscOS;
+	~app.synthSwitcher.activeSynth.trainInstances[0].set(
+		\globalAmplitude, 1.0, \mute, 0, \group_1_onOff, 0
+	);
+	~app.synthSwitcher.activeSynth.trainInstances[0].play;
+
+	steps.do { |step|
+		var fund = step.linexp(0, steps - 1, startFund, endFund);
+		d.data_main[0][0].value_(fund);
+		(1 / updateRate).wait;
+	};
+
+	~app.synthSwitcher.activeSynth.trainInstances[0].stop;
+
+	// Reset
+	d.data_main[0][0].value_(200);
+	d.data_main[0][1].value_(6000);
+
+	"=== Fundamental sweep complete ===".postln;
+	"Notice: Classic engine gets increasingly harsh as fundamental rises.".postln;
+	"OscOS maintains clean harmonics throughout the sweep.".postln;
+}).play(AppClock);
+)
+
+// --- Stop Step 6 ---
+(
+~fundSweepRoutine.stop;
+~app.synthSwitcher.stop;
+)
+
+// =====================================================================
 // Listening guide:
 //
-// Steps 3A/3B - Static comparison (200 Hz fundamental, 2000 Hz formant):
+// Steps 3A/3B - Static comparison (200 Hz fundamental, 6000 Hz formant):
 //
-//   Classic (GrainBuf): A bright, somewhat metallic timbre with
-//   inharmonic spectral content in the upper frequencies. The
-//   burst pattern (7:1) creates a subtle periodic amplitude
-//   modulation. The overall character has a gritty, artefactual
-//   quality - the "sound of the original PG."
+//   Classic (GrainBuf): Harsh, metallic timbre with strong
+//   inharmonic content. The 32 harmonics at 6000 Hz formant create
+//   extensive spectral foldback — a "digital dirt" characteristic
+//   of historical pulsar synthesis implementations.
 //
-//   OscOS (Oversampling): The same pitch, the same burst pattern,
-//   the same emission-rate quantization - but the upper spectrum
-//   is cleaner. The 8-harmonic series is rendered accurately;
-//   the inharmonic aliased content is gone. What remains is the
-//   temporal structure: the discrete click of each pulsaret
-//   emission, the periodic gap of the burst mask, the quantized
-//   character of the emission clock.
+//   OscOS (Oversampling): Same pitch, same burst pattern, same
+//   temporal structure — but dramatically cleaner. The harsh
+//   metallic edge is gone, revealing the pure harmonic series
+//   with natural high-frequency rolloff.
 //
-// Step 4 - Formant sweep comparison:
+// Step 4 - Formant sweep comparison (500 -> 8000 Hz):
 //
-//   As the formant rises from 500 to 8000 Hz, the Classic engine
-//   produces increasingly dramatic aliasing: the upper harmonics
-//   fold back as inharmonic spectral content, creating a metallic,
-//   distorted brightness that intensifies with formant frequency.
+//   Classic: Aliasing intensifies as formant rises. At 8000 Hz
+//   the sound becomes extremely harsh and inharmonic.
 //
-//   The OscOS engine sweeps the same range cleanly. The timbral
-//   evolution follows the natural harmonic series without foldback.
-//   The temporal structure - burst mask, emission quantization,
-//   discrete parameter stepping - sounds identical in both.
+//   OscOS: Clean sweep throughout. Natural timbral brightening
+//   without the metallic artifacts.
+//
+// Step 5 - Harmonic complexity comparison (4 -> 16 -> 32 harmonics):
+//
+//   Demonstrates that aliasing severity scales with harmonic
+//   content. With 4 harmonics, both engines sound similar.
+//   With 32 harmonics, Classic becomes harsh while OscOS stays clean.
+//
+// Step 6 - Fundamental sweep (50 -> 400 Hz, formant at 8000 Hz):
+//
+//   Higher fundamental = faster wavetable playback = more aliasing.
+//   Classic engine becomes increasingly harsh at higher fundamentals.
+//   OscOS maintains consistent clean timbre throughout.
 //
 // The archaeological distinction:
 //
