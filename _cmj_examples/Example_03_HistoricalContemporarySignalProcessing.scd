@@ -35,22 +35,27 @@
 // Step 1: Configure the shared pulsar configuration
 // =====================================================================
 (
+var d = ~app.data;
+
 // --- Pulsaret: spectrally rich waveform (first 8 harmonics) ---
 // This maximises aliasing potential: at high playback rates, upper
 // harmonics fold back below Nyquist in the GrainBuf engine.
-~app.pulsaretBuffers[0].loadCollection(
-	Signal.sineFill(2048, Array.fill(8, { |i| 1.0 / (i + 1) }))
-);
+var pulsaretData = Signal.sineFill(2048, Array.fill(8, { |i| 1.0 / (i + 1) })).as(Array);
 
 // Hanning envelope
-~app.envelopeBuffers[0].loadCollection(
-	Signal.hanningWindow(2048)
-);
+var envelopeData = Signal.hanningWindow(2048).as(Array);
 
 // Flat frequency buffer — no per-pulsaret FM
-~app.frequencyBuffers[0].loadCollection(
-	Signal.newClear(2048).fill(0.0)
-);
+var frequencyData = Array.fill(2048, { 0.0 });
+
+// Update data layer (for GUI display)
+d.data_pulsaret[0].value = pulsaretData;
+d.data_envelope[0].value = envelopeData;
+
+// Send to audio buffers
+~app.pulsaretBuffers[0].sendCollection(pulsaretData);
+~app.envelopeBuffers[0].sendCollection(envelopeData);
+~app.frequencyBuffers[0].sendCollection(frequencyData);
 
 "Step 1 complete: buffers loaded with 8-harmonic pulsaret".postln;
 )
