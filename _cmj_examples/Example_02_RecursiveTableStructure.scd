@@ -150,15 +150,16 @@
 // =====================================================================
 
 (
+// All var declarations must be at top of block
 var d = ~app.data;
+var pulsaretData = Signal.sineFill(2048, [1, 0.3, 0.1]).as(Array);
+var envData = Signal.hanningWindow(2048).as(Array);
 
 // --- Load pulsaret waveform to buffer ---
-var pulsaretData = Signal.sineFill(2048, [1, 0.3, 0.1]).as(Array);
 d.data_pulsaret[0].value = pulsaretData;
 ~app.pulsaretBuffers[0].sendCollection(pulsaretData);
 
 // --- Load envelope to buffer ---
-var envData = Signal.hanningWindow(2048).as(Array);
 d.data_envelope[0].value = envData;
 ~app.envelopeBuffers[0].sendCollection(envData);
 
