@@ -4,7 +4,8 @@
 // Demonstrates the PG's conception of pulsar synthesis as a
 // spatial-spectral instrument rather than a monophonic oscillator:
 // one emission clock generates three simultaneous pulsaret streams,
-// each with independent formant frequency, panning, and amplitude.
+// each with independent formant frequency, envelope dilation,
+// panning, and amplitude.
 //
 // The architectural commitment is specific: the three sets share
 // a SINGLE fundamental frequency (emission clock), a single burst/
@@ -15,11 +16,17 @@
 // whose internal coordination derives from the emission-rate
 // quantization rather than from explicit synchronization.
 //
+// The four per-group parameters:
+//   - Formant frequency: spectral centre of each pulsaret stream
+//   - Envelope dilation: pulsaret duration (short=clicky, long=smooth)
+//   - Panning: spatial position in stereo field
+//   - Amplitude: relative loudness
+//
 // The example moves through four stages:
 //
 //   Part A — Spatial-spectral spread:
-//     Three groups with widely divergent formants and panning,
-//     sharing one emission clock. Demonstrates the basic
+//     Three groups with widely divergent formants, dilations, and
+//     panning, sharing one emission clock. Demonstrates the basic
 //     architecture: spectral diversity within temporal unity.
 //
 //   Part B — Temporal substrate transforms all:
@@ -253,6 +260,108 @@ d.data_main[0][3].value_(5500);
 
 // Stop A3
 ( ~stopSynth.(0); )
+
+// --- A4: Envelope dilation — per-group pulsaret duration ---
+// Each group can have a different envelope dilation (pulsaret
+// duration relative to period). Short dilations produce clicky
+// impulses; long dilations produce overlapping grains.
+// The same emission clock, three different temporal envelopes.
+(
+var d = ~app.data;
+
+d.data_main[0][0].value_(80);     // fundamental: 80 Hz (12.5 ms period)
+
+// Formants: all in mid range to focus on envelope differences
+d.data_main[0][1].value_(1500);
+d.data_main[0][2].value_(1500);
+d.data_main[0][3].value_(1500);
+
+// Panning
+d.data_main[0][7].value_(-0.8);
+d.data_main[0][8].value_(0);
+d.data_main[0][9].value_(0.8);
+
+// Amplitudes
+d.data_main[0][10].value_(0.5);
+d.data_main[0][11].value_(0.5);
+d.data_main[0][12].value_(0.5);
+
+// Envelope dilations: short, medium, long
+d.data_main[0][4].value_(0.3);    // Group 1: short, clicky (left)
+d.data_main[0][5].value_(1.0);    // Group 2: natural duration (centre)
+d.data_main[0][6].value_(2.5);    // Group 3: extended, overlapping (right)
+
+~playSynth.(0);
+"--- A4: Envelope dilation differences ---".postln;
+"  Group 1 (left): dilation 0.3 (short, impulse-like)".postln;
+"  Group 2 (centre): dilation 1.0 (natural)".postln;
+"  Group 3 (right): dilation 2.5 (extended, overlapping)".postln;
+)
+
+// Try different dilations to hear the effect
+( var d = ~app.data; d.data_main[0][4].value_(0.1); d.data_main[0][5].value_(0.1); d.data_main[0][6].value_(0.1); "All short (0.1): clicky impulses".postln; )
+( var d = ~app.data; d.data_main[0][4].value_(1.0); d.data_main[0][5].value_(1.0); d.data_main[0][6].value_(1.0); "All natural (1.0)".postln; )
+( var d = ~app.data; d.data_main[0][4].value_(3.0); d.data_main[0][5].value_(3.0); d.data_main[0][6].value_(3.0); "All long (3.0): overlapping grains".postln; )
+( var d = ~app.data; d.data_main[0][4].value_(0.3); d.data_main[0][5].value_(1.0); d.data_main[0][6].value_(2.5); "Differentiated (0.3/1.0/2.5)".postln; )
+
+// Stop A4
+( ~stopSynth.(0); )
+
+// --- A5: Combined per-group parameters ---
+// All four per-group dimensions varying simultaneously:
+// formant, envelope dilation, panning, and amplitude.
+// This reveals the full architecture: one clock generating
+// three complete timbral-spatial-temporal identities.
+(
+var d = ~app.data;
+
+d.data_main[0][0].value_(100);    // fundamental
+
+// Group 1: low, short, quiet, left
+d.data_main[0][1].value_(400);    // low formant
+d.data_main[0][4].value_(0.4);    // short envelope
+d.data_main[0][7].value_(-0.9);   // hard left
+d.data_main[0][10].value_(0.4);   // slightly quieter
+
+// Group 2: mid, natural, loud, centre
+d.data_main[0][2].value_(2000);   // mid formant
+d.data_main[0][5].value_(1.2);    // slightly extended
+d.data_main[0][8].value_(0);      // centre
+d.data_main[0][11].value_(0.6);   // prominent
+
+// Group 3: high, long, soft, right
+d.data_main[0][3].value_(5500);   // high formant
+d.data_main[0][6].value_(2.0);    // long envelope
+d.data_main[0][9].value_(0.9);    // hard right
+d.data_main[0][12].value_(0.3);   // softer
+
+~playSynth.(0);
+"--- A5: Combined per-group parameters ---".postln;
+"  Group 1 (left): 400 Hz, dil 0.4, amp 0.4 (dark, clicky, quiet)".postln;
+"  Group 2 (centre): 2000 Hz, dil 1.2, amp 0.6 (bright, sustained)".postln;
+"  Group 3 (right): 5500 Hz, dil 2.0, amp 0.3 (thin, smooth, soft)".postln;
+)
+
+// Sweep fundamental to hear how all three respond together
+(
+~sweepA5 = Routine({
+	var d = ~app.data;
+	var steps = 400;
+	"--- A5 sweep: 40→400 Hz (20s) ---".postln;
+	steps.do { |step|
+		var fund = step.linexp(0, steps - 1, 40, 400);
+		d.data_main[0][0].value_(fund);
+		if (step % 80 == 0) {
+			("  fund: " ++ fund.round(1) ++ " Hz").postln;
+		};
+		(20 / steps).wait;
+	};
+	"--- A5 sweep complete ---".postln;
+}).play(AppClock);
+)
+
+// Stop A5
+( ~sweepA5.stop; ~stopSynth.(0); )
 
 // =====================================================================
 // PART B: Temporal Substrate Transforms All
@@ -731,6 +840,20 @@ d.data_probabilityMaskSingular[0].value_(1.0);
 //   combination is richer than any individual group, and the
 //   richness derives entirely from the architectural decision
 //   to bind three spectral-spatial sets to one clock.
+//
+//   A4 (envelope dilation): Each group can have a different
+//   pulsaret duration. Short dilations produce clicky impulses;
+//   long dilations produce overlapping grains. The same emission
+//   clock, three different temporal envelopes — another axis
+//   of per-group independence within temporal unity.
+//
+//   A5 (combined parameters): All four per-group dimensions
+//   varying simultaneously: formant, envelope dilation, panning,
+//   and amplitude. This reveals the full architecture: one clock
+//   generating three complete timbral-spatial-temporal identities.
+//   The fundamental sweep shows how the shared clock transforms
+//   all three simultaneously while they maintain their distinct
+//   characters.
 //
 // PART B — Temporal Substrate Transforms All:
 //
