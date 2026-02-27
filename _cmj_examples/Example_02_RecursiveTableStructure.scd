@@ -103,6 +103,46 @@
 
 
 // =====================================================================
+// PLAYBACK HELPERS (syncs GUI buttons with playback state)
+// =====================================================================
+
+(
+// These functions start/stop playback AND update the GUI buttons.
+// Using .valueAction_() sets the button state AND triggers its action.
+
+~playSynth = { |instance=0|
+	~app.trainControl.trainPlayStop[instance].valueAction_(1);
+};
+
+~stopSynth = { |instance=0|
+	~app.trainControl.trainPlayStop[instance].valueAction_(0);
+};
+
+~playLoop = { |instance=0|
+	~app.trainControl.trainLoopPlayStop[instance].valueAction_(1);
+};
+
+~stopLoop = { |instance=0|
+	~app.trainControl.trainLoopPlayStop[instance].valueAction_(0);
+};
+
+// Convenience: play synth and loop together
+~playAll = { |instance=0|
+	~playSynth.(instance);
+	~playLoop.(instance);
+};
+
+// Convenience: stop synth and loop together
+~stopAll = { |instance=0|
+	~stopLoop.(instance);
+	~stopSynth.(instance);
+};
+
+"Playback helpers loaded.".postln;
+)
+
+
+// =====================================================================
 // SETUP: Configure train parameters
 // =====================================================================
 
@@ -177,16 +217,16 @@ d.data_trainDuration[0].value_(8);
 
 // --- Play Part A ---
 (
-~app.synthSwitcher.play;
+~playSynth.(0);
 ~app.loopTask.tasks[0].set(\playbackDirection, 0);
-~app.loopTask.tasks[0].play;
+~playLoop.(0);
 "--- Playing Part A: smooth sine ---".postln;
 )
 
 // --- Stop Part A ---
 (
-~app.loopTask.tasks[0].stop;
-~app.synthSwitcher.stop;
+~stopLoop.(0);
+~stopSynth.(0);
 )
 
 
@@ -221,16 +261,16 @@ var quantized = ~tableQuantize.(~baseShape, 8);
 
 // --- Play Part B ---
 (
-~app.synthSwitcher.play;
+~playSynth.(0);
 ~app.loopTask.tasks[0].set(\playbackDirection, 0);
-~app.loopTask.tasks[0].play;
+~playLoop.(0);
 "--- Playing Part B: quantized (8 levels) ---".postln;
 )
 
 // --- Stop Part B ---
 (
-~app.loopTask.tasks[0].stop;
-~app.synthSwitcher.stop;
+~stopLoop.(0);
+~stopSynth.(0);
 )
 
 
@@ -245,9 +285,9 @@ var quantized = ~tableQuantize.(~baseShape, 8);
 // --- Start playback for Part C ---
 (
 ~loadShapeBothScales.(~baseShape);  // start from smooth sine
-~app.synthSwitcher.play;
+~playSynth.(0);
 ~app.loopTask.tasks[0].set(\playbackDirection, 0);
-~app.loopTask.tasks[0].play;
+~playLoop.(0);
 "--- Part C: evaluate operations below while listening ---".postln;
 )
 
@@ -345,8 +385,8 @@ shaped = ~tablePower.(shaped, 2);
 
 // --- Stop Part C ---
 (
-~app.loopTask.tasks[0].stop;
-~app.synthSwitcher.stop;
+~stopLoop.(0);
+~stopSynth.(0);
 )
 
 
@@ -374,9 +414,9 @@ var updateRate = 2;  // table updates per second (2048 CVs per update)
 var numSteps = (duration * updateRate).asInteger;
 
 // Start playback
-~app.synthSwitcher.play;
+~playSynth.(0);
 ~app.loopTask.tasks[0].set(\playbackDirection, 0);
-~app.loopTask.tasks[0].play;
+~playLoop.(0);
 
 "--- Part D: Progressive transformation (60 seconds) ---".postln;
 
@@ -427,16 +467,16 @@ var numSteps = (duration * updateRate).asInteger;
 	};
 
 	"--- Progressive transformation complete ---".postln;
-	~app.loopTask.tasks[0].stop;
-	~app.synthSwitcher.stop;
+	~stopLoop.(0);
+	~stopSynth.(0);
 }).play(AppClock);
 )
 
 // --- Stop Part D ---
 (
 ~progressRoutine.stop;
-~app.loopTask.tasks[0].stop;
-~app.synthSwitcher.stop;
+~stopLoop.(0);
+~stopSynth.(0);
 )
 
 
@@ -450,9 +490,9 @@ var numSteps = (duration * updateRate).asInteger;
 
 // --- Start playback for Part E ---
 (
-~app.synthSwitcher.play;
+~playSynth.(0);
 ~app.loopTask.tasks[0].set(\playbackDirection, 0);
-~app.loopTask.tasks[0].play;
+~playLoop.(0);
 )
 
 // E1: Sawtooth
@@ -515,8 +555,8 @@ var complex = Signal.sineFill(2048, [1, 0, 0.5, 0, 0.3, 0, 0.2, 0, 0.1]).as(Arra
 
 // --- Stop Part E ---
 (
-~app.loopTask.tasks[0].stop;
-~app.synthSwitcher.stop;
+~stopLoop.(0);
+~stopSynth.(0);
 )
 
 

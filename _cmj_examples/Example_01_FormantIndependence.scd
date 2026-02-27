@@ -106,6 +106,46 @@
 
 
 // =====================================================================
+// PLAYBACK HELPERS (syncs GUI buttons with playback state)
+// =====================================================================
+
+(
+// These functions start/stop playback AND update the GUI buttons.
+// Using .valueAction_() sets the button state AND triggers its action.
+
+~playSynth = { |instance=0|
+	~app.trainControl.trainPlayStop[instance].valueAction_(1);
+};
+
+~stopSynth = { |instance=0|
+	~app.trainControl.trainPlayStop[instance].valueAction_(0);
+};
+
+~playLoop = { |instance=0|
+	~app.trainControl.trainLoopPlayStop[instance].valueAction_(1);
+};
+
+~stopLoop = { |instance=0|
+	~app.trainControl.trainLoopPlayStop[instance].valueAction_(0);
+};
+
+// Convenience: play synth and loop together
+~playAll = { |instance=0|
+	~playSynth.(instance);
+	~playLoop.(instance);
+};
+
+// Convenience: stop synth and loop together
+~stopAll = { |instance=0|
+	~stopLoop.(instance);
+	~stopSynth.(instance);
+};
+
+"Playback helpers loaded.".postln;
+)
+
+
+// =====================================================================
 // CONFIGURATION A: Formant Independence as Temporal Lens
 // =====================================================================
 
@@ -176,7 +216,7 @@ var endFreq = 500;
 var updateRate = 20;
 var numSteps = (sweepDuration * updateRate).asInteger;
 
-~app.synthSwitcher.play;
+~playSynth.(0);
 
 ~sweepA = Routine({
 	numSteps.do { |step|
@@ -200,7 +240,7 @@ var numSteps = (sweepDuration * updateRate).asInteger;
 // --- Stop Configuration A ---
 (
 ~sweepA.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 )
 
 
@@ -289,7 +329,7 @@ var numSteps = (sweepDuration * updateRate).asInteger;
 "--- Pass 1: ABSOLUTE mode ---".postln;
 ("Formants fixed at 800, 1200, 1600 Hz").postln;
 
-~app.synthSwitcher.play;
+~playSynth.(0);
 
 ~sweepB1 = Routine({
 	numSteps.do { |step|
@@ -305,14 +345,14 @@ var numSteps = (sweepDuration * updateRate).asInteger;
 		(1 / updateRate).wait;
 	};
 	"--- Pass 1 complete ---".postln;
-	~app.synthSwitcher.stop;
+	~stopSynth.(0);
 }).play(AppClock);
 )
 
 // --- Stop Pass 1 if needed ---
 (
 ~sweepB1.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 )
 
 
@@ -335,7 +375,7 @@ d.data_main[0][0].value_(startFreq);
 
 "--- Pass 2: HARMONIC RATIOS (×8, ×12, ×16) ---".postln;
 
-~app.synthSwitcher.play;
+~playSynth.(0);
 
 ~sweepB2 = Routine({
 	numSteps.do { |step|
@@ -354,7 +394,7 @@ d.data_main[0][0].value_(startFreq);
 		(1 / updateRate).wait;
 	};
 	"--- Pass 2 complete ---".postln;
-	~app.synthSwitcher.stop;
+	~stopSynth.(0);
 	~formantRatioDisableAll.(0);
 }).play(AppClock);
 )
@@ -362,7 +402,7 @@ d.data_main[0][0].value_(startFreq);
 // --- Stop Pass 2 if needed ---
 (
 ~sweepB2.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 ~formantRatioDisableAll.(0);
 )
 
@@ -392,7 +432,7 @@ d.data_main[0][0].value_(startFreq);
 
 "--- Pass 3: SUBHARMONIC RATIOS (×0.5, ×0.75, ×1) ---".postln;
 
-~app.synthSwitcher.play;
+~playSynth.(0);
 
 ~sweepB3 = Routine({
 	numSteps.do { |step|
@@ -411,7 +451,7 @@ d.data_main[0][0].value_(startFreq);
 		(1 / updateRate).wait;
 	};
 	"--- Pass 3 complete ---".postln;
-	~app.synthSwitcher.stop;
+	~stopSynth.(0);
 	~formantRatioDisableAll.(0);
 }).play(AppClock);
 )
@@ -419,7 +459,7 @@ d.data_main[0][0].value_(startFreq);
 // --- Stop Pass 3 if needed ---
 (
 ~sweepB3.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 ~formantRatioDisableAll.(0);
 )
 
@@ -446,7 +486,7 @@ d.data_main[0][0].value_(startFreq);
 
 "--- Pass 4: JUST INTONATION TRIAD (×1, ×5/4, ×3/2) ---".postln;
 
-~app.synthSwitcher.play;
+~playSynth.(0);
 
 ~sweepB4 = Routine({
 	numSteps.do { |step|
@@ -465,7 +505,7 @@ d.data_main[0][0].value_(startFreq);
 		(1 / updateRate).wait;
 	};
 	"--- Pass 4 complete ---".postln;
-	~app.synthSwitcher.stop;
+	~stopSynth.(0);
 	~formantRatioDisableAll.(0);
 }).play(AppClock);
 )
@@ -473,7 +513,7 @@ d.data_main[0][0].value_(startFreq);
 // --- Stop Pass 4 if needed ---
 (
 ~sweepB4.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 ~formantRatioDisableAll.(0);
 )
 
@@ -510,7 +550,7 @@ d.data_main[0][0].value_(fund);
 "--- Pass 5: FORMANT SWEEP (fund fixed at 150 Hz) ---".postln;
 ("Ratios glide from " ++ startRatios ++ " to " ++ endRatios).postln;
 
-~app.synthSwitcher.play;
+~playSynth.(0);
 
 ~sweepB5 = Routine({
 	numSteps.do { |step|
@@ -538,7 +578,7 @@ d.data_main[0][0].value_(fund);
 		(1 / updateRate).wait;
 	};
 	"--- Pass 5 complete ---".postln;
-	~app.synthSwitcher.stop;
+	~stopSynth.(0);
 	~formantRatioDisableAll.(0);
 }).play(AppClock);
 )
@@ -546,7 +586,7 @@ d.data_main[0][0].value_(fund);
 // --- Stop Pass 5 if needed ---
 (
 ~sweepB5.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 ~formantRatioDisableAll.(0);
 )
 
@@ -595,7 +635,7 @@ d.data_main[0][0].value_(freq);
 "--- Pass 6: BROWNIAN FUNDAMENTAL, ABSOLUTE FORMANTS ---".postln;
 ("Formants fixed at 800, 1200, 1600 Hz").postln;
 
-~app.synthSwitcher.play;
+~playSynth.(0);
 
 ~sweepB6 = Routine({
 	numSteps.do { |step|
@@ -612,14 +652,14 @@ d.data_main[0][0].value_(freq);
 		(1 / updateRate).wait;
 	};
 	"--- Pass 6 complete ---".postln;
-	~app.synthSwitcher.stop;
+	~stopSynth.(0);
 }).play(AppClock);
 )
 
 // --- Stop Pass 6 if needed ---
 (
 ~sweepB6.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 )
 
 
@@ -658,7 +698,7 @@ if (trajectory.isNil or: { trajectory[0].isNil }) {
 
 	"--- Pass 7: SAME BROWNIAN TRAJECTORY, RATIO FORMANTS (×5, ×8, ×11) ---".postln;
 
-	~app.synthSwitcher.play;
+	~playSynth.(0);
 
 	~sweepB7 = Routine({
 		numSteps.do { |step|
@@ -676,7 +716,7 @@ if (trajectory.isNil or: { trajectory[0].isNil }) {
 			(1 / updateRate).wait;
 		};
 		"--- Pass 7 complete ---".postln;
-		~app.synthSwitcher.stop;
+		~stopSynth.(0);
 		~formantRatioDisableAll.(0);
 	}).play(AppClock);
 };
@@ -685,7 +725,7 @@ if (trajectory.isNil or: { trajectory[0].isNil }) {
 // --- Stop Pass 7 if needed ---
 (
 ~sweepB7.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 ~formantRatioDisableAll.(0);
 )
 
@@ -727,7 +767,7 @@ var ratioMaxs = [6.0, 12.0, 20.0];
 
 "--- Pass 8: DUAL BROWNIAN (fundamental + ratios) ---".postln;
 
-~app.synthSwitcher.play;
+~playSynth.(0);
 
 ~sweepB8 = Routine({
 	numSteps.do { |step|
@@ -756,7 +796,7 @@ var ratioMaxs = [6.0, 12.0, 20.0];
 		(1 / updateRate).wait;
 	};
 	"--- Pass 8 complete ---".postln;
-	~app.synthSwitcher.stop;
+	~stopSynth.(0);
 	~formantRatioDisableAll.(0);
 }).play(AppClock);
 )
@@ -764,7 +804,7 @@ var ratioMaxs = [6.0, 12.0, 20.0];
 // --- Stop Pass 8 if needed ---
 (
 ~sweepB8.stop;
-~app.synthSwitcher.stop;
+~stopSynth.(0);
 ~formantRatioDisableAll.(0);
 )
 
