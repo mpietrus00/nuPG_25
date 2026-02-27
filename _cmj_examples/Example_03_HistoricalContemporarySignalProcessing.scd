@@ -143,9 +143,9 @@ var endFormants = [4000, 6000, 8000];
 
 	steps.do { |step|
 		var t = step / (steps - 1);
-		~app.data.data_main[0][1].value_(startFormants[0].linexp(0, 1, startFormants[0], endFormants[0], t));
-		~app.data.data_main[0][2].value_(startFormants[1].linexp(0, 1, startFormants[1], endFormants[1], t));
-		~app.data.data_main[0][3].value_(startFormants[2].linexp(0, 1, startFormants[2], endFormants[2], t));
+		~app.data.data_main[0][1].value_(t.linexp(0, 1, startFormants[0], endFormants[0]));
+		~app.data.data_main[0][2].value_(t.linexp(0, 1, startFormants[1], endFormants[1]));
+		~app.data.data_main[0][3].value_(t.linexp(0, 1, startFormants[2], endFormants[2]));
 		(1 / updateRate).wait;
 	};
 
@@ -164,9 +164,9 @@ var endFormants = [4000, 6000, 8000];
 
 	steps.do { |step|
 		var t = step / (steps - 1);
-		~app.data.data_main[0][1].value_(startFormants[0].linexp(0, 1, startFormants[0], endFormants[0], t));
-		~app.data.data_main[0][2].value_(startFormants[1].linexp(0, 1, startFormants[1], endFormants[1], t));
-		~app.data.data_main[0][3].value_(startFormants[2].linexp(0, 1, startFormants[2], endFormants[2], t));
+		~app.data.data_main[0][1].value_(t.linexp(0, 1, startFormants[0], endFormants[0]));
+		~app.data.data_main[0][2].value_(t.linexp(0, 1, startFormants[1], endFormants[1]));
+		~app.data.data_main[0][3].value_(t.linexp(0, 1, startFormants[2], endFormants[2]));
 		(1 / updateRate).wait;
 	};
 
