@@ -55,11 +55,12 @@ NuPG_ModulatorSet {
 
 	*ar {
 		arg type = 0, modulation_frequency = 1;
+		var mod;
 
 		// Clip type to valid range (0-16)
 		type = type.clip(0, 16);
 
-		var mod = Select.ar(type,
+		mod = Select.ar(type,
 			[
 				// 0-4: Original types
 				SinOsc.ar(modulation_frequency),
