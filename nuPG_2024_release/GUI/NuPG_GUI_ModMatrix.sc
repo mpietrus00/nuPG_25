@@ -57,7 +57,16 @@ NuPG_GUI_ModMatrix {
 			"_pan_03",
 			"_amp_01",
 			"_amp_02",
-			"_amp_03"
+			"_amp_03",
+			"_flux_rate",
+			"_flux_amt",
+			"_fm_ratio",
+			"_fm_amt",
+			"_phase",
+			"_offset_01",
+			"_offset_02",
+			"_offset_03",
+			"_probability"
 		];
 		modNum = modNames.size;
 		paramNum = paramNames.size;
@@ -92,10 +101,9 @@ NuPG_GUI_ModMatrix {
 
 			modNum.collect{|k|
 				paramNum.collect{|l|
-					matrix[i][k][l] = guiDefinitions.nuPGButton(
-						[["[]", Color.white, Color.grey],
-							["X", Color.black, Color.new255(250, 100, 90)]], 20, 20)
-					.valueAction_(0);
+					// Use mini sliders for continuous intensity (0.0-1.0) instead of binary buttons
+					matrix[i][k][l] = guiDefinitions.nuPGMiniSlider(20, 20)
+					.value_(0);
 			}};
 		};
 

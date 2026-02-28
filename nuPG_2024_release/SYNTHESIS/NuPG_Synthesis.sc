@@ -220,6 +220,21 @@ NuPG_Synthesis {
 				offset_2_five_active = 0, offset_2_six_active = 0, offset_2_seven_active = 0, offset_2_eight_active = 0,
 				offset_3_one_active = 0, offset_3_two_active = 0, offset_3_three_active = 0, offset_3_four_active = 0,
 				offset_3_five_active = 0, offset_3_six_active = 0, offset_3_seven_active = 0, offset_3_eight_active = 0,
+				// Flux rate modulation (row 13)
+				fluxRateMod_one_active = 0, fluxRateMod_two_active = 0, fluxRateMod_three_active = 0, fluxRateMod_four_active = 0,
+				fluxRateMod_five_active = 0, fluxRateMod_six_active = 0, fluxRateMod_seven_active = 0, fluxRateMod_eight_active = 0,
+				// Flux amount modulation (row 14)
+				fluxAmtMod_one_active = 0, fluxAmtMod_two_active = 0, fluxAmtMod_three_active = 0, fluxAmtMod_four_active = 0,
+				fluxAmtMod_five_active = 0, fluxAmtMod_six_active = 0, fluxAmtMod_seven_active = 0, fluxAmtMod_eight_active = 0,
+				// FM ratio modulation (row 15)
+				fmRatioMod_one_active = 0, fmRatioMod_two_active = 0, fmRatioMod_three_active = 0, fmRatioMod_four_active = 0,
+				fmRatioMod_five_active = 0, fmRatioMod_six_active = 0, fmRatioMod_seven_active = 0, fmRatioMod_eight_active = 0,
+				// FM amount modulation (row 16)
+				fmAmtMod_one_active = 0, fmAmtMod_two_active = 0, fmAmtMod_three_active = 0, fmAmtMod_four_active = 0,
+				fmAmtMod_five_active = 0, fmAmtMod_six_active = 0, fmAmtMod_seven_active = 0, fmAmtMod_eight_active = 0,
+				// Phase modulation (row 17)
+				phaseMod_one_active = 0, phaseMod_two_active = 0, phaseMod_three_active = 0, phaseMod_four_active = 0,
+				phaseMod_five_active = 0, phaseMod_six_active = 0, phaseMod_seven_active = 0, phaseMod_eight_active = 0,
 
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
 				pulsarVersion = 0;
@@ -266,6 +281,25 @@ NuPG_Synthesis {
 				var ampTwoMod_five, ampTwoMod_six, ampTwoMod_seven, ampTwoMod_eight;
 				var ampThreeMod_one, ampThreeMod_two, ampThreeMod_three, ampThreeMod_four;
 				var ampThreeMod_five, ampThreeMod_six, ampThreeMod_seven, ampThreeMod_eight;
+				// New targets: flux, FM, phase, offset, probability modulation vars
+				var fluxRateMod_one, fluxRateMod_two, fluxRateMod_three, fluxRateMod_four;
+				var fluxRateMod_five, fluxRateMod_six, fluxRateMod_seven, fluxRateMod_eight;
+				var fluxAmtMod_one, fluxAmtMod_two, fluxAmtMod_three, fluxAmtMod_four;
+				var fluxAmtMod_five, fluxAmtMod_six, fluxAmtMod_seven, fluxAmtMod_eight;
+				var fmRatioMod_one, fmRatioMod_two, fmRatioMod_three, fmRatioMod_four;
+				var fmRatioMod_five, fmRatioMod_six, fmRatioMod_seven, fmRatioMod_eight;
+				var fmAmtMod_one, fmAmtMod_two, fmAmtMod_three, fmAmtMod_four;
+				var fmAmtMod_five, fmAmtMod_six, fmAmtMod_seven, fmAmtMod_eight;
+				var phaseMod_one, phaseMod_two, phaseMod_three, phaseMod_four;
+				var phaseMod_five, phaseMod_six, phaseMod_seven, phaseMod_eight;
+				var offsetOneMod_one, offsetOneMod_two, offsetOneMod_three, offsetOneMod_four;
+				var offsetOneMod_five, offsetOneMod_six, offsetOneMod_seven, offsetOneMod_eight;
+				var offsetTwoMod_one, offsetTwoMod_two, offsetTwoMod_three, offsetTwoMod_four;
+				var offsetTwoMod_five, offsetTwoMod_six, offsetTwoMod_seven, offsetTwoMod_eight;
+				var offsetThreeMod_one, offsetThreeMod_two, offsetThreeMod_three, offsetThreeMod_four;
+				var offsetThreeMod_five, offsetThreeMod_six, offsetThreeMod_seven, offsetThreeMod_eight;
+				var probabilityMod_one, probabilityMod_two, probabilityMod_three, probabilityMod_four;
+				var probabilityMod_five, probabilityMod_six, probabilityMod_seven, probabilityMod_eight;
 
 				/*definition*/
 
@@ -305,6 +339,112 @@ NuPG_Synthesis {
 				mod_eight = NuPG_ModulatorSet.ar(
 					type: modulator_type_eight,
 					modulation_frequency: modulation_frequency_eight);
+
+				// Flux rate modulation (row 13) - additive
+				fluxRateMod_one = Select.ar(fluxRateMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
+				fluxRateMod_two = Select.ar(fluxRateMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
+				fluxRateMod_three = Select.ar(fluxRateMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
+				fluxRateMod_four = Select.ar(fluxRateMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
+				fluxRateMod_five = Select.ar(fluxRateMod_five_active, [K2A.ar(0), (modulation_index_five * mod_five)]);
+				fluxRateMod_six = Select.ar(fluxRateMod_six_active, [K2A.ar(0), (modulation_index_six * mod_six)]);
+				fluxRateMod_seven = Select.ar(fluxRateMod_seven_active, [K2A.ar(0), (modulation_index_seven * mod_seven)]);
+				fluxRateMod_eight = Select.ar(fluxRateMod_eight_active, [K2A.ar(0), (modulation_index_eight * mod_eight)]);
+				fluxRate = fluxRate + (fluxRateMod_one + fluxRateMod_two + fluxRateMod_three + fluxRateMod_four +
+					fluxRateMod_five + fluxRateMod_six + fluxRateMod_seven + fluxRateMod_eight);
+
+				// Flux amount modulation (row 14) - multiplicative
+				fluxAmtMod_one = Select.ar(fluxAmtMod_one_active, [K2A.ar(1), (1 + (modulation_index_one * 0.1)) * mod_one.unipolar]);
+				fluxAmtMod_two = Select.ar(fluxAmtMod_two_active, [K2A.ar(1), (1 + (modulation_index_two * 0.1)) * mod_two.unipolar]);
+				fluxAmtMod_three = Select.ar(fluxAmtMod_three_active, [K2A.ar(1), (1 + (modulation_index_three * 0.1)) * mod_three.unipolar]);
+				fluxAmtMod_four = Select.ar(fluxAmtMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
+				fluxAmtMod_five = Select.ar(fluxAmtMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
+				fluxAmtMod_six = Select.ar(fluxAmtMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
+				fluxAmtMod_seven = Select.ar(fluxAmtMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
+				fluxAmtMod_eight = Select.ar(fluxAmtMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				allFluxAmt = allFluxAmt * (fluxAmtMod_one * fluxAmtMod_two * fluxAmtMod_three * fluxAmtMod_four *
+					fluxAmtMod_five * fluxAmtMod_six * fluxAmtMod_seven * fluxAmtMod_eight);
+
+				// FM ratio modulation (row 15) - additive
+				fmRatioMod_one = Select.ar(fmRatioMod_one_active, [K2A.ar(0), (modulation_index_one * mod_one)]);
+				fmRatioMod_two = Select.ar(fmRatioMod_two_active, [K2A.ar(0), (modulation_index_two * mod_two)]);
+				fmRatioMod_three = Select.ar(fmRatioMod_three_active, [K2A.ar(0), (modulation_index_three * mod_three)]);
+				fmRatioMod_four = Select.ar(fmRatioMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
+				fmRatioMod_five = Select.ar(fmRatioMod_five_active, [K2A.ar(0), (modulation_index_five * mod_five)]);
+				fmRatioMod_six = Select.ar(fmRatioMod_six_active, [K2A.ar(0), (modulation_index_six * mod_six)]);
+				fmRatioMod_seven = Select.ar(fmRatioMod_seven_active, [K2A.ar(0), (modulation_index_seven * mod_seven)]);
+				fmRatioMod_eight = Select.ar(fmRatioMod_eight_active, [K2A.ar(0), (modulation_index_eight * mod_eight)]);
+				fmRatio = fmRatio + (fmRatioMod_one + fmRatioMod_two + fmRatioMod_three + fmRatioMod_four +
+					fmRatioMod_five + fmRatioMod_six + fmRatioMod_seven + fmRatioMod_eight);
+
+				// FM amount modulation (row 16) - multiplicative
+				fmAmtMod_one = Select.ar(fmAmtMod_one_active, [K2A.ar(1), (1 + (modulation_index_one * 0.1)) * mod_one.unipolar]);
+				fmAmtMod_two = Select.ar(fmAmtMod_two_active, [K2A.ar(1), (1 + (modulation_index_two * 0.1)) * mod_two.unipolar]);
+				fmAmtMod_three = Select.ar(fmAmtMod_three_active, [K2A.ar(1), (1 + (modulation_index_three * 0.1)) * mod_three.unipolar]);
+				fmAmtMod_four = Select.ar(fmAmtMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
+				fmAmtMod_five = Select.ar(fmAmtMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
+				fmAmtMod_six = Select.ar(fmAmtMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
+				fmAmtMod_seven = Select.ar(fmAmtMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
+				fmAmtMod_eight = Select.ar(fmAmtMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				fmAmt = fmAmt * (fmAmtMod_one * fmAmtMod_two * fmAmtMod_three * fmAmtMod_four *
+					fmAmtMod_five * fmAmtMod_six * fmAmtMod_seven * fmAmtMod_eight);
+
+				// Phase modulation (row 17) - additive, bipolar
+				phaseMod_one = Select.ar(phaseMod_one_active, [K2A.ar(0), (modulation_index_one * 0.1 * mod_one)]);
+				phaseMod_two = Select.ar(phaseMod_two_active, [K2A.ar(0), (modulation_index_two * 0.1 * mod_two)]);
+				phaseMod_three = Select.ar(phaseMod_three_active, [K2A.ar(0), (modulation_index_three * 0.1 * mod_three)]);
+				phaseMod_four = Select.ar(phaseMod_four_active, [K2A.ar(0), (modulation_index_four * 0.1 * mod_four)]);
+				phaseMod_five = Select.ar(phaseMod_five_active, [K2A.ar(0), (modulation_index_five * 0.1 * mod_five)]);
+				phaseMod_six = Select.ar(phaseMod_six_active, [K2A.ar(0), (modulation_index_six * 0.1 * mod_six)]);
+				phaseMod_seven = Select.ar(phaseMod_seven_active, [K2A.ar(0), (modulation_index_seven * 0.1 * mod_seven)]);
+				phaseMod_eight = Select.ar(phaseMod_eight_active, [K2A.ar(0), (modulation_index_eight * 0.1 * mod_eight)]);
+				phase = phase + (phaseMod_one + phaseMod_two + phaseMod_three + phaseMod_four +
+					phaseMod_five + phaseMod_six + phaseMod_seven + phaseMod_eight);
+
+				// Offset modulation (rows 18-20) - additive, bipolar
+				offsetOneMod_one = Select.ar(offset_1_one_active, [K2A.ar(0), (modulation_index_one * 0.01 * mod_one)]);
+				offsetOneMod_two = Select.ar(offset_1_two_active, [K2A.ar(0), (modulation_index_two * 0.01 * mod_two)]);
+				offsetOneMod_three = Select.ar(offset_1_three_active, [K2A.ar(0), (modulation_index_three * 0.01 * mod_three)]);
+				offsetOneMod_four = Select.ar(offset_1_four_active, [K2A.ar(0), (modulation_index_four * 0.01 * mod_four)]);
+				offsetOneMod_five = Select.ar(offset_1_five_active, [K2A.ar(0), (modulation_index_five * 0.01 * mod_five)]);
+				offsetOneMod_six = Select.ar(offset_1_six_active, [K2A.ar(0), (modulation_index_six * 0.01 * mod_six)]);
+				offsetOneMod_seven = Select.ar(offset_1_seven_active, [K2A.ar(0), (modulation_index_seven * 0.01 * mod_seven)]);
+				offsetOneMod_eight = Select.ar(offset_1_eight_active, [K2A.ar(0), (modulation_index_eight * 0.01 * mod_eight)]);
+				offset_1 = offset_1 + (offsetOneMod_one + offsetOneMod_two + offsetOneMod_three + offsetOneMod_four +
+					offsetOneMod_five + offsetOneMod_six + offsetOneMod_seven + offsetOneMod_eight);
+
+				offsetTwoMod_one = Select.ar(offset_2_one_active, [K2A.ar(0), (modulation_index_one * 0.01 * mod_one)]);
+				offsetTwoMod_two = Select.ar(offset_2_two_active, [K2A.ar(0), (modulation_index_two * 0.01 * mod_two)]);
+				offsetTwoMod_three = Select.ar(offset_2_three_active, [K2A.ar(0), (modulation_index_three * 0.01 * mod_three)]);
+				offsetTwoMod_four = Select.ar(offset_2_four_active, [K2A.ar(0), (modulation_index_four * 0.01 * mod_four)]);
+				offsetTwoMod_five = Select.ar(offset_2_five_active, [K2A.ar(0), (modulation_index_five * 0.01 * mod_five)]);
+				offsetTwoMod_six = Select.ar(offset_2_six_active, [K2A.ar(0), (modulation_index_six * 0.01 * mod_six)]);
+				offsetTwoMod_seven = Select.ar(offset_2_seven_active, [K2A.ar(0), (modulation_index_seven * 0.01 * mod_seven)]);
+				offsetTwoMod_eight = Select.ar(offset_2_eight_active, [K2A.ar(0), (modulation_index_eight * 0.01 * mod_eight)]);
+				offset_2 = offset_2 + (offsetTwoMod_one + offsetTwoMod_two + offsetTwoMod_three + offsetTwoMod_four +
+					offsetTwoMod_five + offsetTwoMod_six + offsetTwoMod_seven + offsetTwoMod_eight);
+
+				offsetThreeMod_one = Select.ar(offset_3_one_active, [K2A.ar(0), (modulation_index_one * 0.01 * mod_one)]);
+				offsetThreeMod_two = Select.ar(offset_3_two_active, [K2A.ar(0), (modulation_index_two * 0.01 * mod_two)]);
+				offsetThreeMod_three = Select.ar(offset_3_three_active, [K2A.ar(0), (modulation_index_three * 0.01 * mod_three)]);
+				offsetThreeMod_four = Select.ar(offset_3_four_active, [K2A.ar(0), (modulation_index_four * 0.01 * mod_four)]);
+				offsetThreeMod_five = Select.ar(offset_3_five_active, [K2A.ar(0), (modulation_index_five * 0.01 * mod_five)]);
+				offsetThreeMod_six = Select.ar(offset_3_six_active, [K2A.ar(0), (modulation_index_six * 0.01 * mod_six)]);
+				offsetThreeMod_seven = Select.ar(offset_3_seven_active, [K2A.ar(0), (modulation_index_seven * 0.01 * mod_seven)]);
+				offsetThreeMod_eight = Select.ar(offset_3_eight_active, [K2A.ar(0), (modulation_index_eight * 0.01 * mod_eight)]);
+				offset_3 = offset_3 + (offsetThreeMod_one + offsetThreeMod_two + offsetThreeMod_three + offsetThreeMod_four +
+					offsetThreeMod_five + offsetThreeMod_six + offsetThreeMod_seven + offsetThreeMod_eight);
+
+				// Probability modulation (row 21) - multiplicative
+				probabilityMod_one = Select.ar(probabilityMod_one_active, [K2A.ar(1), (1 + (modulation_index_one * 0.1)) * mod_one.unipolar]);
+				probabilityMod_two = Select.ar(probabilityMod_two_active, [K2A.ar(1), (1 + (modulation_index_two * 0.1)) * mod_two.unipolar]);
+				probabilityMod_three = Select.ar(probabilityMod_three_active, [K2A.ar(1), (1 + (modulation_index_three * 0.1)) * mod_three.unipolar]);
+				probabilityMod_four = Select.ar(probabilityMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
+				probabilityMod_five = Select.ar(probabilityMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
+				probabilityMod_six = Select.ar(probabilityMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
+				probabilityMod_seven = Select.ar(probabilityMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
+				probabilityMod_eight = Select.ar(probabilityMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				probability = probability * (probabilityMod_one * probabilityMod_two * probabilityMod_three * probabilityMod_four *
+					probabilityMod_five * probabilityMod_six * probabilityMod_seven * probabilityMod_eight);
 
 				//trigger frequency
 				//modulators
