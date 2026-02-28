@@ -43,7 +43,7 @@ NuPG_GUI_ModMatrix {
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//place objects on view
 		//table view editors
-		modNames = ["_m1", "_m2", "_m3", "_m4"];
+		modNames = ["_m1", "_m2", "_m3", "_m4", "_m5", "_m6", "_m7", "_m8"];
 		paramNames = [
 			"_fundamental",
 			"_formant_01",

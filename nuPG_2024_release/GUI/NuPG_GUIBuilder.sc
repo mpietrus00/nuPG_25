@@ -25,6 +25,7 @@ NuPG_GUIBuilder {
 	var <>modulationTableEditor, <>modulationRatioEditor, <>multiparameterModulationTableEditor;
 	var <>groupsControl, <>trainControl, <>fourier, <>sieves, <>masking, <>modulators;
 	var <>groupsOffest, <>matrixMod, <>modulator1, <>modulator2, <>modulator3, <>modulator4;
+	var <>modulator5, <>modulator6, <>modulator7, <>modulator8;
 	var <>presets, <>control, <>extensions, <>progressSlider, <>scrubber, <>record;
 	var <>synthSwitcherView;
 
@@ -671,11 +672,45 @@ NuPG_GUIBuilder {
 			modulator4.modType[i].action_({ |m| synthesis.trainInstances[i].set(\modulator_type_four, m.value) });
 		};
 
+		modulator5 = NuPG_GUI_ModulatorsView.new;
+		modulator5.draw("_m5", guiDefinitions.modulatorOneViewDimensions.moveBy(145, 0), n: instances);
+		instances.collect { |i|
+			data.data_modulator5[i][1].connect(modulator5.modFreq[i]);
+			data.data_modulator5[i][2].connect(modulator5.modDepth[i]);
+			modulator5.modType[i].action_({ |m| synthesis.trainInstances[i].set(\modulator_type_five, m.value) });
+		};
+
+		modulator6 = NuPG_GUI_ModulatorsView.new;
+		modulator6.draw("_m6", guiDefinitions.modulatorOneViewDimensions.moveBy(145, -105), n: instances);
+		instances.collect { |i|
+			data.data_modulator6[i][1].connect(modulator6.modFreq[i]);
+			data.data_modulator6[i][2].connect(modulator6.modDepth[i]);
+			modulator6.modType[i].action_({ |m| synthesis.trainInstances[i].set(\modulator_type_six, m.value) });
+		};
+
+		modulator7 = NuPG_GUI_ModulatorsView.new;
+		modulator7.draw("_m7", guiDefinitions.modulatorOneViewDimensions.moveBy(145, -210), n: instances);
+		instances.collect { |i|
+			data.data_modulator7[i][1].connect(modulator7.modFreq[i]);
+			data.data_modulator7[i][2].connect(modulator7.modDepth[i]);
+			modulator7.modType[i].action_({ |m| synthesis.trainInstances[i].set(\modulator_type_seven, m.value) });
+		};
+
+		modulator8 = NuPG_GUI_ModulatorsView.new;
+		modulator8.draw("_m8", guiDefinitions.modulatorOneViewDimensions.moveBy(145, -315), n: instances);
+		instances.collect { |i|
+			data.data_modulator8[i][1].connect(modulator8.modFreq[i]);
+			data.data_modulator8[i][2].connect(modulator8.modDepth[i]);
+			modulator8.modType[i].action_({ |m| synthesis.trainInstances[i].set(\modulator_type_eight, m.value) });
+		};
+
 		// Modulation matrix
 		matrixMod = NuPG_GUI_ModMatrix.new;
-		matrixMod.draw("_modulation matrix", guiDefinitions.modMatrixViewDimensions, [modulator1, modulator2, modulator3, modulator4], n: instances);
+		matrixMod.draw("_modulation matrix", guiDefinitions.modMatrixViewDimensions,
+			[modulator1, modulator2, modulator3, modulator4, modulator5, modulator6, modulator7, modulator8],
+			n: instances);
 		instances.collect { |i|
-			4.collect { |k| 13.collect { |l| data.data_matrix[i][k][l].connect(matrixMod.matrix[i][k][l]) } };
+			8.collect { |k| 13.collect { |l| data.data_matrix[i][k][l].connect(matrixMod.matrix[i][k][l]) } };
 		};
 	}
 
@@ -714,7 +749,8 @@ NuPG_GUIBuilder {
 			ampOneTable_Editor, ampTwoTable_Editor, ampThreeTable_Editor, presets, synthSwitcherView,
 			modulationTable, modulationTableEditor, modulationRatioTable, modulationRatioEditor,
 			multiparameterModulationTable, multiparameterModulationTableEditor,
-			groupsOffest, matrixMod, modulator1, modulator2, modulator3, modulator4
+			groupsOffest, matrixMod, modulator1, modulator2, modulator3, modulator4,
+			modulator5, modulator6, modulator7, modulator8
 		], n: instances);
 	}
 
