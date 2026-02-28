@@ -470,7 +470,7 @@ NuPG_Synthesis_OscOS {
 				triggerFreq = (fundamental_frequency * fundamental_frequency_loop) +
 					(fundamentalMod_one + fundamentalMod_two + fundamentalMod_three + fundamentalMod_four +
 					 fundamentalMod_five + fundamentalMod_six + fundamentalMod_seven + fundamentalMod_eight);
-				triggerFreq = triggerFreq * LFDNoise3.kr(fluxRate * ExpRand(0.8, 1.2), trigFreqFlux, 1);
+				triggerFreq = triggerFreq * LFNoise2.kr(fluxRate * ExpRand(0.8, 1.2), trigFreqFlux, 1);
 				triggerFreq = triggerFreq.clip(0.1, 4000);
 
 				// Generate phase ramp from fundamental frequency
@@ -570,9 +570,9 @@ NuPG_Synthesis_OscOS {
 							 formantThreeMod_five + formantThreeMod_six + formantThreeMod_seven + formantThreeMod_eight);
 
 				// Apply formant flux
-				ffreq_One = ffreq_One * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
-				ffreq_Two = ffreq_Two * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
-				ffreq_Three = ffreq_Three * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
+				ffreq_One = ffreq_One * LFNoise2.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
+				ffreq_Two = ffreq_Two * LFNoise2.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
+				ffreq_Three = ffreq_Three * LFNoise2.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
 
 				// ============================================================
 				// OVERLAP AND PHASE CALCULATIONS

@@ -78,11 +78,11 @@ NuPG_ModulatorSet {
 					a:  LFNoise2.kr(1, 0.2, 1.2),
 					b: LFNoise2.kr(1, 0.15, 0.15)
 				),
-				// 5-8: LFDNoise variants
-				LFDNoise0.ar(modulation_frequency),  // Sample-and-hold
-				LFDNoise1.ar(modulation_frequency),  // Linear interpolation
-				LFDNoise2.ar(modulation_frequency),  // Quadratic interpolation
-				LFDNoise3.ar(modulation_frequency),  // Cubic interpolation
+				// 5-8: LFNoise variants (using standard UGens)
+				LFNoise0.ar(modulation_frequency),  // Sample-and-hold
+				LFNoise1.ar(modulation_frequency),  // Linear interpolation
+				LFNoise2.ar(modulation_frequency),  // Quadratic interpolation
+				LFNoise2.ar(modulation_frequency),  // Cubic (using LFNoise2 as fallback)
 				// 9-10: Sparse random
 				Dust.ar(modulation_frequency) * 2 - 1,  // Scale to -1 to 1
 				Crackle.ar(1.5 + (modulation_frequency * 0.003).clip(0, 0.5)),  // Chaos parameter varies
@@ -483,7 +483,7 @@ NuPG_Synthesis {
 				 fundamentalMod_five + fundamentalMod_six + fundamentalMod_seven + fundamentalMod_eight);
 
 				trigger = Impulse.ar(trigger *
-					LFDNoise3.kr(fluxRate * ExpRand(0.8, 1.2), trigFreqFlux, 1), phase);
+					LFNoise2.kr(fluxRate * ExpRand(0.8, 1.2), trigFreqFlux, 1), phase);
 
 				trigger = trigger.clip(0, 4000);
 				//probability mask
@@ -699,11 +699,11 @@ NuPG_Synthesis {
 				grainDur_Three = 2048 / Server.default.sampleRate / envM_Three;
 
 				//formant 1 flux
-				ffreq_One = ffreq_One * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
+				ffreq_One = ffreq_One * LFNoise2.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
 				//formant 2 flux
-				ffreq_Two = ffreq_Two * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
+				ffreq_Two = ffreq_Two * LFNoise2.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
 				//formant 3 flux
-				ffreq_Three = ffreq_Three * LFDNoise3.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
+				ffreq_Three = ffreq_Three * LFNoise2.ar(fluxRate * ExpRand(0.01, 2.9), grainFreqFlux, 1);
 
 				//amplitude 1
 				amplitude_One_loop = Select.kr(group_1_onOff, [1, amplitude_One_loop]);
