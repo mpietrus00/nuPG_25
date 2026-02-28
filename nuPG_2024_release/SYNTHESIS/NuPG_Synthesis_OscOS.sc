@@ -106,8 +106,8 @@ NuPG_Synthesis_OscOS {
 				//masks
 				burst = 5, rest = 0,
 				chanMask = 0, centerMask = 1,
-				sieveMaskOn = 0, sieveSequence = #[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-				sieveMod = 16,
+				sieveMaskOn = 0, sieveSequence = #[1,1,1,1,1,1,1,1],  // reduced to 8 elements to stay under control limit
+				sieveMod = 8,  // changed from 16 to match array size
 				//formants (formantModel removed - unused)
 				formant_frequency_One  = 150, formant_frequency_Two = 20, formant_frequency_Three = 90,
 				formant_frequency_One_loop = 1, formant_frequency_Two_loop = 1, formant_frequency_Three_loop =1,
@@ -154,11 +154,11 @@ NuPG_Synthesis_OscOS {
 				offset_1 = 0, offset_2 = 0, offset_3 = 0,
 				//offset modulators
 				offset_1_one_active = 0, offset_1_two_active = 0, offset_1_three_active = 0, offset_1_four_active = 0,
-				offset_1_five_active = 0, offset_1_six_active = 0, offset_1_seven_active = 0, offset_1_eight_active = 0,
+				offset_1_five_active = 0, offset_1_six_active = 0,  // modulators 7-8 disabled to stay under control limit
 				offset_2_one_active = 0, offset_2_two_active = 0, offset_2_three_active = 0, offset_2_four_active = 0,
-				offset_2_five_active = 0, offset_2_six_active = 0, offset_2_seven_active = 0, offset_2_eight_active = 0,
+				offset_2_five_active = 0, offset_2_six_active = 0,  // modulators 7-8 disabled
 				offset_3_one_active = 0, offset_3_two_active = 0, offset_3_three_active = 0, offset_3_four_active = 0,
-				offset_3_five_active = 0, offset_3_six_active = 0, offset_3_seven_active = 0, offset_3_eight_active = 0,
+				offset_3_five_active = 0, offset_3_six_active = 0,  // modulators 7-8 disabled
 				// Flux rate modulation (row 13)
 				fluxRateMod_one_active = 0, fluxRateMod_two_active = 0, fluxRateMod_three_active = 0, fluxRateMod_four_active = 0,
 				fluxRateMod_five_active = 0, fluxRateMod_six_active = 0,  // modulators 7-8 disabled to stay under arg limit
@@ -167,10 +167,10 @@ NuPG_Synthesis_OscOS {
 				fluxAmtMod_five_active = 0, fluxAmtMod_six_active = 0,  // modulators 7-8 disabled to stay under arg limit
 				// FM ratio modulation (row 15)
 				fmRatioMod_one_active = 0, fmRatioMod_two_active = 0, fmRatioMod_three_active = 0, fmRatioMod_four_active = 0,
-				fmRatioMod_five_active = 0, fmRatioMod_six_active = 0, fmRatioMod_seven_active = 0, fmRatioMod_eight_active = 0,
+				fmRatioMod_five_active = 0, fmRatioMod_six_active = 0,  // modulators 7-8 disabled to stay under control limit
 				// FM amount modulation (row 16)
 				fmAmtMod_one_active = 0, fmAmtMod_two_active = 0, fmAmtMod_three_active = 0, fmAmtMod_four_active = 0,
-				fmAmtMod_five_active = 0, fmAmtMod_six_active = 0, fmAmtMod_seven_active = 0, fmAmtMod_eight_active = 0,
+				fmAmtMod_five_active = 0, fmAmtMod_six_active = 0,  // modulators 7-8 disabled to stay under control limit
 				// Phase modulation (row 17)
 				phaseMod_one_active = 0, phaseMod_two_active = 0, phaseMod_three_active = 0, phaseMod_four_active = 0,
 				phaseMod_five_active = 0, phaseMod_six_active = 0,  // modulators 7-8 disabled to stay under arg limit
@@ -376,8 +376,8 @@ NuPG_Synthesis_OscOS {
 				fmRatioMod_four = Select.ar(fmRatioMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 				fmRatioMod_five = Select.ar(fmRatioMod_five_active, [K2A.ar(0), (modulation_index_five * mod_five)]);
 				fmRatioMod_six = Select.ar(fmRatioMod_six_active, [K2A.ar(0), (modulation_index_six * mod_six)]);
-				fmRatioMod_seven = Select.ar(fmRatioMod_seven_active, [K2A.ar(0), (modulation_index_seven * mod_seven)]);
-				fmRatioMod_eight = Select.ar(fmRatioMod_eight_active, [K2A.ar(0), (modulation_index_eight * mod_eight)]);
+				fmRatioMod_seven = K2A.ar(0);  // modulators 7-8 disabled to stay under control limit
+				fmRatioMod_eight = K2A.ar(0);
 				fmRatio = fmRatio + (fmRatioMod_one + fmRatioMod_two + fmRatioMod_three + fmRatioMod_four +
 					fmRatioMod_five + fmRatioMod_six + fmRatioMod_seven + fmRatioMod_eight);
 
@@ -388,8 +388,8 @@ NuPG_Synthesis_OscOS {
 				fmAmtMod_four = Select.ar(fmAmtMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
 				fmAmtMod_five = Select.ar(fmAmtMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
 				fmAmtMod_six = Select.ar(fmAmtMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
-				fmAmtMod_seven = Select.ar(fmAmtMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
-				fmAmtMod_eight = Select.ar(fmAmtMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				fmAmtMod_seven = K2A.ar(1);  // modulators 7-8 disabled to stay under control limit
+				fmAmtMod_eight = K2A.ar(1);
 				fmAmt = fmAmt * (fmAmtMod_one * fmAmtMod_two * fmAmtMod_three * fmAmtMod_four *
 					fmAmtMod_five * fmAmtMod_six * fmAmtMod_seven * fmAmtMod_eight);
 
@@ -412,8 +412,8 @@ NuPG_Synthesis_OscOS {
 				offsetOneMod_four = Select.ar(offset_1_four_active, [K2A.ar(0), (modulation_index_four * 0.01 * mod_four)]);
 				offsetOneMod_five = Select.ar(offset_1_five_active, [K2A.ar(0), (modulation_index_five * 0.01 * mod_five)]);
 				offsetOneMod_six = Select.ar(offset_1_six_active, [K2A.ar(0), (modulation_index_six * 0.01 * mod_six)]);
-				offsetOneMod_seven = Select.ar(offset_1_seven_active, [K2A.ar(0), (modulation_index_seven * 0.01 * mod_seven)]);
-				offsetOneMod_eight = Select.ar(offset_1_eight_active, [K2A.ar(0), (modulation_index_eight * 0.01 * mod_eight)]);
+				offsetOneMod_seven = K2A.ar(0);  // modulators 7-8 disabled to stay under control limit
+				offsetOneMod_eight = K2A.ar(0);
 				offset_1 = offset_1 + (offsetOneMod_one + offsetOneMod_two + offsetOneMod_three + offsetOneMod_four +
 					offsetOneMod_five + offsetOneMod_six + offsetOneMod_seven + offsetOneMod_eight);
 
@@ -423,8 +423,8 @@ NuPG_Synthesis_OscOS {
 				offsetTwoMod_four = Select.ar(offset_2_four_active, [K2A.ar(0), (modulation_index_four * 0.01 * mod_four)]);
 				offsetTwoMod_five = Select.ar(offset_2_five_active, [K2A.ar(0), (modulation_index_five * 0.01 * mod_five)]);
 				offsetTwoMod_six = Select.ar(offset_2_six_active, [K2A.ar(0), (modulation_index_six * 0.01 * mod_six)]);
-				offsetTwoMod_seven = Select.ar(offset_2_seven_active, [K2A.ar(0), (modulation_index_seven * 0.01 * mod_seven)]);
-				offsetTwoMod_eight = Select.ar(offset_2_eight_active, [K2A.ar(0), (modulation_index_eight * 0.01 * mod_eight)]);
+				offsetTwoMod_seven = K2A.ar(0);  // modulators 7-8 disabled to stay under control limit
+				offsetTwoMod_eight = K2A.ar(0);
 				offset_2 = offset_2 + (offsetTwoMod_one + offsetTwoMod_two + offsetTwoMod_three + offsetTwoMod_four +
 					offsetTwoMod_five + offsetTwoMod_six + offsetTwoMod_seven + offsetTwoMod_eight);
 
@@ -434,8 +434,8 @@ NuPG_Synthesis_OscOS {
 				offsetThreeMod_four = Select.ar(offset_3_four_active, [K2A.ar(0), (modulation_index_four * 0.01 * mod_four)]);
 				offsetThreeMod_five = Select.ar(offset_3_five_active, [K2A.ar(0), (modulation_index_five * 0.01 * mod_five)]);
 				offsetThreeMod_six = Select.ar(offset_3_six_active, [K2A.ar(0), (modulation_index_six * 0.01 * mod_six)]);
-				offsetThreeMod_seven = Select.ar(offset_3_seven_active, [K2A.ar(0), (modulation_index_seven * 0.01 * mod_seven)]);
-				offsetThreeMod_eight = Select.ar(offset_3_eight_active, [K2A.ar(0), (modulation_index_eight * 0.01 * mod_eight)]);
+				offsetThreeMod_seven = K2A.ar(0);  // modulators 7-8 disabled to stay under control limit
+				offsetThreeMod_eight = K2A.ar(0);
 				offset_3 = offset_3 + (offsetThreeMod_one + offsetThreeMod_two + offsetThreeMod_three + offsetThreeMod_four +
 					offsetThreeMod_five + offsetThreeMod_six + offsetThreeMod_seven + offsetThreeMod_eight);
 

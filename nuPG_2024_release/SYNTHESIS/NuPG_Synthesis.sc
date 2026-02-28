@@ -166,8 +166,8 @@ NuPG_Synthesis {
 				//masks
 				burst = 5, rest = 0,
 				chanMask = 0, centerMask = 1,
-				sieveMaskOn = 0, sieveSequence = #[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-				sieveMod = 16,
+				sieveMaskOn = 0, sieveSequence = #[1,1,1,1,1,1,1,1],  // reduced to 8 elements to stay under control limit
+				sieveMod = 8,  // changed from 16 to match array size
 				//formants
 				formant_frequency_One  = 150, formant_frequency_Two = 20, formant_frequency_Three = 90,
 				formant_frequency_One_loop = 1, formant_frequency_Two_loop = 1, formant_frequency_Three_loop =1,
@@ -219,18 +219,18 @@ NuPG_Synthesis {
 				offset_2_five_active = 0, offset_2_six_active = 0, offset_2_seven_active = 0, offset_2_eight_active = 0,
 				offset_3_one_active = 0, offset_3_two_active = 0, offset_3_three_active = 0, offset_3_four_active = 0,
 				offset_3_five_active = 0, offset_3_six_active = 0, offset_3_seven_active = 0, offset_3_eight_active = 0,
-				// Flux rate modulation (row 13)
+				// Flux rate modulation (row 13) - modulators 7-8 disabled to stay under control limit
 				fluxRateMod_one_active = 0, fluxRateMod_two_active = 0, fluxRateMod_three_active = 0, fluxRateMod_four_active = 0,
-				fluxRateMod_five_active = 0, fluxRateMod_six_active = 0, fluxRateMod_seven_active = 0, fluxRateMod_eight_active = 0,
-				// Flux amount modulation (row 14)
+				fluxRateMod_five_active = 0, fluxRateMod_six_active = 0,
+				// Flux amount modulation (row 14) - modulators 7-8 disabled
 				fluxAmtMod_one_active = 0, fluxAmtMod_two_active = 0, fluxAmtMod_three_active = 0, fluxAmtMod_four_active = 0,
-				fluxAmtMod_five_active = 0, fluxAmtMod_six_active = 0, fluxAmtMod_seven_active = 0, fluxAmtMod_eight_active = 0,
-				// FM ratio modulation (row 15)
+				fluxAmtMod_five_active = 0, fluxAmtMod_six_active = 0,
+				// FM ratio modulation (row 15) - modulators 7-8 disabled
 				fmRatioMod_one_active = 0, fmRatioMod_two_active = 0, fmRatioMod_three_active = 0, fmRatioMod_four_active = 0,
-				fmRatioMod_five_active = 0, fmRatioMod_six_active = 0, fmRatioMod_seven_active = 0, fmRatioMod_eight_active = 0,
-				// FM amount modulation (row 16)
+				fmRatioMod_five_active = 0, fmRatioMod_six_active = 0,
+				// FM amount modulation (row 16) - modulators 7-8 disabled
 				fmAmtMod_one_active = 0, fmAmtMod_two_active = 0, fmAmtMod_three_active = 0, fmAmtMod_four_active = 0,
-				fmAmtMod_five_active = 0, fmAmtMod_six_active = 0, fmAmtMod_seven_active = 0, fmAmtMod_eight_active = 0,
+				fmAmtMod_five_active = 0, fmAmtMod_six_active = 0,
 				// Phase modulation (row 17)
 				phaseMod_one_active = 0, phaseMod_two_active = 0, phaseMod_three_active = 0, phaseMod_four_active = 0,
 				phaseMod_five_active = 0, phaseMod_six_active = 0,
@@ -352,8 +352,8 @@ NuPG_Synthesis {
 				fluxRateMod_four = Select.ar(fluxRateMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 				fluxRateMod_five = Select.ar(fluxRateMod_five_active, [K2A.ar(0), (modulation_index_five * mod_five)]);
 				fluxRateMod_six = Select.ar(fluxRateMod_six_active, [K2A.ar(0), (modulation_index_six * mod_six)]);
-				fluxRateMod_seven = Select.ar(fluxRateMod_seven_active, [K2A.ar(0), (modulation_index_seven * mod_seven)]);
-				fluxRateMod_eight = Select.ar(fluxRateMod_eight_active, [K2A.ar(0), (modulation_index_eight * mod_eight)]);
+				fluxRateMod_seven = K2A.ar(0);  // modulators 7-8 disabled to stay under control limit
+				fluxRateMod_eight = K2A.ar(0);
 				fluxRate = fluxRate + (fluxRateMod_one + fluxRateMod_two + fluxRateMod_three + fluxRateMod_four +
 					fluxRateMod_five + fluxRateMod_six + fluxRateMod_seven + fluxRateMod_eight);
 
@@ -364,8 +364,8 @@ NuPG_Synthesis {
 				fluxAmtMod_four = Select.ar(fluxAmtMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
 				fluxAmtMod_five = Select.ar(fluxAmtMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
 				fluxAmtMod_six = Select.ar(fluxAmtMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
-				fluxAmtMod_seven = Select.ar(fluxAmtMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
-				fluxAmtMod_eight = Select.ar(fluxAmtMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				fluxAmtMod_seven = K2A.ar(1);  // modulators 7-8 disabled to stay under control limit
+				fluxAmtMod_eight = K2A.ar(1);
 				allFluxAmt = allFluxAmt * (fluxAmtMod_one * fluxAmtMod_two * fluxAmtMod_three * fluxAmtMod_four *
 					fluxAmtMod_five * fluxAmtMod_six * fluxAmtMod_seven * fluxAmtMod_eight);
 
@@ -376,8 +376,8 @@ NuPG_Synthesis {
 				fmRatioMod_four = Select.ar(fmRatioMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 				fmRatioMod_five = Select.ar(fmRatioMod_five_active, [K2A.ar(0), (modulation_index_five * mod_five)]);
 				fmRatioMod_six = Select.ar(fmRatioMod_six_active, [K2A.ar(0), (modulation_index_six * mod_six)]);
-				fmRatioMod_seven = Select.ar(fmRatioMod_seven_active, [K2A.ar(0), (modulation_index_seven * mod_seven)]);
-				fmRatioMod_eight = Select.ar(fmRatioMod_eight_active, [K2A.ar(0), (modulation_index_eight * mod_eight)]);
+				fmRatioMod_seven = K2A.ar(0);  // modulators 7-8 disabled to stay under control limit
+				fmRatioMod_eight = K2A.ar(0);
 				fmRatio = fmRatio + (fmRatioMod_one + fmRatioMod_two + fmRatioMod_three + fmRatioMod_four +
 					fmRatioMod_five + fmRatioMod_six + fmRatioMod_seven + fmRatioMod_eight);
 
@@ -388,8 +388,8 @@ NuPG_Synthesis {
 				fmAmtMod_four = Select.ar(fmAmtMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
 				fmAmtMod_five = Select.ar(fmAmtMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
 				fmAmtMod_six = Select.ar(fmAmtMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
-				fmAmtMod_seven = Select.ar(fmAmtMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
-				fmAmtMod_eight = Select.ar(fmAmtMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				fmAmtMod_seven = K2A.ar(1);  // modulators 7-8 disabled to stay under control limit
+				fmAmtMod_eight = K2A.ar(1);
 				fmAmt = fmAmt * (fmAmtMod_one * fmAmtMod_two * fmAmtMod_three * fmAmtMod_four *
 					fmAmtMod_five * fmAmtMod_six * fmAmtMod_seven * fmAmtMod_eight);
 
