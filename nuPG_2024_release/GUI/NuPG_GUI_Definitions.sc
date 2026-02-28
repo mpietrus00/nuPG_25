@@ -61,7 +61,7 @@ NuPG_GUI_Definitions {
 				tableEditor: (width: 910, height: 650),
 				fourier: (width: 200, height: 150),
 				sieve: (width: 300, height: 325),
-				modMatrix: (width: 220, height: 560),
+				modMatrix: (width: 190, height: 340),
 				modulatorSmall: (width: 140, height: 75)
 			),
 
@@ -540,20 +540,6 @@ NuPG_GUI_Definitions {
 		.background_(this.white)
 		.knobColor_(this.guiGrey)
 		.orientation_(\horizontal)
-		.fixedWidth_(width)
-		.fixedHeight_(height);
-
-		^slider
-	}
-
-	// Mini vertical slider for modulation matrix intensity cells
-	*nuPGMiniSlider {|height = 20, width = 20|
-		var slider;
-
-		slider = Slider()
-		.background_(Color.grey(0.85))
-		.knobColor_(Color.new255(250, 100, 90))
-		.orientation_(\vertical)
 		.fixedWidth_(width)
 		.fixedHeight_(height);
 

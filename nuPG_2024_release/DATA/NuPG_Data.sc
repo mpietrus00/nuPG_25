@@ -37,7 +37,6 @@ NuPG_Data {
 	var <>data_tableShift;
 	var <>data_groupsOffset;
 	var <>data_modulator1, <>data_modulator2, <>data_modulator3, <>data_modulator4;
-	var <>data_modulator5, <>data_modulator6, <>data_modulator7, <>data_modulator8;
 	var <>data_matrix;
 	var <>data_spatial;
 	var <>data_overlapMorph;  // Overlap morphing modulation [rate, depth, shape, min, max, spread]
@@ -136,10 +135,6 @@ NuPG_Data {
 		data_modulator2 = Array.newClear(n);
 		data_modulator3 = Array.newClear(n);
 		data_modulator4 = Array.newClear(n);
-		data_modulator5 = Array.newClear(n);
-		data_modulator6 = Array.newClear(n);
-		data_modulator7 = Array.newClear(n);
-		data_modulator8 = Array.newClear(n);
 		data_matrix = Array.newClear(n);
 		data_spatial = Array.newClear(n);
 		data_overlapMorph = Array.newClear(n);
@@ -165,27 +160,19 @@ NuPG_Data {
 			NuPG_Data.makeCV(defVal[i], ranges[i][0], ranges[i][1], 0.001, \lin);
 		};
 
-		// Matrix (8 columns x 22 rows = 176 values)
-		// Accessed as data_matrix[instance][column][row] where col=0-7, row=0-21
-		// Rows: 0=fund, 1-3=formant, 4-6=env, 7-9=pan, 10-12=amp,
-		//       13=flux_rate, 14=flux_amt, 15=fm_ratio, 16=fm_amt,
-		//       17=phase, 18-20=offset, 21=probability
-		// Uses float intensity (0.0-1.0) instead of binary for per-cell depth
-		data_matrix[index] = 8.collect {
-			22.collect {
-				NuPG_Data.makeCV(0, 0, 1.0, 0.01, \lin);
+		// Matrix (4 columns x 13 rows = 52 values)
+		// Accessed as data_matrix[instance][column][row] where col=0-3, row=0-12
+		data_matrix[index] = 4.collect {
+			13.collect {
+				NuPG_Data.makeCV(0, 0, 1, 1, \lin);
 			};
 		};
 
-		// Modulators 1-8
+		// Modulators 1-4
 		data_modulator1[index] = this.prMakeModulatorCV;
 		data_modulator2[index] = this.prMakeModulatorCV;
 		data_modulator3[index] = this.prMakeModulatorCV;
 		data_modulator4[index] = this.prMakeModulatorCV;
-		data_modulator5[index] = this.prMakeModulatorCV;
-		data_modulator6[index] = this.prMakeModulatorCV;
-		data_modulator7[index] = this.prMakeModulatorCV;
-		data_modulator8[index] = this.prMakeModulatorCV;
 
 		// Table shift
 		data_tableShift[index] = NuPG_Data.makeCV(150, 1, 2048, 1, \lin);
@@ -302,7 +289,7 @@ NuPG_Data {
 	// Private helper methods
 	prMakeModulatorCV {
 		^[
-			NuPG_Data.makeCV(0, 0, 16, 1, \lin),       // type (0-16 for 17 modulator types)
+			NuPG_Data.makeCV(0, 0, 4, 1, \lin),        // type
 			NuPG_Data.makeCV(0.5, 0.001, 150.0, 0.001, \lin), // freq
 			NuPG_Data.makeCV(0, 0, 10, 1, \lin)        // depth
 		];
@@ -438,16 +425,6 @@ NuPG_Data {
 			arr.collect { |row| row.collect { |cv| cv.value } }
 		};
 
-		// Modulators 1-8
-		state[\data_modulator1] = data_modulator1.collect { |arr| arr.collect { |cv| cv.value } };
-		state[\data_modulator2] = data_modulator2.collect { |arr| arr.collect { |cv| cv.value } };
-		state[\data_modulator3] = data_modulator3.collect { |arr| arr.collect { |cv| cv.value } };
-		state[\data_modulator4] = data_modulator4.collect { |arr| arr.collect { |cv| cv.value } };
-		state[\data_modulator5] = data_modulator5.collect { |arr| arr.collect { |cv| cv.value } };
-		state[\data_modulator6] = data_modulator6.collect { |arr| arr.collect { |cv| cv.value } };
-		state[\data_modulator7] = data_modulator7.collect { |arr| arr.collect { |cv| cv.value } };
-		state[\data_modulator8] = data_modulator8.collect { |arr| arr.collect { |cv| cv.value } };
-
 		// Range CVs
 		state[\data_pulsaret_maxMin] = data_pulsaret_maxMin.collect { |arr| arr.collect { |cv| cv.value } };
 		state[\data_envelope_maxMin] = data_envelope_maxMin.collect { |arr| arr.collect { |cv| cv.value } };
@@ -467,9 +444,6 @@ NuPG_Data {
 	}
 
 	prDeserializeState { |state|
-		// Migrate old 4x13 matrix format to new 8x22 format
-		state = this.prMigratePresetFormat(state);
-
 		// Restore all CVs from serialized state
 		state[\data_main].do { |arr, i|
 			arr.do { |val, j|
@@ -525,60 +499,6 @@ NuPG_Data {
 
 		state[\data_trainDuration].do { |val, i| data_trainDuration[i].value = val };
 		state[\data_scrubber].do { |val, i| data_scrubber[i].value = val };
-
-		// Restore modulators 1-8
-		state[\data_modulator1].do { |arr, i| arr.do { |val, j| data_modulator1[i][j].value = val } };
-		state[\data_modulator2].do { |arr, i| arr.do { |val, j| data_modulator2[i][j].value = val } };
-		state[\data_modulator3].do { |arr, i| arr.do { |val, j| data_modulator3[i][j].value = val } };
-		state[\data_modulator4].do { |arr, i| arr.do { |val, j| data_modulator4[i][j].value = val } };
-		if (state[\data_modulator5].notNil) {
-			state[\data_modulator5].do { |arr, i| arr.do { |val, j| data_modulator5[i][j].value = val } };
-			state[\data_modulator6].do { |arr, i| arr.do { |val, j| data_modulator6[i][j].value = val } };
-			state[\data_modulator7].do { |arr, i| arr.do { |val, j| data_modulator7[i][j].value = val } };
-			state[\data_modulator8].do { |arr, i| arr.do { |val, j| data_modulator8[i][j].value = val } };
-		};
-
-		// Restore matrix
-		state[\data_matrix].do { |arr, i|
-			arr.do { |row, j|
-				row.do { |val, k| data_matrix[i][j][k].value = val }
-			}
-		};
-	}
-
-	// Migrate old preset format (4x13 matrix) to new format (8x22 matrix)
-	prMigratePresetFormat { |state|
-		// Check if migration needed (old format has 4 modulator columns, 13 target rows)
-		if (state[\data_matrix].notNil and: { state[\data_matrix][0].notNil }) {
-			var oldMatrix = state[\data_matrix];
-			var numCols = oldMatrix[0].size;
-			var numRows = if (oldMatrix[0][0].notNil) { oldMatrix[0][0].size } { 0 };
-
-			if (numCols == 4 and: { numRows == 13 }) {
-				// Old format: expand 4x13 to 8x22
-				"Migrating old preset format (4x13) to new format (8x22)...".postln;
-				state[\data_matrix] = oldMatrix.collect { |instanceMatrix|
-					// Expand each instance's matrix
-					var expanded = instanceMatrix.collect { |col|
-						// Add 9 new target rows (rows 13-21) with zeros
-						col ++ (0 ! 9);
-					};
-					// Add 4 new modulator columns (columns 4-7) with zeros
-					expanded ++ 4.collect { 22.collect { 0 } };
-				};
-			};
-		};
-
-		// Add default values for modulators 5-8 if missing
-		if (state[\data_modulator5].isNil) {
-			var numInstances = state[\data_modulator1].size;
-			state[\data_modulator5] = numInstances.collect { [0, 0.5, 0] };
-			state[\data_modulator6] = numInstances.collect { [0, 0.5, 0] };
-			state[\data_modulator7] = numInstances.collect { [0, 0.5, 0] };
-			state[\data_modulator8] = numInstances.collect { [0, 0.5, 0] };
-		};
-
-		^state;
 	}
 
 	prInterpolateStates { |stateA, stateB, blend|
@@ -757,15 +677,6 @@ NuPG_Data {
 		state[\data_modulators] = data_modulators[i].collect { |cv| cv.value };
 		state[\data_spatial] = data_spatial[i].collect { |cv| cv.value };
 		state[\data_matrix] = data_matrix[i].collect { |row| row.collect { |cv| cv.value } };
-		// Modulators 1-8
-		state[\data_modulator1] = data_modulator1[i].collect { |cv| cv.value };
-		state[\data_modulator2] = data_modulator2[i].collect { |cv| cv.value };
-		state[\data_modulator3] = data_modulator3[i].collect { |cv| cv.value };
-		state[\data_modulator4] = data_modulator4[i].collect { |cv| cv.value };
-		state[\data_modulator5] = data_modulator5[i].collect { |cv| cv.value };
-		state[\data_modulator6] = data_modulator6[i].collect { |cv| cv.value };
-		state[\data_modulator7] = data_modulator7[i].collect { |cv| cv.value };
-		state[\data_modulator8] = data_modulator8[i].collect { |cv| cv.value };
 		state[\data_pulsaret_maxMin] = data_pulsaret_maxMin[i].collect { |cv| cv.value };
 		state[\data_envelope_maxMin] = data_envelope_maxMin[i].collect { |cv| cv.value };
 		state[\data_fundamentalFrequency_maxMin] = data_fundamentalFrequency_maxMin[i].collect { |cv| cv.value };
@@ -803,17 +714,6 @@ NuPG_Data {
 		state[\data_modulators].do { |val, j| data_modulators[i][j].value = val };
 		state[\data_spatial].do { |val, j| data_spatial[i][j].value = val };
 		state[\data_matrix].do { |row, j| row.do { |val, k| data_matrix[i][j][k].value = val } };
-		// Modulators 1-8
-		state[\data_modulator1].do { |val, j| data_modulator1[i][j].value = val };
-		state[\data_modulator2].do { |val, j| data_modulator2[i][j].value = val };
-		state[\data_modulator3].do { |val, j| data_modulator3[i][j].value = val };
-		state[\data_modulator4].do { |val, j| data_modulator4[i][j].value = val };
-		if (state[\data_modulator5].notNil) {
-			state[\data_modulator5].do { |val, j| data_modulator5[i][j].value = val };
-			state[\data_modulator6].do { |val, j| data_modulator6[i][j].value = val };
-			state[\data_modulator7].do { |val, j| data_modulator7[i][j].value = val };
-			state[\data_modulator8].do { |val, j| data_modulator8[i][j].value = val };
-		};
 		state[\data_pulsaret_maxMin].do { |val, j| data_pulsaret_maxMin[i][j].value = val };
 		state[\data_envelope_maxMin].do { |val, j| data_envelope_maxMin[i][j].value = val };
 		state[\data_fundamentalFrequency_maxMin].do { |val, j| data_fundamentalFrequency_maxMin[i][j].value = val };

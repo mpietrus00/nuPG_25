@@ -48,14 +48,7 @@ NuPG_GUI_ModulatorsView {
 			"_modDepth"
 		];
 
-		// 17 modulator types (indices 0-16)
-		modTypeItems = [
-			"SinOsc", "LFSaw", "Lato", "Gendy", "HennonC",       // 0-4: Original
-			"LFDNoise0", "LFDNoise1", "LFDNoise2", "LFDNoise3",  // 5-8: Noise variants
-			"Dust", "Crackle",                                   // 9-10: Sparse random
-			"LorenzL", "GbmanL", "StandardL", "CuspL",           // 11-14: Chaos
-			"FBSineC", "LinCongC"                                // 15-16: Complex
-		];
+		modTypeItems = ["SinOsc", "LFSaw", "Lato", "Gendy", "HennonC"];
 
 		modType = n.collect{};
 		modFreq = n.collect{};
