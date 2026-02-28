@@ -48,7 +48,25 @@ NuPG_GUI_ModulatorsView {
 			"_modDepth"
 		];
 
-		modTypeItems = ["SinOsc", "LFSaw", "Lato", "Gendy", "HennonC"];
+		modTypeItems = [
+			"SinOsc",       // 0
+			"LFSaw",        // 1
+			"Lato",         // 2 - LatoocarfianC
+			"Gendy",        // 3 - Gendy3
+			"HenonC",       // 4
+			"LFNoise0",     // 5
+			"LFNoise1",     // 6
+			"LFNoise2",     // 7
+			"LFNoise2b",    // 8
+			"Dust",         // 9
+			"Crackle",      // 10
+			"LorenzL",      // 11
+			"GbmanL",       // 12
+			"StandardL",    // 13
+			"CuspL",        // 14
+			"FBSineC",      // 15
+			"LinCongC"      // 16
+		];
 
 		modType = n.collect{};
 		modFreq = n.collect{};
