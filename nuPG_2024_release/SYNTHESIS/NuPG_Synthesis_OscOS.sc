@@ -262,6 +262,13 @@ NuPG_Synthesis_OscOS {
 				var offsetThreeMod_five, offsetThreeMod_six, offsetThreeMod_seven, offsetThreeMod_eight;
 				var probabilityMod_one, probabilityMod_two, probabilityMod_three, probabilityMod_four;
 				var probabilityMod_five, probabilityMod_six, probabilityMod_seven, probabilityMod_eight;
+				// Envelope multiplier modulation vars
+				var envMulOneMod_one, envMulOneMod_two, envMulOneMod_three, envMulOneMod_four;
+				var envMulOneMod_five, envMulOneMod_six, envMulOneMod_seven, envMulOneMod_eight;
+				var envMulTwoMod_one, envMulTwoMod_two, envMulTwoMod_three, envMulTwoMod_four;
+				var envMulTwoMod_five, envMulTwoMod_six, envMulTwoMod_seven, envMulTwoMod_eight;
+				var envMulThreeMod_one, envMulThreeMod_two, envMulThreeMod_three, envMulThreeMod_four;
+				var envMulThreeMod_five, envMulThreeMod_six, envMulThreeMod_seven, envMulThreeMod_eight;
 				// Group offset triggers and accumulators
 				var stepTrigger_One, stepTrigger_Two, stepTrigger_Three;
 				var accumulator_One, accumulator_Two, accumulator_Three;
@@ -582,12 +589,6 @@ NuPG_Synthesis_OscOS {
 				// Derive overlap from envMul (dilation control)
 				// envMul controls how many pulsaret cycles play per grain
 				// Envelope multiplier modulation (rows 4-6 in matrix)
-				var envMulOneMod_one, envMulOneMod_two, envMulOneMod_three, envMulOneMod_four;
-				var envMulOneMod_five, envMulOneMod_six, envMulOneMod_seven, envMulOneMod_eight;
-				var envMulTwoMod_one, envMulTwoMod_two, envMulTwoMod_three, envMulTwoMod_four;
-				var envMulTwoMod_five, envMulTwoMod_six, envMulTwoMod_seven, envMulTwoMod_eight;
-				var envMulThreeMod_one, envMulThreeMod_two, envMulThreeMod_three, envMulThreeMod_four;
-				var envMulThreeMod_five, envMulThreeMod_six, envMulThreeMod_seven, envMulThreeMod_eight;
 
 				// Envelope Mul One modulation
 				envMulOneMod_one = Select.ar(envOneMod_one_active, [

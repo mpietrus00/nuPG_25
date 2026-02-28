@@ -300,6 +300,13 @@ NuPG_Synthesis {
 				var offsetThreeMod_five, offsetThreeMod_six, offsetThreeMod_seven, offsetThreeMod_eight;
 				var probabilityMod_one, probabilityMod_two, probabilityMod_three, probabilityMod_four;
 				var probabilityMod_five, probabilityMod_six, probabilityMod_seven, probabilityMod_eight;
+				// Envelope multiplier modulation vars
+				var envMulOneMod_one, envMulOneMod_two, envMulOneMod_three, envMulOneMod_four;
+				var envMulOneMod_five, envMulOneMod_six, envMulOneMod_seven, envMulOneMod_eight;
+				var envMulTwoMod_one, envMulTwoMod_two, envMulTwoMod_three, envMulTwoMod_four;
+				var envMulTwoMod_five, envMulTwoMod_six, envMulTwoMod_seven, envMulTwoMod_eight;
+				var envMulThreeMod_one, envMulThreeMod_two, envMulThreeMod_three, envMulThreeMod_four;
+				var envMulThreeMod_five, envMulThreeMod_six, envMulThreeMod_seven, envMulThreeMod_eight;
 
 				/*definition*/
 
@@ -587,12 +594,6 @@ NuPG_Synthesis {
 
 				// Envelope multiplier modulation (rows 4-6 in matrix)
 				// Uses multiplicative modulation similar to amplitude
-				var envMulOneMod_one, envMulOneMod_two, envMulOneMod_three, envMulOneMod_four;
-				var envMulOneMod_five, envMulOneMod_six, envMulOneMod_seven, envMulOneMod_eight;
-				var envMulTwoMod_one, envMulTwoMod_two, envMulTwoMod_three, envMulTwoMod_four;
-				var envMulTwoMod_five, envMulTwoMod_six, envMulTwoMod_seven, envMulTwoMod_eight;
-				var envMulThreeMod_one, envMulThreeMod_two, envMulThreeMod_three, envMulThreeMod_four;
-				var envMulThreeMod_five, envMulThreeMod_six, envMulThreeMod_seven, envMulThreeMod_eight;
 
 				// Envelope Mul One modulation
 				envMulOneMod_one = Select.ar(envOneMod_one_active, [
