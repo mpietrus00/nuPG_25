@@ -102,7 +102,7 @@ NuPG_Synthesis_OscOS {
 				probability = 1.0, probability_loop = 1.0,
 				//probability modulators
 				probabilityMod_one_active = 0, probabilityMod_two_active = 0, probabilityMod_three_active = 0, probabilityMod_four_active = 0,
-				probabilityMod_five_active = 0, probabilityMod_six_active = 0, probabilityMod_seven_active = 0, probabilityMod_eight_active = 0,
+				probabilityMod_five_active = 0, probabilityMod_six_active = 0,  // modulators 7-8 disabled to stay under arg limit
 				//masks
 				burst = 5, rest = 0,
 				chanMask = 0, centerMask = 1,
@@ -161,10 +161,10 @@ NuPG_Synthesis_OscOS {
 				offset_3_five_active = 0, offset_3_six_active = 0, offset_3_seven_active = 0, offset_3_eight_active = 0,
 				// Flux rate modulation (row 13)
 				fluxRateMod_one_active = 0, fluxRateMod_two_active = 0, fluxRateMod_three_active = 0, fluxRateMod_four_active = 0,
-				fluxRateMod_five_active = 0, fluxRateMod_six_active = 0, fluxRateMod_seven_active = 0, fluxRateMod_eight_active = 0,
+				fluxRateMod_five_active = 0, fluxRateMod_six_active = 0,  // modulators 7-8 disabled to stay under arg limit
 				// Flux amount modulation (row 14)
 				fluxAmtMod_one_active = 0, fluxAmtMod_two_active = 0, fluxAmtMod_three_active = 0, fluxAmtMod_four_active = 0,
-				fluxAmtMod_five_active = 0, fluxAmtMod_six_active = 0, fluxAmtMod_seven_active = 0, fluxAmtMod_eight_active = 0,
+				fluxAmtMod_five_active = 0, fluxAmtMod_six_active = 0,  // modulators 7-8 disabled to stay under arg limit
 				// FM ratio modulation (row 15)
 				fmRatioMod_one_active = 0, fmRatioMod_two_active = 0, fmRatioMod_three_active = 0, fmRatioMod_four_active = 0,
 				fmRatioMod_five_active = 0, fmRatioMod_six_active = 0, fmRatioMod_seven_active = 0, fmRatioMod_eight_active = 0,
@@ -173,17 +173,16 @@ NuPG_Synthesis_OscOS {
 				fmAmtMod_five_active = 0, fmAmtMod_six_active = 0, fmAmtMod_seven_active = 0, fmAmtMod_eight_active = 0,
 				// Phase modulation (row 17)
 				phaseMod_one_active = 0, phaseMod_two_active = 0, phaseMod_three_active = 0, phaseMod_four_active = 0,
-				phaseMod_five_active = 0, phaseMod_six_active = 0, phaseMod_seven_active = 0, phaseMod_eight_active = 0,
+				phaseMod_five_active = 0, phaseMod_six_active = 0,  // modulators 7-8 disabled to stay under arg limit
 
 				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
-				// Oversampling factor for OscOS (2, 4, or 8)
-				oversample = 4,
+				// oversample removed - not used, OscOS calls use hardcoded values
 				// Overlap morph (fmIndex + formantModel removed to make room)
 				overlapMorphRate = 0.1,
 				overlapMorphDepth = 0,
 				overlapMorphMin = 1,
 				overlapMorphMax = 10,
-				overlapPhaseOffset = 0,
+				// overlapPhaseOffset removed to stay under arg limit (hardcoded to 0 = synchronized)
 				overlapMorphShape = 0;
 
 				// Sub-sample accurate trigger generation variables
@@ -353,8 +352,8 @@ NuPG_Synthesis_OscOS {
 				fluxRateMod_four = Select.ar(fluxRateMod_four_active, [K2A.ar(0), (modulation_index_four * mod_four)]);
 				fluxRateMod_five = Select.ar(fluxRateMod_five_active, [K2A.ar(0), (modulation_index_five * mod_five)]);
 				fluxRateMod_six = Select.ar(fluxRateMod_six_active, [K2A.ar(0), (modulation_index_six * mod_six)]);
-				fluxRateMod_seven = Select.ar(fluxRateMod_seven_active, [K2A.ar(0), (modulation_index_seven * mod_seven)]);
-				fluxRateMod_eight = Select.ar(fluxRateMod_eight_active, [K2A.ar(0), (modulation_index_eight * mod_eight)]);
+				fluxRateMod_seven = K2A.ar(0);  // modulators 7-8 disabled for fluxRate to stay under arg limit
+				fluxRateMod_eight = K2A.ar(0);
 				fluxRate = fluxRate + (fluxRateMod_one + fluxRateMod_two + fluxRateMod_three + fluxRateMod_four +
 					fluxRateMod_five + fluxRateMod_six + fluxRateMod_seven + fluxRateMod_eight);
 
@@ -365,8 +364,8 @@ NuPG_Synthesis_OscOS {
 				fluxAmtMod_four = Select.ar(fluxAmtMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
 				fluxAmtMod_five = Select.ar(fluxAmtMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
 				fluxAmtMod_six = Select.ar(fluxAmtMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
-				fluxAmtMod_seven = Select.ar(fluxAmtMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
-				fluxAmtMod_eight = Select.ar(fluxAmtMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				fluxAmtMod_seven = K2A.ar(1);  // modulators 7-8 disabled for fluxAmt to stay under arg limit
+				fluxAmtMod_eight = K2A.ar(1);
 				allFluxAmt = allFluxAmt * (fluxAmtMod_one * fluxAmtMod_two * fluxAmtMod_three * fluxAmtMod_four *
 					fluxAmtMod_five * fluxAmtMod_six * fluxAmtMod_seven * fluxAmtMod_eight);
 
@@ -401,8 +400,8 @@ NuPG_Synthesis_OscOS {
 				phaseMod_four = Select.ar(phaseMod_four_active, [K2A.ar(0), (modulation_index_four * 0.1 * mod_four)]);
 				phaseMod_five = Select.ar(phaseMod_five_active, [K2A.ar(0), (modulation_index_five * 0.1 * mod_five)]);
 				phaseMod_six = Select.ar(phaseMod_six_active, [K2A.ar(0), (modulation_index_six * 0.1 * mod_six)]);
-				phaseMod_seven = Select.ar(phaseMod_seven_active, [K2A.ar(0), (modulation_index_seven * 0.1 * mod_seven)]);
-				phaseMod_eight = Select.ar(phaseMod_eight_active, [K2A.ar(0), (modulation_index_eight * 0.1 * mod_eight)]);
+				phaseMod_seven = K2A.ar(0);  // modulators 7-8 disabled for phase to stay under arg limit
+				phaseMod_eight = K2A.ar(0);
 				phase = phase + (phaseMod_one + phaseMod_two + phaseMod_three + phaseMod_four +
 					phaseMod_five + phaseMod_six + phaseMod_seven + phaseMod_eight);
 
@@ -447,8 +446,8 @@ NuPG_Synthesis_OscOS {
 				probabilityMod_four = Select.ar(probabilityMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
 				probabilityMod_five = Select.ar(probabilityMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
 				probabilityMod_six = Select.ar(probabilityMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
-				probabilityMod_seven = Select.ar(probabilityMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
-				probabilityMod_eight = Select.ar(probabilityMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				probabilityMod_seven = K2A.ar(1);  // modulators 7-8 disabled for probability to stay under arg limit
+				probabilityMod_eight = K2A.ar(1);
 				probability = probability * (probabilityMod_one * probabilityMod_two * probabilityMod_three * probabilityMod_four *
 					probabilityMod_five * probabilityMod_six * probabilityMod_seven * probabilityMod_eight);
 
@@ -681,7 +680,7 @@ NuPG_Synthesis_OscOS {
 
 				// Overlap morphing modulation
 				// overlapMorphDepth controls mix between dilation and LFO
-				// overlapPhaseOffset controls phase spread between groups (0=sync, 1=120° spread)
+				// overlapPhaseOffset removed to stay under arg limit (hardcoded to 0 = synchronized)
 				// overlapMorphShape: 0=sine, 1=tri, 2=saw, 3=random, 4=chaos
 				overlap_One = overlap_One + (overlapMorphDepth * (
 					Select.kr(overlapMorphShape, [
@@ -694,18 +693,18 @@ NuPG_Synthesis_OscOS {
 				));
 				overlap_Two = overlap_Two + (overlapMorphDepth * (
 					Select.kr(overlapMorphShape, [
-						SinOsc.kr(overlapMorphRate, 2pi/3 * overlapPhaseOffset),
-						LFTri.kr(overlapMorphRate, 2/3 * overlapPhaseOffset),
-						LFSaw.kr(overlapMorphRate, 2/3 * overlapPhaseOffset),
+						SinOsc.kr(overlapMorphRate, 0),  // overlapPhaseOffset hardcoded to 0
+						LFTri.kr(overlapMorphRate, 0),
+						LFSaw.kr(overlapMorphRate, 0),
 						LFNoise1.kr(overlapMorphRate),
 						LFNoise2.kr(overlapMorphRate)
 					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Two
 				));
 				overlap_Three = overlap_Three + (overlapMorphDepth * (
 					Select.kr(overlapMorphShape, [
-						SinOsc.kr(overlapMorphRate, 4pi/3 * overlapPhaseOffset),
-						LFTri.kr(overlapMorphRate, 4/3 * overlapPhaseOffset),
-						LFSaw.kr(overlapMorphRate, 4/3 * overlapPhaseOffset),
+						SinOsc.kr(overlapMorphRate, 0),  // overlapPhaseOffset hardcoded to 0
+						LFTri.kr(overlapMorphRate, 0),
+						LFSaw.kr(overlapMorphRate, 0),
 						LFNoise1.kr(overlapMorphRate),
 						LFNoise2.kr(overlapMorphRate)
 					]).linlin(-1, 1, overlapMorphMin, overlapMorphMax) - overlap_Three

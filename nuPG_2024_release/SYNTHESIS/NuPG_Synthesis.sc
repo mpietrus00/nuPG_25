@@ -142,7 +142,7 @@ NuPG_Synthesis {
 				allFluxAmt = 0.0, allFluxAmt_loop = 1, fluxRate = 40,
 				fmRatio = 5, fmRatio_loop = 1, fmAmt = 5, fmAmt_loop = 1,
 				modMul = 3, modAdd = 3,
-				fmIndex = 0, modulationMode = 0,
+				modulationMode = 0,
 				//fundamental modulation on/off
 				fundamentalMod_one_active = 0, fundamentalMod_two_active = 0, fundamentalMod_three_active = 0, fundamentalMod_four_active = 0,
 				fundamentalMod_five_active = 0, fundamentalMod_six_active = 0, fundamentalMod_seven_active = 0, fundamentalMod_eight_active = 0,
@@ -162,14 +162,13 @@ NuPG_Synthesis {
 				probability = 1.0, probability_loop = 1.0,
 				//probability modulators
 				probabilityMod_one_active = 0, probabilityMod_two_active = 0, probabilityMod_three_active = 0, probabilityMod_four_active = 0,
-				probabilityMod_five_active = 0, probabilityMod_six_active = 0, probabilityMod_seven_active = 0, probabilityMod_eight_active = 0,
+				probabilityMod_five_active = 0, probabilityMod_six_active = 0,
 				//masks
 				burst = 5, rest = 0,
 				chanMask = 0, centerMask = 1,
 				sieveMaskOn = 0, sieveSequence = #[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 				sieveMod = 16,
 				//formants
-				formantModel = 0,
 				formant_frequency_One  = 150, formant_frequency_Two = 20, formant_frequency_Three = 90,
 				formant_frequency_One_loop = 1, formant_frequency_Two_loop = 1, formant_frequency_Three_loop =1,
 				formantOneMod_one_active = 0, formantOneMod_two_active = 0, formantOneMod_three_active = 0, formantOneMod_four_active = 0,
@@ -234,10 +233,9 @@ NuPG_Synthesis {
 				fmAmtMod_five_active = 0, fmAmtMod_six_active = 0, fmAmtMod_seven_active = 0, fmAmtMod_eight_active = 0,
 				// Phase modulation (row 17)
 				phaseMod_one_active = 0, phaseMod_two_active = 0, phaseMod_three_active = 0, phaseMod_four_active = 0,
-				phaseMod_five_active = 0, phaseMod_six_active = 0, phaseMod_seven_active = 0, phaseMod_eight_active = 0,
+				phaseMod_five_active = 0, phaseMod_six_active = 0,
 
-				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0,
-				pulsarVersion = 0;
+				group_1_onOff = 0, group_2_onOff = 0, group_3_onOff = 0;
 
 
 				var trigger, sendTrigger;
@@ -402,8 +400,8 @@ NuPG_Synthesis {
 				phaseMod_four = Select.ar(phaseMod_four_active, [K2A.ar(0), (modulation_index_four * 0.1 * mod_four)]);
 				phaseMod_five = Select.ar(phaseMod_five_active, [K2A.ar(0), (modulation_index_five * 0.1 * mod_five)]);
 				phaseMod_six = Select.ar(phaseMod_six_active, [K2A.ar(0), (modulation_index_six * 0.1 * mod_six)]);
-				phaseMod_seven = Select.ar(phaseMod_seven_active, [K2A.ar(0), (modulation_index_seven * 0.1 * mod_seven)]);
-				phaseMod_eight = Select.ar(phaseMod_eight_active, [K2A.ar(0), (modulation_index_eight * 0.1 * mod_eight)]);
+				phaseMod_seven = K2A.ar(0);  // modulators 7-8 disabled for phase to stay under arg limit
+				phaseMod_eight = K2A.ar(0);
 				phase = phase + (phaseMod_one + phaseMod_two + phaseMod_three + phaseMod_four +
 					phaseMod_five + phaseMod_six + phaseMod_seven + phaseMod_eight);
 
@@ -448,8 +446,8 @@ NuPG_Synthesis {
 				probabilityMod_four = Select.ar(probabilityMod_four_active, [K2A.ar(1), (1 + (modulation_index_four * 0.1)) * mod_four.unipolar]);
 				probabilityMod_five = Select.ar(probabilityMod_five_active, [K2A.ar(1), (1 + (modulation_index_five * 0.1)) * mod_five.unipolar]);
 				probabilityMod_six = Select.ar(probabilityMod_six_active, [K2A.ar(1), (1 + (modulation_index_six * 0.1)) * mod_six.unipolar]);
-				probabilityMod_seven = Select.ar(probabilityMod_seven_active, [K2A.ar(1), (1 + (modulation_index_seven * 0.1)) * mod_seven.unipolar]);
-				probabilityMod_eight = Select.ar(probabilityMod_eight_active, [K2A.ar(1), (1 + (modulation_index_eight * 0.1)) * mod_eight.unipolar]);
+				probabilityMod_seven = K2A.ar(1);  // modulators 7-8 disabled for probability to stay under arg limit
+				probabilityMod_eight = K2A.ar(1);
 				probability = probability * (probabilityMod_one * probabilityMod_two * probabilityMod_three * probabilityMod_four *
 					probabilityMod_five * probabilityMod_six * probabilityMod_seven * probabilityMod_eight);
 
